@@ -1,4 +1,4 @@
-# AGENTS.MD — DỰ ÁN EIU Plant Disease Detection
+# AGENTS.MD — DỰ ÁN EIU Plant Disease Detection System (EIU PDDS)
 
 > **Dành cho mọi AI Coding Agent:**  
 > Đọc kỹ file này để nắm bắt toàn bộ ngữ cảnh hệ thống, kiến trúc luồng dữ liệu, phân vai thành viên và các nguyên tắc phát triển trước khi bắt tay vào sinh mã nguồn.
@@ -6,7 +6,8 @@
 ---
 
 ## 1. Tổng Quan Dự Án & Chiến Lược 3 Phase
-* **Tên dự án:** Nền tảng giám sát và chẩn đoán bệnh cây trồng (Mã dự án: EIU Plant Disease Detection).
+* **Tên chính thức dự án:** **EIU Plant Disease Detection System** (Tên viết tắt: **EIU PDDS**).
+* **Quy ước tên gọi (BẮT BUỘC):** **TUYỆT ĐỐI KHÔNG** sử dụng các tên gọi cũ như "CropPulse" hay "PhytoGuard". Mọi package, repository, API, tài liệu, commit, comment và giao diện bắt buộc dùng định danh **EIU Plant Disease Detection System** hoặc **EIU PDDS**.
 * **Tính chất kỹ thuật:** Đồ án tốt nghiệp Kỹ thuật Phần mềm (Software Engineering) tập trung vào phát triển hệ thống phân tán tích hợp thị giác máy tính ứng dụng (Applied Computer Vision).
 * **Lộ trình tiến hóa 3 giai đoạn (Agile/Iterative Roadmap):**
   * **Phase 1 (Giai đoạn hiện tại - 10 tuần):** Xây dựng hệ thống End-to-End MVP hoàn chỉnh. Sử dụng Cloud Inference API có sẵn (Roboflow Serverless); tập trung vào luồng dữ liệu khép kín, backend proxy, quản lý lịch sử, cấu trúc API và trải nghiệm Mobile Client.
@@ -34,7 +35,7 @@ Agent khi tiếp nhận công việc **bắt buộc tuân thủ nghiêm ngặt**
 ```text
 PROJECT_PlantDiseaseDetection/
 ├── server/                    # Backend Spring Boot 3.x (Java 21) - Phụ trách: Thắng
-│   ├── src/main/java/com/croppulse/
+│   ├── src/main/java/com/eiu/pdds/
 │   │   ├── controller/        # REST Endpoints (/api/v1/diagnoses)
 │   │   ├── service/           # Business logic & interfaces
 │   │   ├── repository/        # Spring Data JPA
@@ -90,3 +91,4 @@ Khi người dùng bắt đầu câu lệnh, Agent cần kiểm tra ngay lập t
 2. **Không can thiệp chéo mã nguồn:** Agent không được tự ý sửa đổi code của thành viên khác trừ khi đó là hợp đồng giao tiếp chung (API Contract / Swagger DTO).
 3. **Phân bổ Sprint rõ ràng:** Mỗi task phải gắn liền với Sprint cụ thể (từ Sprint 1 đến 5). Không nhảy cóc sang tính năng của Sprint sau khi Sprint trước chưa hoàn thành Definition of Done.
 4. **Tối ưu phản hồi (ADHD / Action-first):** Bắt đầu phản hồi bằng hành động/lệnh cụ thể có thể chạy được ngay; chia nhỏ bước việc rõ ràng; không nói vòng vo hoặc tóm tắt thừa thãi.
+5. **Chuẩn hóa danh xưng & thương hiệu (CẤM NGOẠI LỆ):** Tên hệ thống là **EIU Plant Disease Detection System** (**EIU PDDS**). Tuyệt đối cấm sử dụng các danh xưng cũ "CropPulse", "PhytoGuard" trong mã nguồn, tên package Java (`com.eiu.pdds`), tài liệu, commit hay UI.
