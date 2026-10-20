@@ -9,8 +9,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 WORKSPACE_NAME = "plant-disease-detection-mztfb"
-WORKFLOW_ID = "plant-disease-yolo-onfen"
-SERVERLESS_URL = f"https://serverless.roboflow.com/{WORKSPACE_NAME}/workflows/{WORKFLOW_ID}"
+WORKFLOW_ID = "plant-disease-yolo-logic"
+# Canonical workflow identifier for 'Plant Disease YOLO Logic' on Roboflow Serverless
+WORKFLOW_CANONICAL_ID = "7BrZ3OIi8ZsxxlqKtKm1"
+SERVERLESS_URL = f"https://serverless.roboflow.com/{WORKSPACE_NAME}/workflows/{WORKFLOW_CANONICAL_ID}"
 
 class RoboflowWorkflowError(Exception):
     """Custom exception raised when Roboflow workflow execution fails."""
@@ -81,11 +83,13 @@ def run_plant_disease_workflow(
         resolved_params.update(parameters)
 
     payload: Dict[str, Any] = {
+        "api_key": resolved_api_key,
         "inputs": {
             "image": image_payload
-        },
-        "parameters": resolved_params
+        }
     }
+    if parameters:
+        payload["parameters"] = parameters
 
     headers = {
         "Content-Type": "application/json",
@@ -134,11 +138,25 @@ def _process_workflow_response(
     Defensively parses workflow output and writes any base64 images to disk.
     """
     results: List[Dict[str, Any]] = []
-    items = raw_response if isinstance(raw_response, list) else [raw_response]
+
+    # Unpack Roboflow 'outputs' array if present
+    if isinstance(raw_response, dict) and "outputs" in raw_response and isinstance(raw_response["outputs"], list):
+        items = raw_response["outputs"]
+    elif isinstance(raw_response, list):
+        items = raw_response
+    else:
+        items = [raw_response]
 
     out_path = Path(output_dir) if output_dir else None
     if out_path:
         out_path.mkdir(parents=True, exist_ok=True)
+        # Always persist JSON response to output directory
+        json_file = out_path / "latest_workflow_response.json"
+        try:
+            with open(json_file, "w", encoding="utf-8") as f:
+                json.dump(raw_response, f, indent=2)
+        except Exception:
+            pass
 
     for idx, item in enumerate(items):
         if not isinstance(item, dict):

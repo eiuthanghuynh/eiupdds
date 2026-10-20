@@ -4,6 +4,7 @@ import com.eiu.pdds.common.exception.BusinessException;
 import com.eiu.pdds.common.exception.ErrorCode;
 import com.eiu.pdds.integration.roboflow.dto.RoboflowWorkflowResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,7 +39,7 @@ public class RoboflowClient {
     @Value("${roboflow.workspace:plant-disease-detection-mztfb}")
     private String workspace;
 
-    @Value("${roboflow.workflow-id:plant-disease-yolo-onfen}")
+    @Value("${roboflow.workflow-id:7BrZ3OIi8ZsxxlqKtKm1}")
     private String workflowId;
 
     @Value("${roboflow.serverless-url:https://serverless.roboflow.com}")
@@ -107,6 +108,7 @@ public class RoboflowClient {
         String base64Image = Base64.getEncoder().encodeToString(imageBytes);
 
         Map<String, Object> payload = Map.of(
+                "api_key", apiKey,
                 "inputs", Map.of(
                         "image", Map.of(
                                 "type", "base64",
@@ -180,8 +182,11 @@ public class RoboflowClient {
         }
 
         try {
-            List<RoboflowWorkflowResponse.WorkflowItem> items = objectMapper.readValue(
-                    responseBody,
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+            JsonNode itemsNode = rootNode.has("outputs") ? rootNode.get("outputs") : rootNode;
+
+            List<RoboflowWorkflowResponse.WorkflowItem> items = objectMapper.convertValue(
+                    itemsNode,
                     new TypeReference<>() {}
             );
 

@@ -133,6 +133,7 @@ venv.bak/
 
 # Test Outputs & Generated Artifacts
 ai-pipeline/scripts/test_outputs/
+output_visualizations/
 .pytest_cache/
 .coverage
 htmlcov/

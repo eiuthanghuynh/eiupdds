@@ -8,6 +8,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from scripts.roboflow_workflow_client import run_plant_disease_workflow, RoboflowWorkflowError
 
+import json
+
 class TestRoboflowWorkflowSmoke(unittest.TestCase):
     def setUp(self):
         self.api_key = os.getenv("ROBOFLOW_API_KEY")
@@ -29,15 +31,23 @@ class TestRoboflowWorkflowSmoke(unittest.TestCase):
         if not self.api_key:
             self.skipTest("ROBOFLOW_API_KEY is not set. Skipping live serverless API smoke test.")
         
+        output_dir = Path(__file__).parent / "test_outputs"
         result = run_plant_disease_workflow(
             image=self.test_img_path,
             api_key=self.api_key,
-            output_dir=Path(__file__).parent / "test_outputs"
+            output_dir=output_dir
         )
         self.assertIn("results", result)
         self.assertIsInstance(result["results"], list)
         self.assertGreater(len(result["results"]), 0)
-        print("\n[SMOKE TEST PASSED] Workflow Output Keys:", result.get("raw_keys"))
+
+        saved_file = output_dir / "latest_workflow_response.json"
+        print("\n" + "=" * 65)
+        print("[SMOKE TEST PASSED] Roboflow Workflow Live API Response:")
+        print(f"Output saved to: {saved_file}")
+        print("Response JSON Payload:")
+        print(json.dumps(result, indent=2))
+        print("=" * 65 + "\n")
 
 if __name__ == "__main__":
     unittest.main()
