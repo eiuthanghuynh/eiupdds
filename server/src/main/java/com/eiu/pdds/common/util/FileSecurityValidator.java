@@ -45,6 +45,27 @@ public final class FileSecurityValidator {
         }
     }
 
+    public static byte[] validateAndExtractBytes(MultipartFile file) {
+        validateImage(file);
+        try {
+            return file.getBytes();
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_PAYLOAD, "Failed to read image byte stream: " + e.getMessage());
+        }
+    }
+
+    public static void validateImageBytes(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_PAYLOAD, "Image content cannot be empty");
+        }
+        if (bytes.length > MAX_FILE_SIZE_BYTES) {
+            throw new BusinessException(ErrorCode.FILE_TOO_LARGE);
+        }
+        if (bytes.length < 12 || !isAllowedImageSignature(bytes)) {
+            throw new BusinessException(ErrorCode.INVALID_FILE_TYPE);
+        }
+    }
+
     /**
      * Inspects magic bytes against standardized ISO/IEC file signatures.
      */

@@ -1,7 +1,7 @@
 package com.eiu.pdds.diagnosis.controller;
 
 import com.eiu.pdds.common.api.ApiResponse;
-import com.eiu.pdds.diagnosis.service.DiagnosisMockService;
+import com.eiu.pdds.diagnosis.service.DiagnosisService;
 import com.eiu.pdds.dto.diagnosis.DiagnosisAnalyzeResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,7 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Tag(name = "Diagnosis & AI Inference", description = "Endpoints for plant disease detection, leaf image analysis, and treatment protocols")
 public class DiagnosisController {
 
-    private final DiagnosisMockService diagnosisMockService;
+    private final DiagnosisService diagnosisService;
 
     @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
@@ -59,7 +59,7 @@ public class DiagnosisController {
             @Parameter(description = "Client device information (model, OS version)", example = "iPhone 15 Pro / iOS 17.5")
             @RequestParam(value = "deviceInfo", required = false) String deviceInfo
     ) {
-        DiagnosisAnalyzeResponse response = diagnosisMockService.analyzeImage(image, plantCode, latitude, longitude, deviceInfo);
+        DiagnosisAnalyzeResponse response = diagnosisService.analyzeImage(image, plantCode, latitude, longitude, deviceInfo);
         return ResponseEntity.ok(ApiResponse.success("Image analyzed successfully", response));
     }
 }

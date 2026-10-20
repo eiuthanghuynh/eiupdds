@@ -20,6 +20,24 @@ spring:
       max-file-size: 15MB
       max-request-size: 20MB
 
+  # Spring Boot DevTools Hot-Reload (Dual ClassLoader fast restart)
+  devtools:
+    restart:
+      enabled: true
+      poll-interval: 2000ms
+      quiet-period: 1000ms
+      exclude:
+        - "META-INF/maven/**"
+        - "META-INF/resources/**"
+        - "static/**"
+        - "public/**"
+        - "templates/**"
+        - "db/migration/**"
+        - "**/*Test.class"
+        - "**/*Tests.class"
+    livereload:
+      enabled: false
+
   # Springdoc / Swagger OpenAPI
 springdoc:
   api-docs:
