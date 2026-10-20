@@ -94,7 +94,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
       MINIO_BUCKET_NAME: eiu-pdds-plants
-      ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY:-}
+    env_file:
+      - ../.env
     ports:
       - "8080:8080"
     depends_on:

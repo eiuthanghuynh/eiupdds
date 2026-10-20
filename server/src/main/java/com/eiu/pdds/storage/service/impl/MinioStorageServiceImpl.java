@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -38,13 +39,19 @@ public class MinioStorageServiceImpl implements StorageService {
     @Override
     public String uploadImage(MultipartFile file, String folder) {
         FileSecurityValidator.validateImage(file);
+        try {
+            return uploadImage(file.getBytes(), file.getOriginalFilename(), folder);
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_PAYLOAD, "Failed to read image byte stream: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public String uploadImage(byte[] imageBytes, String originalFilename, String folder) {
+        FileSecurityValidator.validateImageBytes(imageBytes);
 
         try {
-            byte[] header = new byte[12];
-            try (InputStream is = file.getInputStream()) {
-                is.read(header, 0, 12);
-            }
-            String ext = FileSecurityValidator.detectExtension(header);
+            String ext = FileSecurityValidator.detectExtension(imageBytes);
             String contentType = switch (ext) {
                 case "png" -> "image/png";
                 case "webp" -> "image/webp";
@@ -58,12 +65,10 @@ public class MinioStorageServiceImpl implements StorageService {
                     .bucket(bucketName)
                     .key(key)
                     .contentType(contentType)
-                    .contentLength(file.getSize())
+                    .contentLength((long) imageBytes.length)
                     .build();
 
-            try (InputStream inputStream = file.getInputStream()) {
-                s3Client.putObject(putRequest, RequestBody.fromInputStream(inputStream, file.getSize()));
-            }
+            s3Client.putObject(putRequest, RequestBody.fromBytes(imageBytes));
 
             String normalizedPublicUrl = publicUrl.endsWith("/") ? publicUrl.substring(0, publicUrl.length() - 1) : publicUrl;
             String generatedUrl = String.format("%s/%s/%s", normalizedPublicUrl, bucketName, key);

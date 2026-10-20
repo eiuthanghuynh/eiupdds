@@ -1,0 +1,20 @@
+# ==============================================================================
+# Development Dockerfile for EIU PDDS Backend with Fast Boot & Hot Reload
+# ==============================================================================
+FROM eclipse-temurin:21-jdk-alpine
+
+WORKDIR /app
+
+# Install Maven and curl for health probes
+RUN apk add --no-cache maven curl
+
+# Expose HTTP port
+EXPOSE 8080
+
+# Environment configurations for development mode and DevTools
+ENV SPRING_PROFILES_ACTIVE=docker \
+    SPRING_DEVTOOLS_RESTART_ENABLED=true
+
+# Launch directly with Maven spring-boot:run
+# Dependencies are cached persistently in the named volume /root/.m2 across runs
+CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.jvmArguments=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"]

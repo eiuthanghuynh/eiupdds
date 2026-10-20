@@ -58,7 +58,7 @@
 ## Sprint 2: Core MVP — Luồng Chẩn Đoán & Proxy AI (Tuần 3 - 4)
 **Mục tiêu Sprint:** Hoàn thiện pipeline nhận diện khép kín từ Mobile gửi lên qua Backend proxy.
 
-- [ ] **Task 2.1: Hoàn thiện Endpoint Chẩn Đoán Cốt Lõi** (8h)
+- [x] **Task 2.1: Hoàn thiện Endpoint Chẩn Đoán Cốt Lõi** (8h)
   - Viết controller và service cho `POST /api/v1/diagnoses/analyze`.
   - Validate kích thước file ảnh, định dạng (JPEG, PNG).
   - Forward ảnh sang Roboflow API, xử lý timeout (fallback 10s).
