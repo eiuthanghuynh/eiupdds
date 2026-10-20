@@ -20,15 +20,19 @@
 ## Sprint 1: Khởi Tạo Nền Tảng & Đặc Tả API Contract (Tuần 1 - 2)
 **Mục tiêu Sprint:** Dựng khung dịch vụ Spring Boot, Database và kết nối thành công với Roboflow API.
 
-- [ ] **Task 1.1: Khởi tạo Spring Boot Project & Docker Compose** (4h)
+- [x] **Task 1.1: Khởi tạo Spring Boot Project & Docker Compose** (4h)
   - Khởi tạo project Spring Boot 3.x (Dependencies: Spring Web, Spring Data JPA, PostgreSQL Driver, Lombok, Validation).
-  - Viết file `docker-compose.yml` khởi chạy PostgreSQL 15+ và MinIO local.
-  - *Acceptance Criteria:* Chạy `docker compose up -d` và `mvn spring-boot:run` kết nối DB thành công.
+  - Viết file `docker-compose.yml` khởi chạy PostgreSQL 16, Redis 7, MinIO/Silo và `backend` Spring Boot service.
+  - Viết multi-stage `Dockerfile` (`eclipse-temurin:21-jdk-alpine` builder, `eclipse-temurin:21-jre-alpine` runtime, non-root user `pdds:pdds`, JVM container ergonomics).
+  - *Acceptance Criteria:* Chạy `docker compose -f infra/docker-compose.yml up -d --build` khởi chạy toàn bộ hệ thống khép kín gồm PostgreSQL, Redis, MinIO (bucket auto-init), và Spring Boot Backend với healthcheck tự động.
 
-- [ ] **Task 1.2: Thiết kế Database Schema & Entity** (6h)
-  - Tạo các JPA Entities: `User`, `Disease` (danh mục bệnh), `Diagnosis` (phiên chẩn đoán), `BoundingBox` (tọa độ nhãn), `Treatment` (phác đồ).
-  - Cấu hình quan hệ One-to-Many giữa `Diagnosis` và `BoundingBox`.
-  - *Acceptance Criteria:* Hibernate sinh đúng schema tables trong PostgreSQL, có migration script (Flyway hoặc Liquibase nếu cần).
+
+- [x] **Task 1.2: Thiết kế Database Schema & Entity** (6h)
+  - Tạo 8 JPA Entities chuẩn 3NF: `User`, `Plant`, `Disease`, `PlantDisease`, `Treatment`, `Diagnosis`, `BoundingBox`, `DiagnosisFeedback`.
+  - Cấu hình quan hệ One-to-Many (`Diagnosis` - `BoundingBox`), Many-to-Many qua junction (`Plant` - `Disease`), và Human-in-the-loop (`DiagnosisFeedback`).
+  - Viết Flyway migration script `V1__init_schema.sql` với UUID PK, Foreign Key indexes, JSONB GIN index, và geospatial index.
+  - Viết suite kiểm thử tự động `DatabaseFoundationTests` xác minh persistence, audit timestamps, soft delete tombstones, và optimistic locking.
+  - *Acceptance Criteria:* Pass 100% kiểm thử JPA và Flyway migration script chuẩn PostgreSQL 16.
 
 - [x] **Task 1.3: Tích hợp Thư viện Roboflow Inference API** (6h)
   - Pre-trained Model chính thức: `plant-leaf-diseases/10` (mAP@50: 70.7%, Precision: 71.0%, Recall: 65.1%, 30 classes).
@@ -38,12 +42,16 @@
   - Smoke test: `ai-pipeline/scripts/test_workflow_smoke.py`.
   - *Acceptance Criteria:* Chạy `python ai-pipeline/scripts/test_workflow_smoke.py` với `ROBOFLOW_API_KEY` pass 100%.
 
-- [ ] **Task 1.4: Đặc tả API Contract qua Swagger / OpenAPI** (4h)
-  - Tích hợp `springdoc-openapi-starter-webmvc-ui`.
-  - Định nghĩa sẵn response DTOs và mock endpoints cho Huy (Mobile):
-    - `POST /api/v1/diagnoses/analyze` (upload ảnh $\rightarrow$ trả Bounding Boxes + mã bệnh).
-    - `GET /api/v1/diseases` (danh sách bệnh).
-  - *Acceptance Criteria:* Huy có thể truy cập `http://localhost:8080/swagger-ui.html` để lấy mẫu JSON.
+- [x] **Task 1.4: Đặc tả API Contract qua Swagger / OpenAPI** (4h)
+  - Tích hợp `springdoc-openapi-starter-webmvc-ui` với đầy đủ OpenAPI 3.0 Schemas, Models và Tags.
+  - Viết Flyway migration `V2__seed_master_data.sql` và `MasterDataSeeder` nạp danh mục 4 cây trồng, 5 bệnh hại và phác đồ điều trị.
+  - Xây dựng hệ thống DTOs bất biến (`record`): `BoundingBoxDto` (tọa độ kép Pixel & Top-Left Normalized [0, 1]), `DiagnosisAnalyzeResponse`, `DiseaseSummaryDto`, `DiseaseDetailDto`, `PlantDto`, `TreatmentDto`.
+  - Triển khai Controllers & Services:
+    - `POST /api/v1/diagnoses/analyze` (nhận multipart file ảnh, trả về tọa độ chuẩn hóa, bệnh chiếm ưu thế theo Max Confidence và phác đồ điều trị).
+    - `GET /api/v1/diseases` & `GET /api/v1/diseases/{code}` (danh mục bệnh và phác đồ chi tiết).
+    - `GET /api/v1/plants` & `GET /api/v1/plants/{code}` (danh mục cây trồng được hỗ trợ).
+  - Viết bộ kiểm thử tự động `ApiContractTests` với MockMvc đạt 100% pass (10/10 tests toàn dự án).
+  - *Acceptance Criteria:* Huy có thể truy cập `http://localhost:8080/swagger-ui.html` để lấy mẫu JSON và phát triển Mobile Client độc lập.
 
 ---
 
