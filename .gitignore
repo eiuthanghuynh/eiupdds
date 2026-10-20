@@ -1,15 +1,148 @@
-# Environment variables & secrets
-.env
-.env.local
-*.env
+# ==============================================================================
+# Monorepo .gitignore for EIU Plant Disease Detection System (EIU PDDS)
+# Covers: Spring Boot (Java 21), React / Next.js, React Native (Expo), Python
+# ==============================================================================
 
-# Python
+# ------------------------------------------------------------------------------
+# 1. Environment Variables & Secrets (CRITICAL SECURITY)
+# ------------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.jks
+*.p12
+*.keystore
+
+# ------------------------------------------------------------------------------
+# 2. Operating System & Common Files
+# ------------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ------------------------------------------------------------------------------
+# 3. IDEs & Editors
+# ------------------------------------------------------------------------------
+# JetBrains (IntelliJ IDEA, PyCharm, WebStorm)
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# ------------------------------------------------------------------------------
+# 4. Java & Spring Boot (server/)
+# ------------------------------------------------------------------------------
+target/
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# ------------------------------------------------------------------------------
+# 5. Node.js, React & Next.js Web (web/)
+# ------------------------------------------------------------------------------
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Next.js & Web Build Outputs
+.next/
+**/dist/
+**/build/
+out/
+.turbo/
+.cache/
+
+# ------------------------------------------------------------------------------
+# 6. React Native & Expo (mobile/)
+# ------------------------------------------------------------------------------
+.expo/
+.expo-shared/
+web-build/
+metro-cache/
+
+# Android Native Outputs (when using Expo prebuild / eject)
+android/app/build/
+android/.gradle/
+android/build/
+android/local.properties
+android/**/*.apk
+android/**/*.aab
+
+# iOS Native Outputs (when using Expo prebuild / eject)
+ios/Pods/
+ios/build/
+ios/*.xcworkspace
+ios/*.xcuserdata
+ios/**/DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# ------------------------------------------------------------------------------
+# 7. Python & AI Pipeline (ai-pipeline/)
+# ------------------------------------------------------------------------------
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
+*.so
+
+# Python Virtual Environments
 venv/
 .venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
 
-# Outputs & temp files
-output_visualizations/
-test_outputs/
+# Test Outputs & Generated Artifacts
+ai-pipeline/scripts/test_outputs/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Large Model Checkpoints & Datasets (Phase 2 & 3 weights)
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.engine
+*.bin
