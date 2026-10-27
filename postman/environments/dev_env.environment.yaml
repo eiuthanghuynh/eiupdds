@@ -1,0 +1,7 @@
+name: dev_env
+values:
+  - key: base_url
+    value: 'http://localhost:8080'
+  - key: ROBOFLOW_API_KEY
+    value: ''
+color: 0
