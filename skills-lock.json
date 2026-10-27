@@ -66,6 +66,12 @@
       "sourceType": "github",
       "skillPath": "skills/roboflow-universe/SKILL.md",
       "computedHash": "281cd2708f5cffe0cbac5eed7a3b7bb9389576fded441c2183b04403ad58f4be"
+    },
+    "solid": {
+      "source": "ramziddin/solid-skills",
+      "sourceType": "github",
+      "skillPath": "skills/solid/SKILL.md",
+      "computedHash": "9f4c0fe1cfbc7b5c480ad492e6b8cc5af52d5531edbabe4dfb359d92f6732f45"
     }
   }
 }
