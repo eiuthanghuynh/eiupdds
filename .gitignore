@@ -147,3 +147,9 @@ htmlcov/
 *.tflite
 *.engine
 *.bin
+
+# Postman local cache & sensitive CLI runtime
+.postman/
+*.postman_dump.json
+*.postman_environment.json
+*.postman_environment.example.json
