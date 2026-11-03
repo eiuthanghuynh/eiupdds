@@ -2,21 +2,21 @@ package com.eiu.pdds.diagnosis.controller;
 
 import com.eiu.pdds.common.api.ApiResponse;
 import com.eiu.pdds.diagnosis.service.DiagnosisService;
+import com.eiu.pdds.dto.diagnosis.DiagnosisAnalyzeRequest;
 import com.eiu.pdds.dto.diagnosis.DiagnosisAnalyzeResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/diagnoses")
@@ -44,22 +44,9 @@ public class DiagnosisController {
             )
     })
     public ResponseEntity<ApiResponse<DiagnosisAnalyzeResponse>> analyzeImage(
-            @Parameter(description = "Leaf photo file (JPEG or PNG, max 15MB)", required = true)
-            @RequestParam("image") MultipartFile image,
-
-            @Parameter(description = "Optional crop hint code (e.g., POTATO, TOMATO, RICE)", example = "POTATO")
-            @RequestParam(value = "plantCode", required = false) String plantCode,
-
-            @Parameter(description = "GPS Latitude where the photo was captured", example = "11.0528")
-            @RequestParam(value = "latitude", required = false) Double latitude,
-
-            @Parameter(description = "GPS Longitude where the photo was captured", example = "106.6661")
-            @RequestParam(value = "longitude", required = false) Double longitude,
-
-            @Parameter(description = "Client device information (model, OS version)", example = "iPhone 15 Pro / iOS 17.5")
-            @RequestParam(value = "deviceInfo", required = false) String deviceInfo
+            @ModelAttribute @Valid DiagnosisAnalyzeRequest request
     ) {
-        DiagnosisAnalyzeResponse response = diagnosisService.analyzeImage(image, plantCode, latitude, longitude, deviceInfo);
+        DiagnosisAnalyzeResponse response = diagnosisService.analyze(request);
         return ResponseEntity.ok(ApiResponse.success("Image analyzed successfully", response));
     }
 }

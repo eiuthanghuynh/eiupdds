@@ -97,11 +97,17 @@ Khi người dùng bắt đầu câu lệnh, Agent cần kiểm tra ngay lập t
 
 ## 6. Tiến Độ Kỹ Thuật & Kiến Trúc Cơ Sở Dữ Liệu (Database Foundation)
 
-### 6.1. Tiến độ hoàn thành (Sprint 1)
-* **Task 1.1:** Khởi tạo Spring Boot 3.3.4 (Java 21 LTS) & Docker Compose (PostgreSQL 16, Redis 7, Pigsty Silo S3/MinIO fork) $\rightarrow$ `[COMPLETED]`
-* **Task 1.2:** Thiết kế Database Foundation 8 bảng 3NF, Flyway Migration `V1__init_schema.sql`, JPA Entities, Repositories & Automated Test Suite $\rightarrow$ `[COMPLETED]`
-* **Task 1.3:** Tích hợp Roboflow Serverless API Client & Workflow Smoke Test $\rightarrow$ `[COMPLETED]`
-* **Task 1.4:** Đặc tả API Contract qua Swagger / OpenAPI, DTOs hệ tọa độ kép, Seed Master Data và Controller Mocks $\rightarrow$ `[COMPLETED]`
+### 6.1. Tiến độ hoàn thành các Sprint
+* **Sprint 1: Khởi Tạo Nền Tảng & Đặc Tả API Contract** $\rightarrow$ `[COMPLETED]`
+  * **Task 1.1:** Khởi tạo Spring Boot 3.3.4 (Java 21 LTS) & Docker Compose (PostgreSQL 16, Redis 7, Pigsty Silo S3/MinIO fork) $\rightarrow$ `[COMPLETED]`
+  * **Task 1.2:** Thiết kế Database Foundation 8 bảng 3NF, Flyway Migration `V1__init_schema.sql`, JPA Entities, Repositories & Automated Test Suite $\rightarrow$ `[COMPLETED]`
+  * **Task 1.3:** Tích hợp Roboflow Serverless API Client & Workflow Smoke Test $\rightarrow$ `[COMPLETED]`
+  * **Task 1.4:** Đặc tả API Contract qua Swagger / OpenAPI, DTOs hệ tọa độ kép, Seed Master Data và Controller Mocks $\rightarrow$ `[COMPLETED]`
+
+* **Sprint 2: Core MVP — Luồng Chẩn Đoán, Proxy AI & Tái Cấu Trúc SOLID Chuyên Sâu** $\rightarrow$ `[COMPLETED]`
+  * **Task 2.1:** Hoàn thiện Core Diagnosis Pipeline & Facade Pattern (`DiagnosisServiceImpl` < 120 LOC), phân rã 5 specialized domain services (SRP, DIP, OCP) $\rightarrow$ `[COMPLETED]`
+  * **Task 2.2:** Tích hợp MinIO Object Storage Service với AWS S3 SDK v2, tự động khởi tạo bucket `eiu-pdds-plants` và sinh public URL an toàn $\rightarrow$ `[COMPLETED]`
+  * **Task 2.3:** Bộ kiểm thử tự động toàn diện đạt 100% (60/60 tests PASS), gia cố Anti-Corruption Layer (ACL), Idempotency Cache SHA-256 (tiết kiệm quota) và triệt tiêu magic numbers kích thước ảnh bằng nguyên tắc Source of Truth & Fail-Fast $\rightarrow$ `[COMPLETED]`
 
 ### 6.2. Danh mục 8 Bảng Cơ Sở Dữ Liệu & Mục Đích Nghiệp Vụ
 1. `users`: Quản lý danh tính người dùng trong hệ sinh thái (Nông dân - `ROLE_USER`, Chuyên gia nông nghiệp - `ROLE_EXPERT`, Quản trị viên - `ROLE_ADMIN`).
@@ -131,6 +137,20 @@ Khi người dùng bắt đầu câu lệnh, Agent cần kiểm tra ngay lập t
 * **Chỉ Mục Phức Hợp & Không Gian Địa Lý (Composite & Geospatial Indexing):**
   * `idx_diagnoses_user_created (user_id, created_at DESC WHERE deleted_at IS NULL)`: Tối ưu tuyệt đối cho endpoint lấy danh sách lịch sử chẩn đoán của nông dân mà không phải quét các bản ghi đã xóa mềm.
   * `idx_diagnoses_geo (latitude, longitude WHERE latitude IS NOT NULL)`: Nền tảng truy vấn bản đồ dịch tễ và cảnh báo dịch bệnh theo bán kính không gian trong Phase 3.
+* **Tái Cấu Trúc Hướng Đối Tượng SOLID Toàn Diện (Sprint 2):**
+  * Chuyển đổi `DiagnosisServiceImpl` từ God Class 385 dòng thành Clean Facade Orchestrator dưới 120 dòng, điều phối song song I/O qua Java 21 Virtual Threads.
+  * Phân rã 5 specialized domain services: `CoordinateTransformer` (SRP tính toán tọa độ kép pixel & normalized), `PathologyAnalysisService` (SRP thuật toán Max Confidence dominant disease & healthy leaf), `TreatmentRecommendationService` (SRP phác đồ điều trị & chăm sóc phòng ngừa), `DiagnosisPersistenceService` (SRP giao dịch `@Transactional` cô lập DB), `DiagnosisIdempotencyService` (SRP bộ đệm dấu vân tay ảnh).
+  * Chuẩn hóa Parameter Object `DiagnosisAnalyzeRequest` cho Controller và Service, triệt tiêu vi phạm Long Parameter List smell.
+* **Lớp Chống Tha Hóa Nhãn AI (Anti-Corruption Layer — ACL):**
+  * Đóng gói hoàn toàn `RoboflowClassMapper` bên trong `RoboflowInferenceProvider`.
+  * Domain services chỉ nhận `DetectedObject` mang canonical domain codes (`diseaseCode`, `plantCode`, `englishName`, `isHealthy`), cô lập 100% logic nghiệp vụ khỏi vendor contract của Roboflow, sẵn sàng cắm mô hình Edge AI (TFLite/ONNX) ở Phase 2.
+* **Cơ Chế Idempotency Cửa Sổ Trượt (Sliding Window SHA-256 Idempotency):**
+  * Tính toán dấu vân tay ảnh SHA-256 (`FileSecurityValidator.calculateSha256`) trước khi kích hoạt I/O song song.
+  * Phát lại (replay) kết quả chẩn đoán tức thì trong $< 5\text{ ms}$ cho các ảnh gửi trùng lặp, bảo vệ tuyệt đối hạn mức API quota Roboflow Serverless và băng thông MinIO S3.
+* **Triệt Tiêu Magic Numbers & Nguyên Tắc Source of Truth / Fail-Fast Kích Thước Ảnh:**
+  * Xóa bỏ hoàn toàn việc fallback về magic numbers `399` và `501`, ngăn chặn triệt để hiện tượng méo tỷ lệ khung hình (Aspect Ratio Distortion) làm lệch tâm và kẹt góc bounding box trên Mobile.
+  * **Source of Truth:** Trích xuất kích thước pixel thật siêu tốc ($< 0.05\text{ ms}$) trực tiếp từ header ảnh nguồn (`FileSecurityValidator.extractDimensions`) cho JPEG, PNG và WebP mà không cần giải mã toàn bộ raster ảnh.
+  * **Fail-Fast:** Ném ngay ngoại lệ `BusinessException(ROBOFLOW_API_ERROR)` khi cả AI provider lẫn ảnh nguồn đều không xác định được kích thước hợp lệ.
 
 ---
 

@@ -38,8 +38,11 @@ public class PddsApplication {
                         .load();
 
                 dotenv.entries().forEach(entry -> {
-                    if (System.getProperty(entry.getKey()) == null && System.getenv(entry.getKey()) == null) {
-                        System.setProperty(entry.getKey(), entry.getValue());
+                    String value = entry.getValue();
+                    if (value != null && !value.isBlank()) {
+                        if (System.getProperty(entry.getKey()) == null && System.getenv(entry.getKey()) == null) {
+                            System.setProperty(entry.getKey(), value);
+                        }
                     }
                 });
                 log.info("Loaded environment variables from: {}", targetEnv.getAbsolutePath());

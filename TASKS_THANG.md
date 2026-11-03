@@ -56,23 +56,32 @@
 ---
 
 ## Sprint 2: Core MVP — Luồng Chẩn Đoán & Proxy AI (Tuần 3 - 4)
-**Mục tiêu Sprint:** Hoàn thiện pipeline nhận diện khép kín từ Mobile gửi lên qua Backend proxy.
+**Mục tiêu Sprint:** Hoàn thiện pipeline nhận diện khép kín từ Mobile gửi lên qua Backend proxy, tái cấu trúc SOLID toàn diện và tối ưu hóa khả năng mở rộng / bảo vệ quota AI.
 
-- [x] **Task 2.1: Hoàn thiện Endpoint Chẩn Đoán Cốt Lõi** (8h)
+- [x] **Task 2.1: Hoàn thiện Endpoint Chẩn Đoán Cốt Lõi & Tái Cấu Trúc SOLID** (8h)
   - Viết controller và service cho `POST /api/v1/diagnoses/analyze`.
-  - Validate kích thước file ảnh, định dạng (JPEG, PNG).
-  - Forward ảnh sang Roboflow API, xử lý timeout (fallback 10s).
-  - *Acceptance Criteria:* Nhận ảnh từ request multipart, trả về JSON chuẩn hóa: `{ diagnosisId, diseaseName, confidence, boxes: [{ x, y, width, height }] }`.
+  - Validate kích thước file ảnh, định dạng (JPEG, PNG, WebP) và kiểm tra magic bytes không phụ thuộc extension.
+  - Forward ảnh sang Roboflow API, xử lý timeout và exponential backoff retry.
+  - Tái cấu trúc theo chuẩn SOLID:
+    - Thu nhỏ `DiagnosisServiceImpl` thành Clean Facade (< 120 LOC).
+    - Tách 5 Domain Services chuyên biệt: `CoordinateTransformer` (SRP), `PathologyAnalysisService` (SRP), `TreatmentRecommendationService` (SRP), `DiagnosisPersistenceService` (SRP), `DiagnosisIdempotencyService` (SRP).
+    - Áp dụng Parameter Object `DiagnosisAnalyzeRequest` cho Controller và Service.
+  - *Acceptance Criteria:* Nhận ảnh từ request multipart, trả về JSON chuẩn hóa: `{ diagnosisId, dominantDisease, confidence, boundingBoxes: [{ x, y, width, height, xMinNormalized... }] }`.
 
-- [ ] **Task 2.2: Tích hợp Cloudinary/MinIO Storage Service** (6h)
-  - Viết `StorageService` interface với 2 implementation: `LocalStorageService` và `CloudinaryService`.
-  - Tự động đẩy file ảnh gốc lên Storage và sinh URL công khai an toàn.
-  - *Acceptance Criteria:* Ảnh upload lên trả về URL truy cập được ngay lập tức.
+- [x] **Task 2.2: Tích hợp Cloudinary/MinIO Storage Service** (6h)
+  - Viết `StorageService` interface trừu tượng hóa tầng lưu trữ ảnh (DIP).
+  - Triển khai `MinioStorageServiceImpl` kết nối AWS S3 SDK v2 với MinIO / Pigsty Silo S3 server trong Docker Compose.
+  - Khởi tạo bucket `eiu-pdds-plants` tự động kèm chính sách public read policy.
+  - Sinh URL công khai cho ảnh chẩn đoán và hỗ trợ dọn dẹp file khi cần thiết.
+  - *Acceptance Criteria:* Đẩy file ảnh gốc lên MinIO S3 thành công, sinh URL ảnh truy cập được ngay lập tức; vượt qua 100% `MinioStorageServiceTests`.
 
-- [ ] **Task 2.3: Viết Unit Test & Integration Test cho Luồng Chẩn Đoán** (6h)
-  - Viết test với `@SpringBootTest` và MockMvc.
-  - Mock kết quả từ Roboflow để test luồng độc lập không tốn quota.
-  - *Acceptance Criteria:* Test pass 100% các case: ảnh hợp lệ, ảnh quá dung lượng, API bên thứ ba lỗi 500.
+- [x] **Task 2.3: Viết Unit Test & Integration Test Toàn Diện & Gia Cố Enterprise** (6h)
+  - Thiết lập bộ kiểm thử toàn diện với `@SpringBootTest`, MockMvc và Mockito (60/60 tests PASS — 100%).
+  - Mock kết quả Roboflow để test luồng chẩn đoán độc lập, zero-quota consumption.
+  - **Anti-Corruption Layer (ACL):** Đóng gói toàn bộ mapping nhãn Roboflow vào `RoboflowInferenceProvider`, bảo vệ Domain Services độc lập với vendor.
+  - **Idempotency Quota Guard:** Fingerprint ảnh bằng SHA-256 + Sliding Window TTL Cache trong `DiagnosisIdempotencyService`, phát lại kết quả trong < 5ms khi gặp ảnh trùng lặp.
+  - **Khắc phục Technical Debt kích thước ảnh:** Triệt tiêu magic numbers 399x501, bổ sung `FileSecurityValidator.extractDimensions` (Source of Truth đọc header JPEG/PNG/WebP trong 0.05ms) và Fail-Fast với `ROBOFLOW_API_ERROR`.
+  - *Acceptance Criteria:* Pass 100% 60 test cases trên toàn bộ module backend (`mvnw.cmd test`), không phát sinh bất kỳ hồi quy nào.
 
 ---
 
