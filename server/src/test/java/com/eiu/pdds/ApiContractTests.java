@@ -43,6 +43,9 @@ class ApiContractTests {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private com.eiu.pdds.diagnosis.service.DiagnosisIdempotencyService idempotencyService;
+
     @MockBean
     private RoboflowClient roboflowClient;
 
@@ -52,6 +55,11 @@ class ApiContractTests {
     @BeforeEach
     void setUp() {
         Mockito.reset(storageService, roboflowClient);
+        idempotencyService.evict("85bc1f4db304533036a57de74bc1c4ec8ea06c17f1a3064618e7b99c8f8b8988");
+        idempotencyService.evict(com.eiu.pdds.common.util.FileSecurityValidator.calculateSha256(new byte[]{
+                (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0,
+                0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01
+        }));
     }
 
     @Test

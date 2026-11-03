@@ -4,9 +4,9 @@ spring:
       on-profile: docker
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:eiu_pdds_db}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:postgres123}
+    url: jdbc:postgresql://${DB_HOST:postgres}:${POSTGRES_PORT:${DB_PORT:5432}}/${POSTGRES_DB:${DB_NAME:eiu_pdds_db}}
+    username: ${POSTGRES_USER:${DB_USER:postgres}}
+    password: ${POSTGRES_PASSWORD:${DB_PASSWORD:postgres123}}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -28,10 +28,10 @@ spring:
 storage:
   provider: minio
   minio:
-    endpoint: http://${MINIO_HOST:minio}:${MINIO_PORT:9000}
-    public-url: ${MINIO_PUBLIC_URL:http://localhost:9000}
-    access-key: ${MINIO_ROOT_USER:minioadmin}
-    secret-key: ${MINIO_ROOT_PASSWORD:minioadmin123}
+    endpoint: ${MINIO_ENDPOINT:http://${MINIO_HOST:minio}:${MINIO_PORT:9000}}
+    public-url: ${MINIO_PUBLIC_URL:http://${MINIO_PUBLIC_HOST:localhost}:${MINIO_API_PORT:${MINIO_PORT:9000}}}
+    access-key: ${MINIO_ROOT_USER:${MINIO_ACCESS_KEY:minioadmin}}
+    secret-key: ${MINIO_ROOT_PASSWORD:${MINIO_SECRET_KEY:minioadmin123}}
     bucket-name: ${MINIO_BUCKET_NAME:eiu-pdds-plants}
     region: ${MINIO_REGION:us-east-1}
 

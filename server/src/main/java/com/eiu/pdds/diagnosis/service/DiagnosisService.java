@@ -1,5 +1,6 @@
 package com.eiu.pdds.diagnosis.service;
 
+import com.eiu.pdds.dto.diagnosis.DiagnosisAnalyzeRequest;
 import com.eiu.pdds.dto.diagnosis.DiagnosisAnalyzeResponse;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -8,6 +9,11 @@ import org.springframework.web.multipart.MultipartFile;
  * dual-coordinate transformation, pathology resolution, and agricultural treatment recommendations.
  */
 public interface DiagnosisService {
+
+    /**
+     * Executes diagnosis pipeline from an encapsulated parameter request object (Clean Code).
+     */
+    DiagnosisAnalyzeResponse analyze(DiagnosisAnalyzeRequest request);
 
     /**
      * Executes the end-to-end diagnosis pipeline on an uploaded plant leaf image.
