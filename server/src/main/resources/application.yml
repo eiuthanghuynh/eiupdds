@@ -80,3 +80,17 @@ storage:
     bucket-name: ${MINIO_BUCKET_NAME:eiu-pdds-plants}
     region: ${MINIO_REGION:us-east-1}
 
+# JWT Authentication & Token Lifecycle Config (Enterprise Dual-Token)
+jwt:
+  secret: ${JWT_SECRET:4c696e685f646965755f6b686f616e675f636875616e5f656e74657270726973655f7365637265745f6b65795f3235365f62697473}
+  issuer: ${JWT_ISSUER:eiu-pdds-auth}
+  audience: ${JWT_AUDIENCE:eiu-pdds-client}
+  access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:900000} # 15 minutes
+  refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000} # 7 days
+
+# OAuth2 3rd-Party Providers
+security:
+  oauth2:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:eiu-pdds-mobile.apps.googleusercontent.com}
+
