@@ -33,7 +33,7 @@ public class JwtTokenProvider {
     private final SecureRandom secureRandom = new SecureRandom();
 
     public JwtTokenProvider(
-            @Value("${jwt.secret:4c696e685f646965755f6b686f616e675f636875616e5f656e74657270726973655f7365637265745f6b65795f3235365f62697473}") String secret,
+            @Value("${jwt.secret}") String secret,
             @Value("${jwt.issuer:eiu-pdds-auth}") String issuer,
             @Value("${jwt.audience:eiu-pdds-client}") String audience,
             @Value("${jwt.access-token-expiration-ms:900000}") long accessTokenExpirationMs

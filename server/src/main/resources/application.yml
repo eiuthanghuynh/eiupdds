@@ -61,7 +61,7 @@ management:
 
 # Cloud & AI Integration Config
 roboflow:
-  api-key: ${ROBOFLOW_API_KEY:}
+  api-key: ${ROBOFLOW_API_KEY}
   workspace: ${ROBOFLOW_WORKSPACE:plant-disease-detection-mztfb}
   workflow-id: ${ROBOFLOW_WORKFLOW_ID:7BrZ3OIi8ZsxxlqKtKm1}
   model-id: ${ROBOFLOW_MODEL_ID:plant-leaf-diseases/10}
@@ -82,7 +82,7 @@ storage:
 
 # JWT Authentication & Token Lifecycle Config (Enterprise Dual-Token)
 jwt:
-  secret: ${JWT_SECRET:4c696e685f646965755f6b686f616e675f636875616e5f656e74657270726973655f7365637265745f6b65795f3235365f62697473}
+  secret: ${JWT_SECRET}
   issuer: ${JWT_ISSUER:eiu-pdds-auth}
   audience: ${JWT_AUDIENCE:eiu-pdds-client}
   access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:900000} # 15 minutes
