@@ -60,13 +60,13 @@ target/
 **/target/
 *.class
 *.jar
+!**/.mvn/wrapper/maven-wrapper.jar
 *.war
 *.ear
 *.nar
 hs_err_pid*
 replay_pid*
 .mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
 
 # ------------------------------------------------------------------------------
 # 5. Node.js, React & Next.js Web (web/)

@@ -1,0 +1,14 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlist for test fixtures, example environment files, and synthetic test tokens"
+paths = [
+  '''server/src/test/.*''',
+  '''\.env\.example''',
+  '''\.gitleaks\.toml'''
+]
+regexes = [
+  '''0123456789012345678901234567890101234567890123456789012345678901''',
+  '''test-mock-roboflow-key'''
+]
