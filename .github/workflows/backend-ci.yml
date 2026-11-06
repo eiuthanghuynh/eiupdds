@@ -68,8 +68,13 @@ jobs:
           java-version: '21'
           cache: 'maven'
 
-      - name: Grant execution permission for Maven wrapper
-        run: chmod +x server/mvnw
+      - name: Ensure Maven wrapper jar and execution permissions
+        run: |
+          chmod +x server/mvnw
+          if [ ! -f server/.mvn/wrapper/maven-wrapper.jar ]; then
+            mkdir -p server/.mvn/wrapper
+            curl -fsSL -o server/.mvn/wrapper/maven-wrapper.jar https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.3.2/maven-wrapper-3.3.2.jar
+          fi
 
       - name: Run unit and integration tests
         working-directory: server
