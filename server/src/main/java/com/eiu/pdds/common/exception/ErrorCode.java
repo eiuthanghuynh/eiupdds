@@ -11,7 +11,16 @@ public enum ErrorCode {
     DISEASE_NOT_FOUND("DISEASE_001", "Disease record not found", HttpStatus.NOT_FOUND),
     PLANT_NOT_FOUND("PLANT_001", "Plant crop record not found", HttpStatus.NOT_FOUND),
     RESOURCE_NOT_FOUND("RES_001", "Requested resource not found", HttpStatus.NOT_FOUND),
-    DIAGNOSIS_NOT_FOUND("DIAGNOSIS_001", "Diagnosis session not found", HttpStatus.NOT_FOUND);
+    DIAGNOSIS_NOT_FOUND("DIAGNOSIS_001", "Diagnosis session not found", HttpStatus.NOT_FOUND),
+    UNAUTHORIZED("AUTH_001", "Full authentication is required to access this resource", HttpStatus.UNAUTHORIZED),
+    INVALID_CREDENTIALS("AUTH_002", "Invalid username/email or password", HttpStatus.UNAUTHORIZED),
+    ACCESS_DENIED("AUTH_003", "Access denied: insufficient permissions", HttpStatus.FORBIDDEN),
+    USER_ALREADY_EXISTS("AUTH_004", "Username or email is already registered", HttpStatus.CONFLICT),
+    INVALID_REFRESH_TOKEN("AUTH_005", "Refresh token is invalid, expired, or has been revoked", HttpStatus.UNAUTHORIZED),
+    TOKEN_REUSE_DETECTED("AUTH_006", "Security alert: token reuse detected, all active sessions terminated", HttpStatus.UNAUTHORIZED),
+    GOOGLE_AUTH_FAILED("AUTH_007", "Google ID token verification failed", HttpStatus.UNAUTHORIZED),
+    USER_NOT_FOUND("AUTH_008", "User account not found", HttpStatus.NOT_FOUND),
+    USER_INACTIVE("AUTH_009", "User account is suspended or inactive", HttpStatus.FORBIDDEN);
 
     private final String code;
     private final String defaultMessage;

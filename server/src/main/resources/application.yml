@@ -61,7 +61,7 @@ management:
 
 # Cloud & AI Integration Config
 roboflow:
-  api-key: ${ROBOFLOW_API_KEY:}
+  api-key: ${ROBOFLOW_API_KEY}
   workspace: ${ROBOFLOW_WORKSPACE:plant-disease-detection-mztfb}
   workflow-id: ${ROBOFLOW_WORKFLOW_ID:7BrZ3OIi8ZsxxlqKtKm1}
   model-id: ${ROBOFLOW_MODEL_ID:plant-leaf-diseases/10}
@@ -79,4 +79,18 @@ storage:
     secret-key: ${MINIO_ROOT_PASSWORD:${MINIO_SECRET_KEY:minioadmin123}}
     bucket-name: ${MINIO_BUCKET_NAME:eiu-pdds-plants}
     region: ${MINIO_REGION:us-east-1}
+
+# JWT Authentication & Token Lifecycle Config (Enterprise Dual-Token)
+jwt:
+  secret: ${JWT_SECRET}
+  issuer: ${JWT_ISSUER:eiu-pdds-auth}
+  audience: ${JWT_AUDIENCE:eiu-pdds-client}
+  access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:900000} # 15 minutes
+  refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000} # 7 days
+
+# OAuth2 3rd-Party Providers
+security:
+  oauth2:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:eiu-pdds-mobile.apps.googleusercontent.com}
 
