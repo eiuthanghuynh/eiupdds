@@ -85,6 +85,49 @@
 
 ---
 
+## Sprint 2.5: Nền Tảng Xác Thực & Phân Quyền Chuẩn Enterprise (AuthN & AuthZ Core)
+**Mục tiêu Sprint:** Xây dựng hệ thống xác thực người dùng hoàn chỉnh, hỗ trợ đăng ký/đăng nhập cục bộ (LOCAL), đăng nhập Google OAuth2, cơ chế Dual-Token JWT an toàn với Refresh Token Rotation và ngăn chặn tấn công Replay Attack.
+
+- [x] **Task 2.5.1: Thiết kế Federated Identity Pattern & Flyway Migration V3** (4h)
+  - Cập nhật entity `User` (cho phép `passwordHash` nullable với tài khoản OAuth, bổ sung `avatarUrl`).
+  - Tạo entity `UserIdentity` và enum `AuthProvider` (`LOCAL`, `GOOGLE`, `APPLE`) mapping với bảng `user_identities`.
+  - Viết script Flyway migration `V3__create_user_identities_and_adjust_users.sql` kèm ràng buộc duy nhất `(provider, provider_user_id)` và indexes.
+  - *Acceptance Criteria:* Khởi tạo cấu trúc bảng sạch sẽ, hỗ trợ một user liên kết nhiều provider danh tính.
+
+- [x] **Task 2.5.2: Triển khai Kiến Trúc Dual-Token JWT & Redis Refresh Token Store** (6h)
+  - `JwtTokenProvider`: Ký Access Token HMAC-SHA256 với claims (`sub`, `email`, `role`, `fullName`, `iss`, `aud`), hạn 15 phút.
+  - Sinh Refresh Token ID an toàn với `SecureRandom` 256 bits, hạn 7 ngày.
+  - `RefreshTokenStore` (DIP): Triển khai `RedisRefreshTokenStore` (`@Primary`) với atomic `getAndDelete` và `InMemoryRefreshTokenStore` (`@Profile("test")`).
+  - **Token Reuse Detection:** Lưu vết token đã xoay vòng (tombstone), nếu phát hiện replay token cũ sẽ lập tức hủy toàn bộ phiên của người dùng (`revokeAllForUser`) và bắn lỗi bảo mật `TOKEN_REUSE_DETECTED`.
+  - *Acceptance Criteria:* Kiểm thử xoay vòng token mượt mà, token cũ bị chặn tức thì.
+
+- [x] **Task 2.5.3: Tích hợp Google OAuth2 Token Exchange & Identity Auto-linking** (4h)
+  - Tích hợp thư viện `google-api-client` (với `google-http-client-gson`).
+  - `GoogleTokenVerifier`: Kiểm tra tính hợp lệ của Google ID Token, xác thực chữ ký số từ Google public keys và trích xuất `sub`, `email`, `name`, `pictureUrl`.
+  - Auto-linking: Nếu email đã tồn tại dưới dạng `LOCAL`, tự động liên kết danh tính `GOOGLE` với user mà không tạo user rác.
+  - *Acceptance Criteria:* Xác thực Google ID Token thành công, cấp phát token hệ thống EIU PDDS.
+
+- [x] **Task 2.5.4: Cấu hình Spring Security 6 Stateless Filter Chain & RBAC** (4h)
+  - Tích hợp `BCryptPasswordEncoder(12)`.
+  - Triển khai `JwtAuthenticationFilter` phân giải Bearer token và nạp `UserPrincipal` vào `SecurityContext`.
+  - Xử lý lỗi bảo mật tập trung: `JwtAuthenticationEntryPoint` (401 Unauthorized JSON) và `CustomAccessDeniedHandler` (403 Forbidden JSON).
+  - RBAC: Thiết lập quyền truy cập cho `ROLE_USER`, `ROLE_EXPERT`, `ROLE_ADMIN` trên các endpoint chẩn đoán và quản lý danh mục.
+  - *Acceptance Criteria:* Mọi request không hợp lệ đều trả về mã lỗi JSON chuẩn của hệ thống, không render trang lỗi mặc định của Spring.
+
+- [x] **Task 2.5.5: REST API Controller & Bộ Kiểm Thử Tự Động Toàn Diện** (6h)
+  - Viết `AuthController` với các endpoint:
+    - `POST /api/v1/auth/register` (201 Created)
+    - `POST /api/v1/auth/login` (200 OK)
+    - `POST /api/v1/auth/google` (200 OK)
+    - `POST /api/v1/auth/refresh` (200 OK)
+    - `POST /api/v1/auth/logout` (200 OK)
+    - `GET /api/v1/auth/me` (200 OK, Bearer token required)
+  - Cập nhật Swagger UI / OpenAPI 3.0 với cấu hình `bearerAuth`.
+  - Viết bộ test suite tự động 34 test cases: `JwtTokenProviderTest`, `AuthServiceTest`, `InMemoryRefreshTokenStoreTest`, `AuthIntegrationTests`.
+  - *Acceptance Criteria:* Pass 100% toàn bộ 94/94 test cases trên toàn hệ thống server backend (`mvnw.cmd test`), không phát sinh bất kỳ lỗi hồi quy nào.
+
+---
+
 ## Sprint 3: Lưu Trữ Lịch Sử, GPS & Danh Mục Phác Đồ (Tuần 5 - 6)
 **Mục tiêu Sprint:** Quản lý dữ liệu bệnh, phác đồ điều trị và lưu vết lịch sử chẩn đoán.
 

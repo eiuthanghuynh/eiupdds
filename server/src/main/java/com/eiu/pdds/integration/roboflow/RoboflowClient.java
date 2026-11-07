@@ -33,7 +33,7 @@ public class RoboflowClient {
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${roboflow.api-key:}")
+    @Value("${roboflow.api-key}")
     private String apiKey;
 
     @Value("${roboflow.workspace:plant-disease-detection-mztfb}")

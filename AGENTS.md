@@ -109,6 +109,13 @@ Khi người dùng bắt đầu câu lệnh, Agent cần kiểm tra ngay lập t
   * **Task 2.2:** Tích hợp MinIO Object Storage Service với AWS S3 SDK v2, tự động khởi tạo bucket `eiu-pdds-plants` và sinh public URL an toàn $\rightarrow$ `[COMPLETED]`
   * **Task 2.3:** Bộ kiểm thử tự động toàn diện đạt 100% (60/60 tests PASS), gia cố Anti-Corruption Layer (ACL), Idempotency Cache SHA-256 (tiết kiệm quota) và triệt tiêu magic numbers kích thước ảnh bằng nguyên tắc Source of Truth & Fail-Fast $\rightarrow$ `[COMPLETED]`
 
+* **Sprint 2.5: Nền Tảng Xác Thực & Phân Quyền Chuẩn Enterprise (AuthN & AuthZ Core)** $\rightarrow$ `[COMPLETED]`
+  * **Task 2.5.1:** Thiết kế Federated Identity Pattern (`user_identities` table, Flyway `V3`, JPA mapping) hỗ trợ đa danh tính (LOCAL, GOOGLE, APPLE) liên kết với hồ sơ người dùng trung tâm $\rightarrow$ `[COMPLETED]`
+  * **Task 2.5.2:** Xây dựng kiến trúc Dual-Token JWT (Access Token 15 phút HMAC-SHA256 + Refresh Token xoay vòng 7 ngày qua Redis và In-Memory cache) kèm cơ chế phát hiện và ngăn chặn tấn công Token Reuse Replay Attack $\rightarrow$ `[COMPLETED]`
+  * **Task 2.5.3:** Tích hợp Google OAuth2 Token Exchange (`POST /api/v1/auth/google`) qua Google API Client, xác thực chữ ký mật mã Google ID Token và tự động liên kết danh tính (Auto-linking) $\rightarrow$ `[COMPLETED]`
+  * **Task 2.5.4:** Cấu hình Spring Security 6 Stateless Filter Chain, `JwtAuthenticationFilter`, `JwtAuthenticationEntryPoint` (401), `CustomAccessDeniedHandler` (403), và RBAC phân quyền 3 cấp (`ROLE_USER`, `ROLE_EXPERT`, `ROLE_ADMIN`) $\rightarrow$ `[COMPLETED]`
+  * **Task 2.5.5:** Triển khai bộ REST API `/api/v1/auth/*` (`register`, `login`, `google`, `refresh`, `logout`, `me`), tích hợp OpenAPI Bearer Auth và hoàn thiện bộ kiểm thử tự động toàn diện đạt 100% (94/94 tests PASS toàn dự án) $\rightarrow$ `[COMPLETED]`
+
 ### 6.2. Danh mục 8 Bảng Cơ Sở Dữ Liệu & Mục Đích Nghiệp Vụ
 1. `users`: Quản lý danh tính người dùng trong hệ sinh thái (Nông dân - `ROLE_USER`, Chuyên gia nông nghiệp - `ROLE_EXPERT`, Quản trị viên - `ROLE_ADMIN`).
 2. `plants`: Danh mục cây trồng được hỗ trợ (Lúa, Cà chua, Ngô, Khoai tây...). Lưu mã định danh khoa học, tên phổ thông và biểu tượng hiển thị trên Mobile.
