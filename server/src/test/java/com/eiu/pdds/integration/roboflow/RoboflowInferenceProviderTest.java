@@ -76,7 +76,7 @@ class RoboflowInferenceProviderTest {
         RoboflowWorkflowResponse.ModelOutput mockOutputWithoutDims = new RoboflowWorkflowResponse.ModelOutput(
                 null, // Missing image dimensions from Roboflow
                 List.of(
-                        new RoboflowWorkflowResponse.Prediction(400.0, 300.0, 100.0, 100.0, 0.85, 1, "Tomato leaf", "f8b7e2a1-0000-0000-0000-000000000000", "image")
+                        new RoboflowWorkflowResponse.Prediction(400.0, 300.0, 100.0, 100.0, 0.85, 21, "Tomato leaf", "f8b7e2a1-0000-0000-0000-000000000000", "image")
                 )
         );
 
@@ -90,6 +90,31 @@ class RoboflowInferenceProviderTest {
         assertThat(result.detections()).hasSize(1);
         assertThat(result.detections().get(0).label()).isEqualTo("Tomato leaf");
         assertThat(result.detections().get(0).plantCode()).isEqualTo("TOMATO");
+    }
+
+    @Test
+    @DisplayName("Should resolve metadata by classId when className is null or unrecognized")
+    void testInferPlantDisease_FallbackToClassIdResolution() {
+        byte[] dummyBytes = new byte[]{1, 2, 3};
+        RoboflowWorkflowResponse.ModelOutput mockOutput = new RoboflowWorkflowResponse.ModelOutput(
+                new RoboflowWorkflowResponse.ImageInfo(500, 500),
+                List.of(
+                        new RoboflowWorkflowResponse.Prediction(250.0, 250.0, 100.0, 100.0, 0.91, 0, null, "det-0", "image")
+                )
+        );
+
+        when(roboflowClient.inferPlantDisease(dummyBytes, 0.5)).thenReturn(mockOutput);
+
+        InferenceResult result = provider.inferPlantDisease(dummyBytes, 0.5);
+
+        assertThat(result).isNotNull();
+        assertThat(result.detections()).hasSize(1);
+        DetectedObject detection = result.detections().get(0);
+        assertThat(detection.label()).isEqualTo("Apple Scab Leaf");
+        assertThat(detection.diseaseCode()).isEqualTo("APPLE_SCAB");
+        assertThat(detection.plantCode()).isEqualTo("APPLE");
+        assertThat(detection.englishName()).isEqualTo("Apple scab");
+        assertThat(detection.isHealthy()).isFalse();
     }
 
     @Test

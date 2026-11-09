@@ -117,4 +117,40 @@ class RoboflowClassMapperTests {
         assertThat(mapper.resolve("")).isEmpty();
         assertThat(mapper.resolve(null)).isEmpty();
     }
+
+    @Test
+    @DisplayName("Should resolve all 30 official Roboflow 0-indexed class IDs (0-29)")
+    void testAllThirtyClassIdsMapped() {
+        for (int id = 0; id < OFFICIAL_30_CLASSES.size(); id++) {
+            String expectedLabel = OFFICIAL_30_CLASSES.get(id);
+
+            Optional<RoboflowClassMapper.ClassMetadata> fromInstance = mapper.resolveByClassId(id);
+            Optional<RoboflowClassMapper.ClassMetadata> fromStatic = RoboflowClassMapper.fromClassId(id);
+
+            assertThat(fromInstance).as("Class ID %d should resolve", id).isPresent();
+            assertThat(fromStatic).as("Static method for class ID %d should resolve", id).isPresent();
+
+            RoboflowClassMapper.ClassMetadata meta = fromInstance.get();
+            assertThat(meta.classId()).isEqualTo(id);
+            assertThat(meta.rawLabel()).isEqualTo(expectedLabel);
+
+            // Cross-verify with resolve by rawLabel
+            Optional<RoboflowClassMapper.ClassMetadata> byLabel = mapper.resolve(expectedLabel);
+            assertThat(byLabel).isPresent();
+            assertThat(byLabel.get().classId()).isEqualTo(id);
+            assertThat(byLabel.get()).isEqualTo(meta);
+        }
+    }
+
+    @Test
+    @DisplayName("Should return empty for invalid or null class IDs")
+    void testInvalidClassIds() {
+        assertThat(mapper.resolveByClassId(null)).isEmpty();
+        assertThat(mapper.resolveByClassId(-1)).isEmpty();
+        assertThat(mapper.resolveByClassId(30)).isEmpty();
+        assertThat(mapper.resolveByClassId(999)).isEmpty();
+        assertThat(RoboflowClassMapper.fromClassId(null)).isEmpty();
+        assertThat(RoboflowClassMapper.fromClassId(-1)).isEmpty();
+        assertThat(RoboflowClassMapper.fromClassId(30)).isEmpty();
+    }
 }

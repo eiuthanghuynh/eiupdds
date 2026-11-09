@@ -190,7 +190,7 @@ class DiagnosisServiceTests {
         RoboflowWorkflowResponse.ModelOutput mockOutput = new RoboflowWorkflowResponse.ModelOutput(
                 new RoboflowWorkflowResponse.ImageInfo(300, 300),
                 List.of(
-                        new RoboflowWorkflowResponse.Prediction(150.0, 150.0, 100.0, 100.0, 0.85, 4, "Corn Gray leaf spot", "det-unseeded", "image")
+                        new RoboflowWorkflowResponse.Prediction(150.0, 150.0, 100.0, 100.0, 0.85, 7, "Corn Gray leaf spot", "det-unseeded", "image")
                 )
         );
 
