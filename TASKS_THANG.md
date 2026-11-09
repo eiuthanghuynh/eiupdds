@@ -157,9 +157,10 @@
   - Phân quyền RBAC chuẩn Enterprise: `ROLE_ADMIN` và `ROLE_EXPERT` toàn quyền CRUD (POST, PUT, DELETE); các endpoint GET công khai (`permitAll`).
   - *Acceptance Criteria:* Pass 100% bộ kiểm thử tự động `DiseaseAdminIntegrationTest` (21 tests) và `TreatmentAdminIntegrationTest` (16 tests).
 
-- [ ] **Task 3.3: Seed Data Mẫu Chuẩn Cho Demo** (4h)
-  - Viết script SQL hoặc `DataInitializer` nạp sẵn 10-15 bệnh cây trồng phổ biến (lúa, cà chua, ngô, khoai tây) kèm phác đồ mẫu tiếng Việt.
-  - *Acceptance Criteria:* Chạy lại ứng dụng tự động có sẵn dữ liệu mẫu trong DB.
+- [x] **Task 3.3: Seed Data Mẫu Chuẩn Cho Demo** (4h)
+  - Viết Flyway migration `V5__seed_demo_diseases_and_treatments.sql` nạp sẵn danh mục 9 cây trồng, 15 bệnh hại phổ biến và 38 phác đồ điều trị (hóa học, sinh học, canh tác, phòng ngừa) chuẩn 100% bằng tiếng Anh nông học quốc tế.
+  - Đồng bộ hóa vào `MasterDataSeeder.java` (`com.eiu.pdds.common.seeder`) đảm bảo môi trường in-memory H2 test suite và local dev tự động nạp đồng nhất.
+  - *Acceptance Criteria:* Khởi động ứng dụng có sẵn toàn bộ dữ liệu mẫu; toàn bộ test suite dự án đạt 160/160 tests PASS 100%.
 
 ---
 
