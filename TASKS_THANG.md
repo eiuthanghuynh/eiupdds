@@ -142,14 +142,20 @@
   - Viết bộ kiểm thử tự động toàn diện: `DiagnosisQueryServiceImplTest` (6 unit tests), `DiagnosisIdempotencyServiceTest` (bổ sung test evict theo ID), và `DiagnosisHistoryIntegrationTest` (7 integration tests bao gồm lọc đa tiêu chí và vòng đời xóa mềm/cache).
   - *Acceptance Criteria:* Pass 100% toàn bộ 110/110 test cases trên toàn hệ thống server backend (`./mvnw test`).
 
-- [ ] **Task 3.2: CRUD Danh Mục Bệnh & Phác Đồ Điều Trị Cho Web Admin** (8h)
-  - Xây dựng các endpoints:
-    - `GET /api/v1/diseases`
-    - `POST /api/v1/diseases`
-    - `PUT /api/v1/diseases/{id}`
-    - `DELETE /api/v1/diseases/{id}`
-    - `GET /api/v1/diseases/{id}/treatments`
-  - *Acceptance Criteria:* Hỗ trợ Web Admin (Huy) thêm, sửa, xóa danh mục bệnh và tài liệu phác đồ.
+- [x] **Task 3.2: CRUD Danh Mục Bệnh & Phác Đồ Điều Trị Cho Web Admin** (8h)
+  - Áp dụng kiến trúc SOLID & CQRS-lite: phân tách `DiseaseQueryService` (Read) và `DiseaseManagementService` (Write), `TreatmentManagementService`.
+  - Xây dựng bộ REST Endpoints quản trị:
+    - `GET /api/v1/diseases`: Phân trang `PageResponse<DiseaseSummaryDto>`, hỗ trợ lọc đa tiêu chí qua `DiseaseSpecifications` (`keyword`, `plantCode`, `severity`) và param `unpaged=true` phục vụ Mobile cache ngoại tuyến.
+    - `GET /api/v1/diseases/{idOrCode}`: Tra cứu linh hoạt theo UUID hoặc mã định danh Roboflow (`diseaseCode`).
+    - `POST /api/v1/diseases`: Tạo mới bệnh hại (hỗ trợ liên kết danh sách cây trồng `plantCodes`).
+    - `PUT /api/v1/diseases/{id}`: Cập nhật thông tin bệnh học, triệu chứng, mức độ nguy hại.
+    - `DELETE /api/v1/diseases/{id}`: Xóa mềm bệnh hại (`deleted_at = Instant.now()`).
+    - `GET /api/v1/diseases/{diseaseId}/treatments`: Tra cứu phác đồ điều trị theo bệnh (lọc theo `treatmentType`, `plantId`).
+    - `POST /api/v1/diseases/{diseaseId}/treatments`: Tạo mới phác đồ điều trị gắn liền với bệnh.
+    - `PUT /api/v1/treatments/{treatmentId}`: Cập nhật chi tiết phác đồ (hoạt chất, liều lượng, thời gian cách ly).
+    - `DELETE /api/v1/treatments/{treatmentId}`: Xóa mềm phác đồ điều trị.
+  - Phân quyền RBAC chuẩn Enterprise: `ROLE_ADMIN` và `ROLE_EXPERT` toàn quyền CRUD (POST, PUT, DELETE); các endpoint GET công khai (`permitAll`).
+  - *Acceptance Criteria:* Pass 100% bộ kiểm thử tự động `DiseaseAdminIntegrationTest` (21 tests) và `TreatmentAdminIntegrationTest` (16 tests).
 
 - [ ] **Task 3.3: Seed Data Mẫu Chuẩn Cho Demo** (4h)
   - Viết script SQL hoặc `DataInitializer` nạp sẵn 10-15 bệnh cây trồng phổ biến (lúa, cà chua, ngô, khoai tây) kèm phác đồ mẫu tiếng Việt.
