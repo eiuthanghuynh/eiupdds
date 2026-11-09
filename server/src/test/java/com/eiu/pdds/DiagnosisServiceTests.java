@@ -186,18 +186,18 @@ class DiagnosisServiceTests {
         when(storageService.uploadImage(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
                 .thenReturn("http://localhost:9000/eiu-pdds-plants/diagnoses/2026/10/unknown.jpg");
 
-        // CORN_GRAY_LEAF_SPOT is recognized by mapper, but not seeded in V2 migration / MasterDataSeeder
+        // TOMATO_LEAF_MOLD is recognized by mapper, but not seeded in MasterDataSeeder
         RoboflowWorkflowResponse.ModelOutput mockOutput = new RoboflowWorkflowResponse.ModelOutput(
                 new RoboflowWorkflowResponse.ImageInfo(300, 300),
                 List.of(
-                        new RoboflowWorkflowResponse.Prediction(150.0, 150.0, 100.0, 100.0, 0.85, 7, "Corn Gray leaf spot", "det-unseeded", "image")
+                        new RoboflowWorkflowResponse.Prediction(150.0, 150.0, 100.0, 100.0, 0.85, 26, "Tomato mold leaf", "det-unseeded", "image")
                 )
         );
 
         when(roboflowClient.inferPlantDisease(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.nullable(Double.class)))
                 .thenReturn(mockOutput);
 
-        assertThatThrownBy(() -> diagnosisService.analyzeImage(file, "CORN", null, null, null))
+        assertThatThrownBy(() -> diagnosisService.analyzeImage(file, "TOMATO", null, null, null))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode()).isEqualTo(ErrorCode.DISEASE_NOT_FOUND));
     }
