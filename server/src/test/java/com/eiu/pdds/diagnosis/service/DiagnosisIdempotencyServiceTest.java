@@ -75,4 +75,18 @@ class DiagnosisIdempotencyServiceTest {
 
         assertThat(idempotencyService.findRecentDiagnosis(hash)).isEmpty();
     }
+
+    @Test
+    @DisplayName("Should evict entry by diagnosisId")
+    void testEvictByDiagnosisId() {
+        String hash = "sample_hash_to_evict_by_id";
+        UUID diagnosisId = UUID.randomUUID();
+        idempotencyService.recordDiagnosis(hash, createDummyResponse(diagnosisId));
+
+        assertThat(idempotencyService.findRecentDiagnosis(hash)).isPresent();
+
+        idempotencyService.evictByDiagnosisId(diagnosisId);
+
+        assertThat(idempotencyService.findRecentDiagnosis(hash)).isEmpty();
+    }
 }

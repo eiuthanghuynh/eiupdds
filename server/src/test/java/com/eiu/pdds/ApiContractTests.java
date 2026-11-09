@@ -46,11 +46,19 @@ class ApiContractTests {
     @Autowired
     private com.eiu.pdds.diagnosis.service.DiagnosisIdempotencyService idempotencyService;
 
+    @Autowired
+    private com.eiu.pdds.auth.security.JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private com.eiu.pdds.user.repository.UserRepository userRepository;
+
     @MockBean
     private RoboflowClient roboflowClient;
 
     @MockBean
     private StorageService storageService;
+
+    private String testBearerToken;
 
     @BeforeEach
     void setUp() {
@@ -60,6 +68,16 @@ class ApiContractTests {
                 (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0,
                 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01
         }));
+
+        com.eiu.pdds.user.entity.User user = userRepository.findByUsername("api_contract_farmer")
+                .orElseGet(() -> userRepository.save(com.eiu.pdds.user.entity.User.builder()
+                        .username("api_contract_farmer")
+                        .email("contract_farmer@eiu.edu.vn")
+                        .passwordHash("hash")
+                        .role(com.eiu.pdds.user.entity.Role.ROLE_USER)
+                        .isActive(true)
+                        .build()));
+        testBearerToken = jwtTokenProvider.generateAccessToken(user);
     }
 
     @Test
@@ -96,6 +114,7 @@ class ApiContractTests {
 
         mockMvc.perform(multipart("/api/v1/diagnoses/analyze")
                         .file(imageFile)
+                        .header("Authorization", "Bearer " + testBearerToken)
                         .param("plantCode", "POTATO")
                         .param("latitude", "11.0528")
                         .param("longitude", "106.6661")

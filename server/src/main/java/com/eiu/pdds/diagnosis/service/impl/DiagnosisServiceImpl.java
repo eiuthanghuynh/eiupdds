@@ -13,9 +13,11 @@ import com.eiu.pdds.diagnosis.service.dto.PathologyResolution;
 import com.eiu.pdds.dto.diagnosis.BoundingBoxDto;
 import com.eiu.pdds.dto.diagnosis.DiagnosisAnalyzeRequest;
 import com.eiu.pdds.dto.diagnosis.DiagnosisAnalyzeResponse;
+import com.eiu.pdds.dto.plant.PlantDto;
 import com.eiu.pdds.dto.treatment.TreatmentDto;
 import com.eiu.pdds.integration.ai.AiInferenceProvider;
 import com.eiu.pdds.integration.ai.dto.InferenceResult;
+import com.eiu.pdds.plant.entity.Plant;
 import com.eiu.pdds.storage.service.StorageService;
 import com.eiu.pdds.treatment.service.TreatmentRecommendationService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -57,7 +60,8 @@ public class DiagnosisServiceImpl implements DiagnosisService {
                 request.plantCode(),
                 request.latitude(),
                 request.longitude(),
-                request.deviceInfo()
+                request.deviceInfo(),
+                request.userId()
         );
     }
 
@@ -67,7 +71,8 @@ public class DiagnosisServiceImpl implements DiagnosisService {
             String plantCodeHint,
             Double latitude,
             Double longitude,
-            String deviceInfo
+            String deviceInfo,
+            UUID userId
     ) {
         // 1. Validate file magic bytes & extract bytes
         byte[] imageBytes = FileSecurityValidator.validateAndExtractBytes(image);
@@ -75,15 +80,15 @@ public class DiagnosisServiceImpl implements DiagnosisService {
         String imageHash = FileSecurityValidator.calculateSha256(imageBytes);
 
         // 2. Idempotency & Quota Guard: Replay recent diagnosis if identical image sent (Saves API Quota)
-        Optional<DiagnosisAnalyzeResponse> cached = idempotencyService.findRecentDiagnosis(imageHash);
+        Optional<DiagnosisAnalyzeResponse> cached = idempotencyService.findRecentDiagnosis(userId, imageHash);
         if (cached.isPresent()) {
-            log.info("Idempotent diagnosis hit for imageHash='{}', replaying cached diagnosisId='{}' (Quota saved!)",
-                    imageHash, cached.get().diagnosisId());
+            log.info("Idempotent diagnosis hit for user='{}', imageHash='{}', replaying cached diagnosisId='{}' (Quota saved!)",
+                    userId, imageHash, cached.get().diagnosisId());
             return cached.get();
         }
 
-        log.info("Starting diagnosis pipeline for file='{}' ({} bytes, hash='{}'), cropHint='{}', device='{}'",
-                filename, imageBytes.length, imageHash, plantCodeHint, deviceInfo);
+        log.info("Starting diagnosis pipeline for file='{}' ({} bytes, hash='{}'), cropHint='{}', device='{}', user='{}'",
+                filename, imageBytes.length, imageHash, plantCodeHint, deviceInfo, userId);
 
         // 3. Parallel I/O via Java 21 Virtual Threads (Storage Upload & AI Inference)
         long startTime = System.currentTimeMillis();
@@ -135,6 +140,7 @@ public class DiagnosisServiceImpl implements DiagnosisService {
 
         // 7. Transactional Persistence (SRP)
         Diagnosis saved = persistenceService.saveDiagnosis(
+                userId,
                 pathology.plantEntity(),
                 s3ImageUrl,
                 inferenceResult.imageWidth(),
@@ -155,17 +161,35 @@ public class DiagnosisServiceImpl implements DiagnosisService {
                 s3ImageUrl,
                 inferenceResult.imageWidth(),
                 inferenceResult.imageHeight(),
+                toPlantDto(pathology.plantEntity()),
                 pathology.dominantDiseaseDto(),
                 pathology.dominantConfidence(),
                 boundingBoxDtos,
                 pathology.coOccurringDiseases(),
                 treatments,
                 inferenceTimeMs,
+                latitude,
+                longitude,
+                deviceInfo,
                 saved.getStatus().name(),
                 saved.getCreatedAt() != null ? saved.getCreatedAt() : Instant.now()
         );
 
-        idempotencyService.recordDiagnosis(imageHash, response);
+        idempotencyService.recordDiagnosis(userId, imageHash, response);
         return response;
+    }
+
+    private PlantDto toPlantDto(Plant plant) {
+        if (plant == null) {
+            return null;
+        }
+        return new PlantDto(
+                plant.getId(),
+                plant.getPlantCode(),
+                plant.getCommonName(),
+                plant.getScientificName(),
+                plant.getIconUrl(),
+                plant.getDescription()
+        );
     }
 }

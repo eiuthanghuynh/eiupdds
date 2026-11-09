@@ -131,11 +131,16 @@
 ## Sprint 3: Lưu Trữ Lịch Sử, GPS & Danh Mục Phác Đồ (Tuần 5 - 6)
 **Mục tiêu Sprint:** Quản lý dữ liệu bệnh, phác đồ điều trị và lưu vết lịch sử chẩn đoán.
 
-- [ ] **Task 3.1: API Lưu Vết Lịch Sử Chẩn Đoán Kèm GPS** (8h)
-  - Cập nhật bảng `Diagnosis` nhận thêm `latitude`, `longitude`, `deviceInfo`.
-  - Viết endpoint `GET /api/v1/diagnoses` (phân trang, lọc theo thời gian/người dùng).
-  - Viết endpoint `GET /api/v1/diagnoses/{id}` (chi tiết lần khám).
-  - *Acceptance Criteria:* Truy vấn danh sách lịch sử trả về đầy đủ ảnh, tọa độ và phác đồ sơ cứu.
+- [x] **Task 3.1: API Lưu Vết Lịch Sử Chẩn Đoán Kèm GPS** (8h)
+  - Liên kết danh tính người dùng (`User`) và tọa độ địa lý (`latitude`, `longitude`, `deviceInfo`) vào bản ghi `Diagnosis` khi gọi `POST /api/v1/diagnoses/analyze`.
+  - Phân tách khóa bộ đệm `DiagnosisIdempotencyService` theo tổ hợp `(userId + ":" + imageSha256)` để bảo vệ quota AI mà vẫn đảm bảo tính toàn vẹn lịch sử riêng cho từng user.
+  - Phân tách kiến trúc đọc/ghi (`/solid` CQRS-lite & ISP): Giữ `DiagnosisServiceImpl` (< 120 LOC) chỉ thực hiện Command; tạo `DiagnosisQueryService` và `DiagnosisQueryServiceImpl` chuyên trách truy vấn lịch sử và chi tiết.
+  - Viết endpoint `GET /api/v1/diagnoses`: Phân trang `PageResponse<DiagnosisSummaryDto>`, hỗ trợ lọc động qua `DiagnosisSpecifications` (`plantCode`, `diseaseCode`, `status`, khoảng thời gian `fromDate`/`toDate`), tối ưu truy vấn nạp sẵn quan hệ tránh N+1 Query.
+  - Viết endpoint `GET /api/v1/diagnoses/{id}`: Trả về đầy đủ `DiagnosisAnalyzeResponse`, tái tạo hệ tọa độ kép Pixel + Normalized qua `CoordinateTransformer`, danh sách bệnh đồng nhiễm `coOccurringDiseases`, và phác đồ điều trị `recommendedTreatments`.
+  - Viết endpoint `DELETE /api/v1/diagnoses/{id}`: Xóa mềm bản ghi (`deleted_at = Instant.now()`), bảo toàn bia mộ Tombstone cho AI Active Learning và Sync Engine Phase 3.
+  - Bảo mật Zero-Trust chống lỗ hổng IDOR/BOLA: Mọi endpoint trên `/api/v1/diagnoses/**` yêu cầu JWT Bearer Token và chỉ cho phép người dùng truy xuất/xóa dữ liệu của chính mình (trả về 404 Not Found nếu truy cập bản ghi của user khác).
+  - Viết bộ kiểm thử tự động toàn diện: `DiagnosisQueryServiceImplTest` (6 unit tests), `DiagnosisIdempotencyServiceTest` (bổ sung test evict theo ID), và `DiagnosisHistoryIntegrationTest` (7 integration tests bao gồm lọc đa tiêu chí và vòng đời xóa mềm/cache).
+  - *Acceptance Criteria:* Pass 100% toàn bộ 110/110 test cases trên toàn hệ thống server backend (`./mvnw test`).
 
 - [ ] **Task 3.2: CRUD Danh Mục Bệnh & Phác Đồ Điều Trị Cho Web Admin** (8h)
   - Xây dựng các endpoints:

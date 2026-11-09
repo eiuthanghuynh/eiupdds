@@ -9,12 +9,15 @@ import com.eiu.pdds.disease.entity.Disease;
 import com.eiu.pdds.disease.repository.DiseaseRepository;
 import com.eiu.pdds.dto.diagnosis.BoundingBoxDto;
 import com.eiu.pdds.plant.entity.Plant;
+import com.eiu.pdds.user.entity.User;
+import com.eiu.pdds.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Production implementation of DiagnosisPersistenceService (SRP).
@@ -26,10 +29,12 @@ public class DiagnosisPersistenceServiceImpl implements DiagnosisPersistenceServ
 
     private final DiagnosisRepository diagnosisRepository;
     private final DiseaseRepository diseaseRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
     public Diagnosis saveDiagnosis(
+            UUID userId,
             Plant plant,
             String s3ImageUrl,
             int imageWidth,
@@ -43,8 +48,10 @@ public class DiagnosisPersistenceServiceImpl implements DiagnosisPersistenceServ
             String rawAiJson,
             List<BoundingBoxDto> boundingBoxDtos
     ) {
+        User user = userId != null ? userRepository.getReferenceById(userId) : null;
+
         Diagnosis diagnosis = Diagnosis.builder()
-                .user(null) // Anonymous farmer in Sprint 2
+                .user(user)
                 .plant(plant)
                 .originalImageUrl(s3ImageUrl)
                 .imageWidth(imageWidth)

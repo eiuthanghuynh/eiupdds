@@ -64,10 +64,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/plants/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/diseases/**").permitAll()
 
-                        // 5. Diagnosis Execution (Permits anonymous farmers or authenticated users)
-                        .requestMatchers(HttpMethod.POST, "/api/v1/diagnoses/analyze").permitAll()
-
-                        // 6. Admin Only Management (RBAC)
+                        // 5. Admin Only Management (RBAC)
                         .requestMatchers(HttpMethod.POST, "/api/v1/diseases/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/diseases/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/diseases/**").hasAuthority("ROLE_ADMIN")
@@ -75,7 +72,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/v1/treatments/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/treatments/**").hasAuthority("ROLE_ADMIN")
 
-                        // 7. Protected User Endpoints (Diagnosis History, etc.)
+                        // 6. Protected Diagnosis Endpoints (Requires Authentication)
                         .requestMatchers("/api/v1/diagnoses/**").authenticated()
 
                         .anyRequest().authenticated()
