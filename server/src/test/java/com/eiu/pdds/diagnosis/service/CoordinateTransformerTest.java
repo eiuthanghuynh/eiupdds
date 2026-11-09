@@ -1,7 +1,10 @@
 package com.eiu.pdds.diagnosis.service;
 
+import com.eiu.pdds.diagnosis.entity.BoundingBox;
+import com.eiu.pdds.diagnosis.entity.Diagnosis;
 import com.eiu.pdds.dto.diagnosis.BoundingBoxDto;
 import com.eiu.pdds.integration.ai.dto.DetectedObject;
+import com.eiu.pdds.plant.entity.Plant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -96,5 +99,30 @@ class CoordinateTransformerTest {
         assertThat(dtos).hasSize(2);
         assertThat(dtos.get(0).diseaseCode()).isEqualTo("TOMATO_HEALTHY");
         assertThat(dtos.get(1).diseaseCode()).isEqualTo("CORN_COMMON_RUST");
+    }
+
+    @Test
+    @DisplayName("Should resolve healthy leaf diseaseCode when converting BoundingBox entity with null disease")
+    void testToBoundingBoxDto_EntityHealthyLeaf() {
+        Plant potato = Plant.builder().plantCode("POTATO").build();
+        Diagnosis diag = Diagnosis.builder().plant(potato).build();
+
+        BoundingBox box = BoundingBox.builder()
+                .label("Potato leaf")
+                .confidence(0.92)
+                .x(100.0)
+                .y(100.0)
+                .width(50.0)
+                .height(50.0)
+                .build();
+        box.setDiagnosis(diag);
+
+        BoundingBoxDto dto = transformer.toBoundingBoxDto(box, 400, 400);
+
+        assertThat(dto).isNotNull();
+        assertThat(dto.label()).isEqualTo("Potato leaf");
+        assertThat(dto.diseaseCode()).isEqualTo("POTATO_HEALTHY");
+        assertThat(dto.xMinNormalized()).isEqualTo(0.1875);
+        assertThat(dto.yMinNormalized()).isEqualTo(0.1875);
     }
 }

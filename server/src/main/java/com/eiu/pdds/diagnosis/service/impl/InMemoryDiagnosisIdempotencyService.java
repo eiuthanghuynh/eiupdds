@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -36,21 +37,22 @@ public class InMemoryDiagnosisIdempotencyService implements DiagnosisIdempotency
     }
 
     @Override
-    public Optional<DiagnosisAnalyzeResponse> findRecentDiagnosis(String imageHash) {
+    public Optional<DiagnosisAnalyzeResponse> findRecentDiagnosis(UUID userId, String imageHash) {
         if (imageHash == null || imageHash.isBlank()) {
             return Optional.empty();
         }
 
+        String key = buildKey(userId, imageHash);
         Instant now = Instant.now();
-        CacheEntry entry = cache.get(imageHash);
+        CacheEntry entry = cache.get(key);
 
         if (entry == null) {
             return Optional.empty();
         }
 
         if (entry.isExpired(now)) {
-            cache.remove(imageHash);
-            log.debug("Evicted expired idempotency cache entry for hash='{}'", imageHash);
+            cache.remove(key);
+            log.debug("Evicted expired idempotency cache entry for key='{}'", key);
             return Optional.empty();
         }
 
@@ -58,26 +60,39 @@ public class InMemoryDiagnosisIdempotencyService implements DiagnosisIdempotency
     }
 
     @Override
-    public void recordDiagnosis(String imageHash, DiagnosisAnalyzeResponse response) {
+    public void recordDiagnosis(UUID userId, String imageHash, DiagnosisAnalyzeResponse response) {
         if (imageHash == null || imageHash.isBlank() || response == null) {
             return;
         }
 
-        // Opportunistic cleanup if cache size exceeds threshold
         if (cache.size() > 1000) {
             cleanExpiredEntries();
         }
 
+        String key = buildKey(userId, imageHash);
         Instant expiresAt = Instant.now().plus(ttl);
-        cache.put(imageHash, new CacheEntry(response, expiresAt));
-        log.debug("Recorded idempotency cache entry for hash='{}', ttl={}", imageHash, ttl);
+        cache.put(key, new CacheEntry(response, expiresAt));
+        log.debug("Recorded idempotency cache entry for key='{}', ttl={}", key, ttl);
     }
 
     @Override
-    public void evict(String imageHash) {
+    public void evict(UUID userId, String imageHash) {
         if (imageHash != null) {
-            cache.remove(imageHash);
+            cache.remove(buildKey(userId, imageHash));
         }
+    }
+
+    @Override
+    public void evictByDiagnosisId(UUID diagnosisId) {
+        if (diagnosisId != null) {
+            cache.entrySet().removeIf(entry ->
+                    entry.getValue().response() != null &&
+                    diagnosisId.equals(entry.getValue().response().diagnosisId()));
+        }
+    }
+
+    private String buildKey(UUID userId, String imageHash) {
+        return (userId != null ? userId.toString() : "anon") + ":" + imageHash;
     }
 
     private void cleanExpiredEntries() {

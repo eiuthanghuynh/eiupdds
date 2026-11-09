@@ -69,15 +69,18 @@ public class RoboflowInferenceProvider implements AiInferenceProvider {
         UUID detectionId = parseUuidSafely(p.detectionId());
         String label = p.className();
 
-        RoboflowClassMapper.ClassMetadata meta = classMapper.resolve(label).orElse(null);
-        String diseaseCode = classMapper.resolveDiseaseCode(label);
-        String plantCode = (meta != null) ? meta.plantCode() : classMapper.resolvePlantCode(label);
-        String englishName = (meta != null) ? meta.englishName() : classMapper.resolveEnglishName(label);
+        RoboflowClassMapper.ClassMetadata meta = classMapper.resolve(label)
+                .or(() -> classMapper.resolveByClassId(p.classId()))
+                .orElse(null);
+        String diseaseCode = (meta != null) ? meta.diseaseCode() : (label != null ? classMapper.resolveDiseaseCode(label) : "UNKNOWN");
+        String plantCode = (meta != null) ? meta.plantCode() : (label != null ? classMapper.resolvePlantCode(label) : null);
+        String englishName = (meta != null) ? meta.englishName() : (label != null ? classMapper.resolveEnglishName(label) : "Unknown");
         boolean isHealthy = (meta != null) && meta.isHealthy();
+        String resolvedLabel = (label != null && !label.isBlank()) ? label : (meta != null ? meta.rawLabel() : "unknown");
 
         return new DetectedObject(
                 detectionId,
-                label,
+                resolvedLabel,
                 diseaseCode,
                 plantCode,
                 englishName,

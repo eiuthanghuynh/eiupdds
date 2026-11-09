@@ -33,11 +33,14 @@ class DiagnosisPersistenceServiceTest {
     @Mock
     private DiseaseRepository diseaseRepository;
 
+    @Mock
+    private com.eiu.pdds.user.repository.UserRepository userRepository;
+
     private DiagnosisPersistenceService persistenceService;
 
     @BeforeEach
     void setUp() {
-        persistenceService = new DiagnosisPersistenceServiceImpl(diagnosisRepository, diseaseRepository);
+        persistenceService = new DiagnosisPersistenceServiceImpl(diagnosisRepository, diseaseRepository, userRepository);
     }
 
     @Test

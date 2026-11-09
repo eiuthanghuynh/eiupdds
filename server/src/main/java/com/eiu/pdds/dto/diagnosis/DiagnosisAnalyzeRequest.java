@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.UUID;
+
 /**
  * Parameter Object encapsulating multipart leaf analysis request parameters (Clean Code).
  */
@@ -23,5 +25,12 @@ public record DiagnosisAnalyzeRequest(
         Double longitude,
 
         @Schema(description = "Client hardware or OS info", example = "iPhone 15 Pro / iOS 17.5")
-        String deviceInfo
-) {}
+        String deviceInfo,
+
+        @Schema(hidden = true)
+        UUID userId
+) {
+    public DiagnosisAnalyzeRequest withUserId(UUID userId) {
+        return new DiagnosisAnalyzeRequest(image, plantCode, latitude, longitude, deviceInfo, userId);
+    }
+}
