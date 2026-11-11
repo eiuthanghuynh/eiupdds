@@ -47,6 +47,12 @@ export const translations = {
     // Search / History
     searchTitle: 'Lịch sử',
     searchSubtitle: 'Tra cứu thông tin và lịch sử chẩn đoán bệnh',
+    emptyHistoryTitle: 'Chưa có lịch sử chẩn đoán',
+    emptyHistorySubtitle: 'Các ảnh chụp lá cây và kết quả chẩn đoán bệnh sẽ được lưu tại đây.',
+    scanLeafNow: 'Chụp ảnh chẩn đoán ngay',
+    loadingHistory: 'Đang tải lịch sử...',
+    loadHistoryFailed: 'Không thể tải lịch sử chẩn đoán. Vuốt xuống để thử lại.',
+    spotsCount: 'vết bệnh',
 
     // Notification
     notificationTitle: 'Thông báo',
@@ -124,6 +130,12 @@ export const translations = {
     // Search / History
     searchTitle: 'History',
     searchSubtitle: 'Review past plant scans and diagnostic history',
+    emptyHistoryTitle: 'No Diagnosis History',
+    emptyHistorySubtitle: 'Captured leaf photos and AI disease detections will appear here.',
+    scanLeafNow: 'Scan Plant Disease Now',
+    loadingHistory: 'Loading history...',
+    loadHistoryFailed: 'Could not load diagnosis history. Pull down to retry.',
+    spotsCount: 'disease spots',
 
     // Notification
     notificationTitle: 'Notification',

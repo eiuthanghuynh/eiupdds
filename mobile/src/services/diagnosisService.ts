@@ -9,7 +9,9 @@ import { getRandomMockDiagnosis } from './mockDiagnosis';
 import {
   AnalyzeImageParams,
   DiagnosisAnalyzeResponse,
+  DiagnosisSummaryDto,
   DiseaseSummaryDto,
+  PageResponse,
 } from '@/types/diagnosis';
 
 export const DiagnosisService = {
@@ -99,6 +101,36 @@ export const DiagnosisService = {
    */
   async getDiseases(): Promise<DiseaseSummaryDto[]> {
     const response = await ApiClient.get<DiseaseSummaryDto[]>('/diseases');
+    return response.data;
+  },
+
+  /**
+   * Get paginated history of diagnosis sessions
+   */
+  async getHistory(
+    params: { page?: number; size?: number; plantCode?: string; diseaseCode?: string } = {}
+  ): Promise<PageResponse<DiagnosisSummaryDto>> {
+    const { page = 0, size = 20, plantCode, diseaseCode } = params;
+    const queryParams = new URLSearchParams({
+      page: String(page),
+      size: String(size),
+    });
+    if (plantCode) queryParams.append('plantCode', plantCode);
+    if (diseaseCode) queryParams.append('diseaseCode', diseaseCode);
+
+    const response = await ApiClient.get<PageResponse<DiagnosisSummaryDto>>(
+      `/diagnoses?${queryParams.toString()}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get full details of a specific diagnosis session (including bounding boxes & treatments)
+   */
+  async getDiagnosisDetail(diagnosisId: string): Promise<DiagnosisAnalyzeResponse> {
+    const response = await ApiClient.get<DiagnosisAnalyzeResponse>(
+      `/diagnoses/${diagnosisId}`
+    );
     return response.data;
   },
 };
