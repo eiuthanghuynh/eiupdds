@@ -76,12 +76,12 @@
   - Bấm vào một dòng để mở xem lại chi tiết hình ảnh kèm khung Bounding Box đã lưu.
   - *Acceptance Criteria:* Lấy dữ liệu từ `GET /api/v1/diagnoses` và hiển thị mượt mà, có tính năng kéo để tải lại (Pull-to-refresh).
 
-- [ ] **Task 3.2: Khởi Tạo Web Admin Next.js (App Router)** (6h)
+- [x] **Task 3.2: Khởi Tạo Web Admin Next.js (App Router)** (6h)
   - Tạo project Next.js 14+ với TailwindCSS và component library (shadcn/ui hoặc Ant Design).
   - Dựng layout quản trị viên: Sidebar điều hướng, Header hiển thị thông tin tài khoản.
   - *Acceptance Criteria:* Khởi chạy `npm run dev` hiển thị giao diện quản trị hiện đại, chuẩn responsive.
 
-- [ ] **Task 3.3: Trang Web Quản Lý Danh Mục Bệnh Cây** (8h)
+- [x] **Task 3.3: Trang Web Quản Lý Danh Mục Bệnh Cây** (8h)
   - Tạo trang danh sách bệnh dạng Bảng (Table): Tên bệnh, tên khoa học, loài cây, mức độ nguy hiểm.
   - Form thêm mới / chỉnh sửa thông tin bệnh kèm upload ảnh mẫu.
   - *Acceptance Criteria:* Gọi thành công các API CRUD `/api/v1/diseases` của Thắng.
