@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
@@ -25,7 +25,7 @@ services:
     container_name: eiu-pdds-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -45,8 +45,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - minio_data:/data
     healthcheck:
@@ -66,9 +66,9 @@ services:
     entrypoint: >
       /bin/sh -c "
       mc alias set mysilo http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin123};
-      mc mb --ignore-existing mysilo/eiu-pdds-plants;
-      mc anonymous set download mysilo/eiu-pdds-plants;
-      echo 'SILO bucket eiu-pdds-plants initialized with public read access.';
+      mc mb --ignore-existing mysilo/${MINIO_BUCKET_NAME:-eiu-pdds-plants};
+      mc anonymous set download mysilo/${MINIO_BUCKET_NAME:-eiu-pdds-plants};
+      echo 'SILO bucket ${MINIO_BUCKET_NAME:-eiu-pdds-plants} initialized with public read access.';
       exit 0;
       "
     networks:
@@ -82,23 +82,27 @@ services:
     container_name: eiu-pdds-backend
     restart: unless-stopped
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
+      SERVER_PORT: 8080
+      POSTGRES_DB: ${POSTGRES_DB:-eiu_pdds_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      POSTGRES_PORT: 5432
       DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: ${POSTGRES_DB:-eiu_pdds_db}
-      DB_USER: ${POSTGRES_USER:-postgres}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       MINIO_HOST: minio
       MINIO_PORT: 9000
+      MINIO_API_PORT: 9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
-      MINIO_BUCKET_NAME: eiu-pdds-plants
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-eiu-pdds-plants}
+      ROBOFLOW_API_KEY: ${ROBOFLOW_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
     env_file:
       - ../.env
     ports:
-      - "8080:8080"
+      - "${SERVER_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy

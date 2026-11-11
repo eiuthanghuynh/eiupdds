@@ -60,13 +60,13 @@ target/
 **/target/
 *.class
 *.jar
+!**/.mvn/wrapper/maven-wrapper.jar
 *.war
 *.ear
 *.nar
 hs_err_pid*
 replay_pid*
 .mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
 
 # ------------------------------------------------------------------------------
 # 5. Node.js, React & Next.js Web (web/)
@@ -149,3 +149,9 @@ htmlcov/
 *.tflite
 *.engine
 *.bin
+
+# Postman local cache & sensitive CLI runtime
+.postman/
+*.postman_dump.json
+*.postman_environment.json
+*.postman_environment.example.json

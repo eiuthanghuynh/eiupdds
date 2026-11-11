@@ -30,11 +30,14 @@ public class User extends BaseAuditEntity {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash")
     private String passwordHash;
 
     @Column(name = "full_name")
     private String fullName;
+
+    @Column(name = "avatar_url")
+    private String avatarUrl;
 
     @Column(name = "phone_number")
     private String phoneNumber;

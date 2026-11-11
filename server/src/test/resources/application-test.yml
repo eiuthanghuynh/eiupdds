@@ -21,3 +21,9 @@ storage:
   provider: local
   local:
     upload-dir: target/test-uploads
+
+jwt:
+  secret: 0123456789012345678901234567890101234567890123456789012345678901
+
+roboflow:
+  api-key: test-mock-roboflow-key
