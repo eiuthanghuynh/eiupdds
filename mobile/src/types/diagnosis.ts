@@ -79,3 +79,34 @@ export interface AnalyzeImageParams {
   longitude?: number;
   deviceInfo?: string;
 }
+
+export interface PlantDto {
+  id: string;
+  plantCode: string;
+  commonNameVi: string;
+  commonNameEn: string;
+  scientificName?: string | null;
+}
+
+export interface DiagnosisSummaryDto {
+  diagnosisId: string;
+  originalImageUrl: string;
+  plant?: PlantDto | null;
+  dominantDisease?: DiseaseSummaryDto | null;
+  dominantConfidence: number;
+  boundingBoxCount: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  deviceInfo?: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}

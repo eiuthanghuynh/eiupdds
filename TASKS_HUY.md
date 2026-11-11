@@ -70,7 +70,7 @@
 ## Sprint 3: Lịch Sử Chẩn Đoán & Khởi Tạo Web Admin Next.js (Tuần 5 - 6)
 **Mục tiêu Sprint:** Nông dân xem lại được lịch sử khám bệnh trên Mobile; Khởi tạo Web Admin quản trị cho chuyên gia.
 
-- [ ] **Task 3.1: Màn Hình Lịch Sử Khám Bệnh Trên Mobile** (8h)
+- [x] **Task 3.1: Màn Hình Lịch Sử Khám Bệnh Trên Mobile** (8h)
   - Viết màn hình danh sách lịch sử chẩn đoán (`FlatList` tối ưu hiệu năng).
   - Hiển thị ảnh thu nhỏ (thumbnail), ngày giờ chụp, tên bệnh và nhãn mức độ nguy hiểm (Đỏ: Nghiêm trọng, Vàng: Trung bình, Xanh: Nhẹ).
   - Bấm vào một dòng để mở xem lại chi tiết hình ảnh kèm khung Bounding Box đã lưu.
