@@ -39,6 +39,9 @@ class DiagnosisServiceTests {
     @Autowired
     private DiagnosisRepository diagnosisRepository;
 
+    @Autowired
+    private com.eiu.pdds.diagnosis.service.DiagnosisIdempotencyService idempotencyService;
+
     @MockBean
     private RoboflowClient roboflowClient;
 
@@ -48,6 +51,7 @@ class DiagnosisServiceTests {
     @BeforeEach
     void setUp() {
         Mockito.reset(storageService, roboflowClient);
+        idempotencyService.evict(com.eiu.pdds.common.util.FileSecurityValidator.calculateSha256(VALID_JPEG_BYTES));
     }
 
     private static final byte[] VALID_JPEG_BYTES = new byte[]{
@@ -182,18 +186,18 @@ class DiagnosisServiceTests {
         when(storageService.uploadImage(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
                 .thenReturn("http://localhost:9000/eiu-pdds-plants/diagnoses/2026/10/unknown.jpg");
 
-        // CORN_GRAY_LEAF_SPOT is recognized by mapper, but not seeded in V2 migration / MasterDataSeeder
+        // TOMATO_LEAF_MOLD is recognized by mapper, but not seeded in MasterDataSeeder
         RoboflowWorkflowResponse.ModelOutput mockOutput = new RoboflowWorkflowResponse.ModelOutput(
                 new RoboflowWorkflowResponse.ImageInfo(300, 300),
                 List.of(
-                        new RoboflowWorkflowResponse.Prediction(150.0, 150.0, 100.0, 100.0, 0.85, 4, "Corn Gray leaf spot", "det-unseeded", "image")
+                        new RoboflowWorkflowResponse.Prediction(150.0, 150.0, 100.0, 100.0, 0.85, 26, "Tomato mold leaf", "det-unseeded", "image")
                 )
         );
 
         when(roboflowClient.inferPlantDisease(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.nullable(Double.class)))
                 .thenReturn(mockOutput);
 
-        assertThatThrownBy(() -> diagnosisService.analyzeImage(file, "CORN", null, null, null))
+        assertThatThrownBy(() -> diagnosisService.analyzeImage(file, "TOMATO", null, null, null))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode()).isEqualTo(ErrorCode.DISEASE_NOT_FOUND));
     }
@@ -207,5 +211,37 @@ class DiagnosisServiceTests {
         assertThatThrownBy(() -> diagnosisService.analyzeImage(fakeFile, "POTATO", null, null, null))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode()).isEqualTo(ErrorCode.INVALID_FILE_TYPE));
+    }
+
+    @Test
+    @DisplayName("Should replay cached diagnosis response and avoid calling Roboflow API when same image is uploaded twice")
+    void testIdempotentDuplicateUpload_SavesQuota() {
+        MockMultipartFile file1 = new MockMultipartFile("image", "potato.jpg", "image/jpeg", VALID_JPEG_BYTES);
+        MockMultipartFile file2 = new MockMultipartFile("image", "potato-retry.jpg", "image/jpeg", VALID_JPEG_BYTES);
+
+        when(storageService.uploadImage(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
+                .thenReturn("http://localhost:9000/eiu-pdds-plants/diagnoses/sample.jpg");
+
+        RoboflowWorkflowResponse.ModelOutput mockOutput = new RoboflowWorkflowResponse.ModelOutput(
+                new RoboflowWorkflowResponse.ImageInfo(399, 501),
+                List.of(
+                        new RoboflowWorkflowResponse.Prediction(322.0, 426.0, 154.0, 150.0, 0.7994, 13, "Potato leaf late blight", "det-1", "image")
+                )
+        );
+
+        when(roboflowClient.inferPlantDisease(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.nullable(Double.class)))
+                .thenReturn(mockOutput);
+
+        // First call
+        DiagnosisAnalyzeResponse firstResponse = diagnosisService.analyzeImage(file1, "POTATO", null, null, null);
+        assertThat(firstResponse).isNotNull();
+
+        // Second call with same image bytes
+        DiagnosisAnalyzeResponse secondResponse = diagnosisService.analyzeImage(file2, "POTATO", null, null, null);
+        assertThat(secondResponse).isNotNull();
+        assertThat(secondResponse.diagnosisId()).isEqualTo(firstResponse.diagnosisId());
+
+        // Verify Roboflow was only called ONCE, saving API quota!
+        Mockito.verify(roboflowClient, Mockito.times(1)).inferPlantDisease(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.nullable(Double.class));
     }
 }

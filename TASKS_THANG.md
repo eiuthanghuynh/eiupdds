@@ -56,47 +56,111 @@
 ---
 
 ## Sprint 2: Core MVP — Luồng Chẩn Đoán & Proxy AI (Tuần 3 - 4)
-**Mục tiêu Sprint:** Hoàn thiện pipeline nhận diện khép kín từ Mobile gửi lên qua Backend proxy.
+**Mục tiêu Sprint:** Hoàn thiện pipeline nhận diện khép kín từ Mobile gửi lên qua Backend proxy, tái cấu trúc SOLID toàn diện và tối ưu hóa khả năng mở rộng / bảo vệ quota AI.
 
-- [x] **Task 2.1: Hoàn thiện Endpoint Chẩn Đoán Cốt Lõi** (8h)
+- [x] **Task 2.1: Hoàn thiện Endpoint Chẩn Đoán Cốt Lõi & Tái Cấu Trúc SOLID** (8h)
   - Viết controller và service cho `POST /api/v1/diagnoses/analyze`.
-  - Validate kích thước file ảnh, định dạng (JPEG, PNG).
-  - Forward ảnh sang Roboflow API, xử lý timeout (fallback 10s).
-  - *Acceptance Criteria:* Nhận ảnh từ request multipart, trả về JSON chuẩn hóa: `{ diagnosisId, diseaseName, confidence, boxes: [{ x, y, width, height }] }`.
+  - Validate kích thước file ảnh, định dạng (JPEG, PNG, WebP) và kiểm tra magic bytes không phụ thuộc extension.
+  - Forward ảnh sang Roboflow API, xử lý timeout và exponential backoff retry.
+  - Tái cấu trúc theo chuẩn SOLID:
+    - Thu nhỏ `DiagnosisServiceImpl` thành Clean Facade (< 120 LOC).
+    - Tách 5 Domain Services chuyên biệt: `CoordinateTransformer` (SRP), `PathologyAnalysisService` (SRP), `TreatmentRecommendationService` (SRP), `DiagnosisPersistenceService` (SRP), `DiagnosisIdempotencyService` (SRP).
+    - Áp dụng Parameter Object `DiagnosisAnalyzeRequest` cho Controller và Service.
+  - *Acceptance Criteria:* Nhận ảnh từ request multipart, trả về JSON chuẩn hóa: `{ diagnosisId, dominantDisease, confidence, boundingBoxes: [{ x, y, width, height, xMinNormalized... }] }`.
 
-- [ ] **Task 2.2: Tích hợp Cloudinary/MinIO Storage Service** (6h)
-  - Viết `StorageService` interface với 2 implementation: `LocalStorageService` và `CloudinaryService`.
-  - Tự động đẩy file ảnh gốc lên Storage và sinh URL công khai an toàn.
-  - *Acceptance Criteria:* Ảnh upload lên trả về URL truy cập được ngay lập tức.
+- [x] **Task 2.2: Tích hợp Cloudinary/MinIO Storage Service** (6h)
+  - Viết `StorageService` interface trừu tượng hóa tầng lưu trữ ảnh (DIP).
+  - Triển khai `MinioStorageServiceImpl` kết nối AWS S3 SDK v2 với MinIO / Pigsty Silo S3 server trong Docker Compose.
+  - Khởi tạo bucket `eiu-pdds-plants` tự động kèm chính sách public read policy.
+  - Sinh URL công khai cho ảnh chẩn đoán và hỗ trợ dọn dẹp file khi cần thiết.
+  - *Acceptance Criteria:* Đẩy file ảnh gốc lên MinIO S3 thành công, sinh URL ảnh truy cập được ngay lập tức; vượt qua 100% `MinioStorageServiceTests`.
 
-- [ ] **Task 2.3: Viết Unit Test & Integration Test cho Luồng Chẩn Đoán** (6h)
-  - Viết test với `@SpringBootTest` và MockMvc.
-  - Mock kết quả từ Roboflow để test luồng độc lập không tốn quota.
-  - *Acceptance Criteria:* Test pass 100% các case: ảnh hợp lệ, ảnh quá dung lượng, API bên thứ ba lỗi 500.
+- [x] **Task 2.3: Viết Unit Test & Integration Test Toàn Diện & Gia Cố Enterprise** (6h)
+  - Thiết lập bộ kiểm thử toàn diện với `@SpringBootTest`, MockMvc và Mockito (60/60 tests PASS — 100%).
+  - Mock kết quả Roboflow để test luồng chẩn đoán độc lập, zero-quota consumption.
+  - **Anti-Corruption Layer (ACL):** Đóng gói toàn bộ mapping nhãn Roboflow vào `RoboflowInferenceProvider`, bảo vệ Domain Services độc lập với vendor.
+  - **Idempotency Quota Guard:** Fingerprint ảnh bằng SHA-256 + Sliding Window TTL Cache trong `DiagnosisIdempotencyService`, phát lại kết quả trong < 5ms khi gặp ảnh trùng lặp.
+  - **Khắc phục Technical Debt kích thước ảnh:** Triệt tiêu magic numbers 399x501, bổ sung `FileSecurityValidator.extractDimensions` (Source of Truth đọc header JPEG/PNG/WebP trong 0.05ms) và Fail-Fast với `ROBOFLOW_API_ERROR`.
+  - *Acceptance Criteria:* Pass 100% 60 test cases trên toàn bộ module backend (`mvnw.cmd test`), không phát sinh bất kỳ hồi quy nào.
+
+---
+
+## Sprint 2.5: Nền Tảng Xác Thực & Phân Quyền Chuẩn Enterprise (AuthN & AuthZ Core)
+**Mục tiêu Sprint:** Xây dựng hệ thống xác thực người dùng hoàn chỉnh, hỗ trợ đăng ký/đăng nhập cục bộ (LOCAL), đăng nhập Google OAuth2, cơ chế Dual-Token JWT an toàn với Refresh Token Rotation và ngăn chặn tấn công Replay Attack.
+
+- [x] **Task 2.5.1: Thiết kế Federated Identity Pattern & Flyway Migration V3** (4h)
+  - Cập nhật entity `User` (cho phép `passwordHash` nullable với tài khoản OAuth, bổ sung `avatarUrl`).
+  - Tạo entity `UserIdentity` và enum `AuthProvider` (`LOCAL`, `GOOGLE`, `APPLE`) mapping với bảng `user_identities`.
+  - Viết script Flyway migration `V3__create_user_identities_and_adjust_users.sql` kèm ràng buộc duy nhất `(provider, provider_user_id)` và indexes.
+  - *Acceptance Criteria:* Khởi tạo cấu trúc bảng sạch sẽ, hỗ trợ một user liên kết nhiều provider danh tính.
+
+- [x] **Task 2.5.2: Triển khai Kiến Trúc Dual-Token JWT & Redis Refresh Token Store** (6h)
+  - `JwtTokenProvider`: Ký Access Token HMAC-SHA256 với claims (`sub`, `email`, `role`, `fullName`, `iss`, `aud`), hạn 15 phút.
+  - Sinh Refresh Token ID an toàn với `SecureRandom` 256 bits, hạn 7 ngày.
+  - `RefreshTokenStore` (DIP): Triển khai `RedisRefreshTokenStore` (`@Primary`) với atomic `getAndDelete` và `InMemoryRefreshTokenStore` (`@Profile("test")`).
+  - **Token Reuse Detection:** Lưu vết token đã xoay vòng (tombstone), nếu phát hiện replay token cũ sẽ lập tức hủy toàn bộ phiên của người dùng (`revokeAllForUser`) và bắn lỗi bảo mật `TOKEN_REUSE_DETECTED`.
+  - *Acceptance Criteria:* Kiểm thử xoay vòng token mượt mà, token cũ bị chặn tức thì.
+
+- [x] **Task 2.5.3: Tích hợp Google OAuth2 Token Exchange & Identity Auto-linking** (4h)
+  - Tích hợp thư viện `google-api-client` (với `google-http-client-gson`).
+  - `GoogleTokenVerifier`: Kiểm tra tính hợp lệ của Google ID Token, xác thực chữ ký số từ Google public keys và trích xuất `sub`, `email`, `name`, `pictureUrl`.
+  - Auto-linking: Nếu email đã tồn tại dưới dạng `LOCAL`, tự động liên kết danh tính `GOOGLE` với user mà không tạo user rác.
+  - *Acceptance Criteria:* Xác thực Google ID Token thành công, cấp phát token hệ thống EIU PDDS.
+
+- [x] **Task 2.5.4: Cấu hình Spring Security 6 Stateless Filter Chain & RBAC** (4h)
+  - Tích hợp `BCryptPasswordEncoder(12)`.
+  - Triển khai `JwtAuthenticationFilter` phân giải Bearer token và nạp `UserPrincipal` vào `SecurityContext`.
+  - Xử lý lỗi bảo mật tập trung: `JwtAuthenticationEntryPoint` (401 Unauthorized JSON) và `CustomAccessDeniedHandler` (403 Forbidden JSON).
+  - RBAC: Thiết lập quyền truy cập cho `ROLE_USER`, `ROLE_EXPERT`, `ROLE_ADMIN` trên các endpoint chẩn đoán và quản lý danh mục.
+  - *Acceptance Criteria:* Mọi request không hợp lệ đều trả về mã lỗi JSON chuẩn của hệ thống, không render trang lỗi mặc định của Spring.
+
+- [x] **Task 2.5.5: REST API Controller & Bộ Kiểm Thử Tự Động Toàn Diện** (6h)
+  - Viết `AuthController` với các endpoint:
+    - `POST /api/v1/auth/register` (201 Created)
+    - `POST /api/v1/auth/login` (200 OK)
+    - `POST /api/v1/auth/google` (200 OK)
+    - `POST /api/v1/auth/refresh` (200 OK)
+    - `POST /api/v1/auth/logout` (200 OK)
+    - `GET /api/v1/auth/me` (200 OK, Bearer token required)
+  - Cập nhật Swagger UI / OpenAPI 3.0 với cấu hình `bearerAuth`.
+  - Viết bộ test suite tự động 34 test cases: `JwtTokenProviderTest`, `AuthServiceTest`, `InMemoryRefreshTokenStoreTest`, `AuthIntegrationTests`.
+  - *Acceptance Criteria:* Pass 100% toàn bộ 94/94 test cases trên toàn hệ thống server backend (`mvnw.cmd test`), không phát sinh bất kỳ lỗi hồi quy nào.
 
 ---
 
 ## Sprint 3: Lưu Trữ Lịch Sử, GPS & Danh Mục Phác Đồ (Tuần 5 - 6)
 **Mục tiêu Sprint:** Quản lý dữ liệu bệnh, phác đồ điều trị và lưu vết lịch sử chẩn đoán.
 
-- [ ] **Task 3.1: API Lưu Vết Lịch Sử Chẩn Đoán Kèm GPS** (8h)
-  - Cập nhật bảng `Diagnosis` nhận thêm `latitude`, `longitude`, `deviceInfo`.
-  - Viết endpoint `GET /api/v1/diagnoses` (phân trang, lọc theo thời gian/người dùng).
-  - Viết endpoint `GET /api/v1/diagnoses/{id}` (chi tiết lần khám).
-  - *Acceptance Criteria:* Truy vấn danh sách lịch sử trả về đầy đủ ảnh, tọa độ và phác đồ sơ cứu.
+- [x] **Task 3.1: API Lưu Vết Lịch Sử Chẩn Đoán Kèm GPS** (8h)
+  - Liên kết danh tính người dùng (`User`) và tọa độ địa lý (`latitude`, `longitude`, `deviceInfo`) vào bản ghi `Diagnosis` khi gọi `POST /api/v1/diagnoses/analyze`.
+  - Phân tách khóa bộ đệm `DiagnosisIdempotencyService` theo tổ hợp `(userId + ":" + imageSha256)` để bảo vệ quota AI mà vẫn đảm bảo tính toàn vẹn lịch sử riêng cho từng user.
+  - Phân tách kiến trúc đọc/ghi (`/solid` CQRS-lite & ISP): Giữ `DiagnosisServiceImpl` (< 120 LOC) chỉ thực hiện Command; tạo `DiagnosisQueryService` và `DiagnosisQueryServiceImpl` chuyên trách truy vấn lịch sử và chi tiết.
+  - Viết endpoint `GET /api/v1/diagnoses`: Phân trang `PageResponse<DiagnosisSummaryDto>`, hỗ trợ lọc động qua `DiagnosisSpecifications` (`plantCode`, `diseaseCode`, `status`, khoảng thời gian `fromDate`/`toDate`), tối ưu truy vấn nạp sẵn quan hệ tránh N+1 Query.
+  - Viết endpoint `GET /api/v1/diagnoses/{id}`: Trả về đầy đủ `DiagnosisAnalyzeResponse`, tái tạo hệ tọa độ kép Pixel + Normalized qua `CoordinateTransformer`, danh sách bệnh đồng nhiễm `coOccurringDiseases`, và phác đồ điều trị `recommendedTreatments`.
+  - Viết endpoint `DELETE /api/v1/diagnoses/{id}`: Xóa mềm bản ghi (`deleted_at = Instant.now()`), bảo toàn bia mộ Tombstone cho AI Active Learning và Sync Engine Phase 3.
+  - Bảo mật Zero-Trust chống lỗ hổng IDOR/BOLA: Mọi endpoint trên `/api/v1/diagnoses/**` yêu cầu JWT Bearer Token và chỉ cho phép người dùng truy xuất/xóa dữ liệu của chính mình (trả về 404 Not Found nếu truy cập bản ghi của user khác).
+  - Viết bộ kiểm thử tự động toàn diện: `DiagnosisQueryServiceImplTest` (6 unit tests), `DiagnosisIdempotencyServiceTest` (bổ sung test evict theo ID), và `DiagnosisHistoryIntegrationTest` (7 integration tests bao gồm lọc đa tiêu chí và vòng đời xóa mềm/cache).
+  - *Acceptance Criteria:* Pass 100% toàn bộ 110/110 test cases trên toàn hệ thống server backend (`./mvnw test`).
 
-- [ ] **Task 3.2: CRUD Danh Mục Bệnh & Phác Đồ Điều Trị Cho Web Admin** (8h)
-  - Xây dựng các endpoints:
-    - `GET /api/v1/diseases`
-    - `POST /api/v1/diseases`
-    - `PUT /api/v1/diseases/{id}`
-    - `DELETE /api/v1/diseases/{id}`
-    - `GET /api/v1/diseases/{id}/treatments`
-  - *Acceptance Criteria:* Hỗ trợ Web Admin (Huy) thêm, sửa, xóa danh mục bệnh và tài liệu phác đồ.
+- [x] **Task 3.2: CRUD Danh Mục Bệnh & Phác Đồ Điều Trị Cho Web Admin** (8h)
+  - Áp dụng kiến trúc SOLID & CQRS-lite: phân tách `DiseaseQueryService` (Read) và `DiseaseManagementService` (Write), `TreatmentManagementService`.
+  - Xây dựng bộ REST Endpoints quản trị:
+    - `GET /api/v1/diseases`: Phân trang `PageResponse<DiseaseSummaryDto>`, hỗ trợ lọc đa tiêu chí qua `DiseaseSpecifications` (`keyword`, `plantCode`, `severity`) và param `unpaged=true` phục vụ Mobile cache ngoại tuyến.
+    - `GET /api/v1/diseases/{idOrCode}`: Tra cứu linh hoạt theo UUID hoặc mã định danh Roboflow (`diseaseCode`).
+    - `POST /api/v1/diseases`: Tạo mới bệnh hại (hỗ trợ liên kết danh sách cây trồng `plantCodes`).
+    - `PUT /api/v1/diseases/{id}`: Cập nhật thông tin bệnh học, triệu chứng, mức độ nguy hại.
+    - `DELETE /api/v1/diseases/{id}`: Xóa mềm bệnh hại (`deleted_at = Instant.now()`).
+    - `GET /api/v1/diseases/{diseaseId}/treatments`: Tra cứu phác đồ điều trị theo bệnh (lọc theo `treatmentType`, `plantId`).
+    - `POST /api/v1/diseases/{diseaseId}/treatments`: Tạo mới phác đồ điều trị gắn liền với bệnh.
+    - `PUT /api/v1/treatments/{treatmentId}`: Cập nhật chi tiết phác đồ (hoạt chất, liều lượng, thời gian cách ly).
+    - `DELETE /api/v1/treatments/{treatmentId}`: Xóa mềm phác đồ điều trị.
+  - Phân quyền RBAC chuẩn Enterprise: `ROLE_ADMIN` và `ROLE_EXPERT` toàn quyền CRUD (POST, PUT, DELETE); các endpoint GET công khai (`permitAll`).
+  - *Acceptance Criteria:* Pass 100% bộ kiểm thử tự động `DiseaseAdminIntegrationTest` (21 tests) và `TreatmentAdminIntegrationTest` (16 tests).
 
-- [ ] **Task 3.3: Seed Data Mẫu Chuẩn Cho Demo** (4h)
-  - Viết script SQL hoặc `DataInitializer` nạp sẵn 10-15 bệnh cây trồng phổ biến (lúa, cà chua, ngô, khoai tây) kèm phác đồ mẫu tiếng Việt.
-  - *Acceptance Criteria:* Chạy lại ứng dụng tự động có sẵn dữ liệu mẫu trong DB.
+- [x] **Task 3.3: Seed Data Mẫu Chuẩn Cho Demo** (4h)
+  - Viết Flyway migration `V5__seed_demo_diseases_and_treatments.sql` nạp sẵn danh mục 9 cây trồng, 15 bệnh hại phổ biến và 38 phác đồ điều trị (hóa học, sinh học, canh tác, phòng ngừa) chuẩn 100% bằng tiếng Anh nông học quốc tế.
+  - Đồng bộ hóa vào `MasterDataSeeder.java` (`com.eiu.pdds.common.seeder`) đảm bảo môi trường in-memory H2 test suite và local dev tự động nạp đồng nhất.
+  - *Acceptance Criteria:* Khởi động ứng dụng có sẵn toàn bộ dữ liệu mẫu; toàn bộ test suite dự án đạt 160/160 tests PASS 100%.
 
 ---
 

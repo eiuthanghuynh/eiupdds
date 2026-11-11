@@ -43,15 +43,41 @@ class ApiContractTests {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private com.eiu.pdds.diagnosis.service.DiagnosisIdempotencyService idempotencyService;
+
+    @Autowired
+    private com.eiu.pdds.auth.security.JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private com.eiu.pdds.user.repository.UserRepository userRepository;
+
     @MockBean
     private RoboflowClient roboflowClient;
 
     @MockBean
     private StorageService storageService;
 
+    private String testBearerToken;
+
     @BeforeEach
     void setUp() {
         Mockito.reset(storageService, roboflowClient);
+        idempotencyService.evict("85bc1f4db304533036a57de74bc1c4ec8ea06c17f1a3064618e7b99c8f8b8988");
+        idempotencyService.evict(com.eiu.pdds.common.util.FileSecurityValidator.calculateSha256(new byte[]{
+                (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0,
+                0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01
+        }));
+
+        com.eiu.pdds.user.entity.User user = userRepository.findByUsername("api_contract_farmer")
+                .orElseGet(() -> userRepository.save(com.eiu.pdds.user.entity.User.builder()
+                        .username("api_contract_farmer")
+                        .email("contract_farmer@eiu.edu.vn")
+                        .passwordHash("hash")
+                        .role(com.eiu.pdds.user.entity.Role.ROLE_USER)
+                        .isActive(true)
+                        .build()));
+        testBearerToken = jwtTokenProvider.generateAccessToken(user);
     }
 
     @Test
@@ -88,6 +114,7 @@ class ApiContractTests {
 
         mockMvc.perform(multipart("/api/v1/diagnoses/analyze")
                         .file(imageFile)
+                        .header("Authorization", "Bearer " + testBearerToken)
                         .param("plantCode", "POTATO")
                         .param("latitude", "11.0528")
                         .param("longitude", "106.6661")
@@ -131,8 +158,8 @@ class ApiContractTests {
         mockMvc.perform(get("/api/v1/diseases"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
-                .andExpect(jsonPath("$.data", hasSize(greaterThanOrEqualTo(3))))
-                .andExpect(jsonPath("$.data[*].diseaseCode", hasItems("POTATO_LATE_BLIGHT", "POTATO_EARLY_BLIGHT", "TOMATO_LATE_BLIGHT")));
+                .andExpect(jsonPath("$.data.content", hasSize(greaterThanOrEqualTo(3))))
+                .andExpect(jsonPath("$.data.content[*].diseaseCode", hasItems("POTATO_LATE_BLIGHT", "POTATO_EARLY_BLIGHT", "TOMATO_LATE_BLIGHT")));
     }
 
     @Test
