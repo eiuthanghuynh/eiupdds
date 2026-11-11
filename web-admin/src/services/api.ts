@@ -35,4 +35,42 @@ export const ApiService = {
       return false;
     }
   },
+
+  async createDisease(data: Partial<DiseaseSummaryDto>): Promise<DiseaseSummaryDto> {
+    const res = await fetch(`${API_BASE_URL}/diseases`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => null);
+      throw new Error(errJson?.message || `Lỗi tạo mầm bệnh (HTTP ${res.status})`);
+    }
+    const json = await res.json();
+    return json.data;
+  },
+
+  async updateDisease(id: string, data: Partial<DiseaseSummaryDto>): Promise<DiseaseSummaryDto> {
+    const res = await fetch(`${API_BASE_URL}/diseases/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => null);
+      throw new Error(errJson?.message || `Lỗi cập nhật mầm bệnh (HTTP ${res.status})`);
+    }
+    const json = await res.json();
+    return json.data;
+  },
+
+  async deleteDisease(id: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/diseases/${id}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => null);
+      throw new Error(errJson?.message || `Lỗi xóa mầm bệnh (HTTP ${res.status})`);
+    }
+  },
 };
