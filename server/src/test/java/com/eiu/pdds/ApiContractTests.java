@@ -158,8 +158,8 @@ class ApiContractTests {
         mockMvc.perform(get("/api/v1/diseases"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
-                .andExpect(jsonPath("$.data", hasSize(greaterThanOrEqualTo(3))))
-                .andExpect(jsonPath("$.data[*].diseaseCode", hasItems("POTATO_LATE_BLIGHT", "POTATO_EARLY_BLIGHT", "TOMATO_LATE_BLIGHT")));
+                .andExpect(jsonPath("$.data.content", hasSize(greaterThanOrEqualTo(3))))
+                .andExpect(jsonPath("$.data.content[*].diseaseCode", hasItems("POTATO_LATE_BLIGHT", "POTATO_EARLY_BLIGHT", "TOMATO_LATE_BLIGHT")));
     }
 
     @Test
