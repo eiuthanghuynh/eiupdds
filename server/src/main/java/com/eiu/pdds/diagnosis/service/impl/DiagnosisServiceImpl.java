@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Facade Orchestrator implementing DiagnosisService (SRP, DIP & OCP).
@@ -49,6 +51,7 @@ public class DiagnosisServiceImpl implements DiagnosisService {
     private final TreatmentRecommendationService treatmentRecommendationService;
     private final DiagnosisPersistenceService persistenceService;
     private final DiagnosisIdempotencyService idempotencyService;
+    private final ExecutorService virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     @Override
     public DiagnosisAnalyzeResponse analyze(DiagnosisAnalyzeRequest request) {
@@ -93,10 +96,12 @@ public class DiagnosisServiceImpl implements DiagnosisService {
         // 3. Parallel I/O via Java 21 Virtual Threads (Storage Upload & AI Inference)
         long startTime = System.currentTimeMillis();
         CompletableFuture<String> uploadFuture = CompletableFuture.supplyAsync(
-                () -> storageService.uploadImage(imageBytes, filename, "diagnoses")
+                () -> storageService.uploadImage(imageBytes, filename, "diagnoses"),
+                virtualThreadExecutor
         );
         CompletableFuture<InferenceResult> inferenceFuture = CompletableFuture.supplyAsync(
-                () -> aiInferenceProvider.inferPlantDisease(imageBytes, null)
+                () -> aiInferenceProvider.inferPlantDisease(imageBytes, null),
+                virtualThreadExecutor
         );
 
         String s3ImageUrl;

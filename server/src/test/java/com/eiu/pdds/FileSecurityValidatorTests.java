@@ -152,4 +152,28 @@ class FileSecurityValidatorTests {
         assertThat(FileSecurityValidator.extractDimensions(new byte[]{1, 2, 3})).isEmpty();
         assertThat(FileSecurityValidator.extractDimensions("not an image file".getBytes())).isEmpty();
     }
+
+    @Test
+    @DisplayName("Should throw BusinessException when image width or height exceeds 8192px")
+    void testValidateImage_ExceedsMaxDimensions_ThrowsException() {
+        // Construct PNG header with width = 8193 (0x2001) > 8192
+        byte[] largePngBytes = new byte[]{
+                (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+                0x00, 0x00, 0x00, 0x0D,
+                0x49, 0x48, 0x44, 0x52,
+                0x00, 0x00, 0x20, 0x01, // width: 8193
+                0x00, 0x00, 0x01, 0x00, // height: 256
+                0x08, 0x06, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00
+        };
+        MockMultipartFile file = new MockMultipartFile("image", "large.png", "image/png", largePngBytes);
+
+        assertThatThrownBy(() -> FileSecurityValidator.validateImage(file))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST_PAYLOAD);
+                    assertThat(be.getMessage()).contains("exceed maximum allowed limit");
+                });
+    }
 }
