@@ -170,6 +170,13 @@
             <version>${org.mapstruct.version}</version>
         </dependency>
 
+        <!-- UUID Creator (RFC 9562 UUIDv7 Generator) -->
+        <dependency>
+            <groupId>com.github.f4b6a3</groupId>
+            <artifactId>uuid-creator</artifactId>
+            <version>6.0.0</version>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
