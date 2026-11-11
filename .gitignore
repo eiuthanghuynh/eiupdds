@@ -99,6 +99,8 @@ metro-cache/
 android/app/build/
 android/.gradle/
 android/build/
+android/**/.cxx/
+.cxx/
 android/local.properties
 android/**/*.apk
 android/**/*.aab

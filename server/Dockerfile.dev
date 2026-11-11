@@ -8,6 +8,11 @@ WORKDIR /app
 # Install Maven and curl for health probes
 RUN apk add --no-cache maven curl
 
+# Copy POM and source code into container image as baseline
+# (Live volume bind mounts in docker-compose.dev.yml will overlay these for hot reload)
+COPY pom.xml ./
+COPY src/ ./src/
+
 # Expose HTTP port
 EXPOSE 8080
 

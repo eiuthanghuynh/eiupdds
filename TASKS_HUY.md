@@ -20,25 +20,25 @@
 ## Sprint 1: Khởi Tạo Ứng Dụng Mobile & Giao Diện Chụp Ảnh (Tuần 1 - 2)
 **Mục tiêu Sprint:** Dựng app Mobile với Expo Dev Client, điều hướng màn hình và mở được Camera chụp ảnh.
 
-- [ ] **Task 1.1: Khởi tạo Project Mobile với Expo Dev Client** (4h)
+- [x] **Task 1.1: Khởi tạo Project Mobile với Expo Dev Client** (4h)
   - Khởi tạo project React Native với Expo TypeScript template.
   - Cài đặt `expo-dev-client` và cấu hình build APK debug nội bộ (chuẩn bị sẵn đường cho Phase 2 On-device AI).
   - Cài đặt thư viện giao diện NativeWind / Tailwind hoặc StyleSheet chuẩn hóa theme màu nông nghiệp (xanh lá cây/trắng).
   - *Acceptance Criteria:* Chạy `npx expo start` và cài đặt được app lên thiết bị thật/giả lập qua `expo-dev-client`.
 
-- [ ] **Task 1.2: Thiết lập Luồng Điều Hướng (React Navigation)** (4h)
+- [x] **Task 1.2: Thiết lập Luồng Điều Hướng (React Navigation)** (4h)
   - Cài đặt `@react-navigation/native` và `@react-navigation/bottom-tabs` (hoặc stack).
   - Dựng 3 tab chính: Chẩn đoán (Home/Scanner), Lịch sử (History), Cài đặt/Hỗ trợ (Settings).
   - *Acceptance Criteria:* Chuyển tab mượt mà, giữ trạng thái hiển thị chuẩn.
 
-- [ ] **Task 1.3: Màn Hình Chụp Ảnh Lá Cây (Camera & Gallery)** (8h)
+- [x] **Task 1.3: Màn Hình Chụp Ảnh Lá Cây (Camera & Gallery)** (8h)
   - Cài đặt `expo-camera` và `expo-image-picker`.
   - Xin quyền truy cập Camera và Thư viện ảnh (xử lý từ chối quyền người dùng).
   - Thiết kế khung ngắm định vị lá cây (Overlay Viewfinder) giúp nông dân canh đúng vùng bệnh.
   - Cho phép xem trước (Preview) ảnh đã chụp trước khi xác nhận gửi đi chẩn đoán.
   - *Acceptance Criteria:* Chụp được ảnh từ camera hoặc chọn ảnh từ thư viện, hiển thị rõ ràng trên màn hình preview.
 
-- [ ] **Task 1.4: Tạo API Service Client & Mock Data** (4h)
+- [x] **Task 1.4: Tạo API Service Client & Mock Data** (4h)
   - Cài đặt `axios` hoặc `fetch` client bọc trong service `ApiClient`.
   - Đọc tài liệu Swagger của Thắng (`/api/v1/diagnoses/analyze`) và tạo mock response để code giao diện kết quả.
   - *Acceptance Criteria:* Nút "Chẩn đoán" gọi mock data và nhảy sang màn hình kết quả mẫu.
@@ -127,3 +127,4 @@
   - Thiết kế slide thuyết trình bảo vệ đồ án (Tập trung vào vấn đề nông nghiệp, giải pháp kỹ thuật, demo).
   - Quay 1 video Full HD quay lại cảnh cầm điện thoại soi lá cây và màn hình hiển thị kết quả (dùng khi phòng thi mất mạng).
   - *Acceptance Criteria:* Slide và video hoàn chỉnh sẵn sàng cho buổi bảo vệ.
+
