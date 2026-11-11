@@ -97,7 +97,7 @@
   - Bắt lỗi timeout API (> 15 giây) và hiển thị nút "Thử lại".
   - *Acceptance Criteria:* Tắt Wi-Fi/4G app không bị crash màn hình trắng, hiển thị thông báo rõ ràng cho người dùng.
 
-- [ ] **Task 4.2: Trang Web Quản Lý Phác Đồ Điều Trị (Next.js)** (8h)
+- [x] **Task 4.2: Trang Web Quản Lý Phác Đồ Điều Trị (Next.js)** (8h)
   - Dựng giao diện chỉnh sửa phác đồ điều trị cho từng loại bệnh (Biện pháp sinh học, Biện pháp hóa học, Cách phòng ngừa).
   - Tích hợp trình soạn thảo văn bản phong phú (Rich Text Editor hoặc Markdown Editor).
   - *Acceptance Criteria:* Chuyên gia có thể nhập và cập nhật phác đồ điều trị hiển thị xuống Mobile.
