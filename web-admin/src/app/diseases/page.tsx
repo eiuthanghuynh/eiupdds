@@ -218,6 +218,7 @@ export default function DiseasesPage() {
     try {
       try {
         await ApiService.deleteDisease(id);
+        await refreshDiseases();
       } catch {
         // Local fallback
       }
