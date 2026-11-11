@@ -9,12 +9,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   Clock,
-  Sparkles,
-  Search,
   Filter,
-  Check,
   X,
-  AlertCircle,
 } from 'lucide-react';
 import { TreatmentDto, TreatmentType } from '@/types';
 

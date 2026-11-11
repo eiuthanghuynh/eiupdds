@@ -3,13 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  Activity,
   Bug,
-  CheckCircle2,
-  Clock,
   Sparkles,
   TrendingUp,
-  AlertTriangle,
   ArrowRight,
   ShieldCheck,
 } from 'lucide-react';
