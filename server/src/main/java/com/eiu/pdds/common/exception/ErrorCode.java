@@ -11,6 +11,7 @@ public enum ErrorCode {
     DISEASE_NOT_FOUND("DISEASE_001", "Disease record not found", HttpStatus.NOT_FOUND),
     PLANT_NOT_FOUND("PLANT_001", "Plant crop record not found", HttpStatus.NOT_FOUND),
     RESOURCE_NOT_FOUND("RES_001", "Requested resource not found", HttpStatus.NOT_FOUND),
+    DUPLICATE_RESOURCE("RES_002", "Resource already exists", HttpStatus.CONFLICT),
     DIAGNOSIS_NOT_FOUND("DIAGNOSIS_001", "Diagnosis session not found", HttpStatus.NOT_FOUND),
     UNAUTHORIZED("AUTH_001", "Full authentication is required to access this resource", HttpStatus.UNAUTHORIZED),
     INVALID_CREDENTIALS("AUTH_002", "Invalid username/email or password", HttpStatus.UNAUTHORIZED),

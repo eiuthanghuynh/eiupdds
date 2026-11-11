@@ -61,16 +61,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
 
                         // 4. Public Plant & Disease Knowledge Catalog Browsing
-                        .requestMatchers(HttpMethod.GET, "/api/v1/plants/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/diseases/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/plants/**", "/api/v1/diseases/**", "/api/v1/treatments/**").permitAll()
 
-                        // 5. Admin Only Management (RBAC)
-                        .requestMatchers(HttpMethod.POST, "/api/v1/diseases/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/diseases/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/diseases/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/treatments/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/treatments/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/treatments/**").hasAuthority("ROLE_ADMIN")
+                        // 5. Admin & Expert Management RBAC
+                        .requestMatchers(HttpMethod.POST, "/api/v1/diseases/**", "/api/v1/treatments/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EXPERT")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/diseases/**", "/api/v1/treatments/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EXPERT")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/diseases/**", "/api/v1/treatments/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EXPERT")
 
                         // 6. Protected Diagnosis Endpoints (Requires Authentication)
                         .requestMatchers("/api/v1/diagnoses/**").authenticated()
