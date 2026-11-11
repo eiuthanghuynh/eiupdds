@@ -7,13 +7,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.CreateBucketResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 import java.lang.reflect.Proxy;
 import java.time.LocalDate;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -86,6 +91,54 @@ class MinioStorageServiceTests {
         assertThat(capturedRequest.key()).startsWith(expectedPrefix).endsWith(".jpg");
 
         assertThat(publicUrl).isEqualTo("http://192.168.1.100:9000/eiu-pdds-plants/" + capturedRequest.key());
+    }
+
+    @Test
+    @DisplayName("Should auto-create bucket and retry upload when NoSuchBucketException is thrown")
+    void testUploadImageAutoCreatesBucketOnNoSuchBucketException() {
+        AtomicInteger putAttempts = new AtomicInteger(0);
+        AtomicBoolean createBucketCalled = new AtomicBoolean(false);
+
+        S3Client resilientClient = (S3Client) Proxy.newProxyInstance(
+                S3Client.class.getClassLoader(),
+                new Class<?>[]{S3Client.class},
+                (proxy, method, args) -> {
+                    if ("putObject".equals(method.getName())) {
+                        int attempt = putAttempts.incrementAndGet();
+                        if (attempt == 1) {
+                            throw NoSuchBucketException.builder().message("The specified bucket does not exist").build();
+                        }
+                        if (args != null && args.length > 0 && args[0] instanceof PutObjectRequest req) {
+                            capturedPutRequest.set(req);
+                        }
+                        return PutObjectResponse.builder().build();
+                    }
+                    if ("createBucket".equals(method.getName())) {
+                        createBucketCalled.set(true);
+                        return CreateBucketResponse.builder().build();
+                    }
+                    if ("serviceName".equals(method.getName())) {
+                        return "s3";
+                    }
+                    return null;
+                }
+        );
+
+        MinioStorageServiceImpl resilientStorage = new MinioStorageServiceImpl(resilientClient);
+        ReflectionTestUtils.setField(resilientStorage, "bucketName", "eiu-pdds-plants");
+        ReflectionTestUtils.setField(resilientStorage, "publicUrl", "http://192.168.1.100:9000");
+
+        byte[] validJpegBytes = new byte[]{
+                (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0,
+                0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01
+        };
+        MockMultipartFile file = new MockMultipartFile("image", "test-auto-bucket.jpg", "image/jpeg", validJpegBytes);
+
+        String publicUrl = resilientStorage.uploadImage(file, "diagnoses");
+
+        assertThat(createBucketCalled.get()).as("createBucket must be called on NoSuchBucketException").isTrue();
+        assertThat(putAttempts.get()).as("putObject must be retried after bucket creation").isEqualTo(2);
+        assertThat(publicUrl).contains("eiu-pdds-plants");
     }
 
     @Test

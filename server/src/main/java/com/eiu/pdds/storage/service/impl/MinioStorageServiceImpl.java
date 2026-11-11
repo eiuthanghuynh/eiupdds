@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -68,7 +70,13 @@ public class MinioStorageServiceImpl implements StorageService {
                     .contentLength((long) imageBytes.length)
                     .build();
 
-            s3Client.putObject(putRequest, RequestBody.fromBytes(imageBytes));
+            try {
+                s3Client.putObject(putRequest, RequestBody.fromBytes(imageBytes));
+            } catch (NoSuchBucketException e) {
+                log.warn("MinIO bucket '{}' missing during upload. Auto-creating bucket and retrying...", bucketName);
+                s3Client.createBucket(CreateBucketRequest.builder().bucket(bucketName).build());
+                s3Client.putObject(putRequest, RequestBody.fromBytes(imageBytes));
+            }
 
             String normalizedPublicUrl = publicUrl.endsWith("/") ? publicUrl.substring(0, publicUrl.length() - 1) : publicUrl;
             String generatedUrl = String.format("%s/%s/%s", normalizedPublicUrl, bucketName, key);
