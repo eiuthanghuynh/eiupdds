@@ -96,21 +96,41 @@ export default function DiseasesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const fetchDiseases = async () => {
+  useEffect(() => {
+    let ignore = false;
+    async function load() {
+      try {
+        const data = await ApiService.getDiseases();
+        if (!ignore) {
+          setDiseases(data && data.length > 0 ? data : fallbackDiseases);
+        }
+      } catch {
+        if (!ignore) {
+          setDiseases(fallbackDiseases);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    }
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const refreshDiseases = async () => {
     try {
       setLoading(true);
       const data = await ApiService.getDiseases();
       setDiseases(data && data.length > 0 ? data : fallbackDiseases);
     } catch {
-      setDiseases(fallbackDiseases);
+      // keep current
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchDiseases();
-  }, []);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setFeedback({ type, message });
@@ -158,6 +178,7 @@ export default function DiseasesPage() {
         try {
           const updated = await ApiService.updateDisease(editingId, formData);
           setDiseases((prev) => prev.map((d) => (d.id === editingId ? { ...d, ...updated } : d)));
+          await refreshDiseases();
         } catch {
           // Local fallback if backend is offline
           setDiseases((prev) =>
