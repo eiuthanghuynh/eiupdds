@@ -151,7 +151,7 @@ public class DiagnosisController {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         UUID userId = principal != null ? principal.id() : null;
-        diagnosisQueryService.softDeleteUserDiagnosis(userId, id);
+        diagnosisService.softDeleteUserDiagnosis(userId, id);
         return ResponseEntity.ok(ApiResponse.success("Diagnosis session deleted successfully", null));
     }
 }

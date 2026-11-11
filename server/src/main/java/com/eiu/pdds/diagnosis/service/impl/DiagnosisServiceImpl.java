@@ -3,7 +3,9 @@ package com.eiu.pdds.diagnosis.service.impl;
 import com.eiu.pdds.common.exception.BusinessException;
 import com.eiu.pdds.common.exception.ErrorCode;
 import com.eiu.pdds.common.util.FileSecurityValidator;
+import com.eiu.pdds.diagnosis.dto.DiagnosisSaveCommand;
 import com.eiu.pdds.diagnosis.entity.Diagnosis;
+import com.eiu.pdds.diagnosis.repository.DiagnosisRepository;
 import com.eiu.pdds.diagnosis.service.CoordinateTransformer;
 import com.eiu.pdds.diagnosis.service.DiagnosisIdempotencyService;
 import com.eiu.pdds.diagnosis.service.DiagnosisPersistenceService;
@@ -23,6 +25,7 @@ import com.eiu.pdds.treatment.service.TreatmentRecommendationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
@@ -51,6 +54,7 @@ public class DiagnosisServiceImpl implements DiagnosisService {
     private final TreatmentRecommendationService treatmentRecommendationService;
     private final DiagnosisPersistenceService persistenceService;
     private final DiagnosisIdempotencyService idempotencyService;
+    private final DiagnosisRepository diagnosisRepository;
     private final ExecutorService virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     @Override
@@ -144,7 +148,7 @@ public class DiagnosisServiceImpl implements DiagnosisService {
         }
 
         // 7. Transactional Persistence (SRP)
-        Diagnosis saved = persistenceService.saveDiagnosis(
+        Diagnosis saved = persistenceService.saveDiagnosis(new DiagnosisSaveCommand(
                 userId,
                 pathology.plantEntity(),
                 s3ImageUrl,
@@ -158,7 +162,7 @@ public class DiagnosisServiceImpl implements DiagnosisService {
                 inferenceTimeMs,
                 inferenceResult.rawPayloadJson(),
                 boundingBoxDtos
-        );
+        ));
 
         // 8. Assemble Response DTO and record in idempotency cache
         DiagnosisAnalyzeResponse response = new DiagnosisAnalyzeResponse(
@@ -196,5 +200,21 @@ public class DiagnosisServiceImpl implements DiagnosisService {
                 plant.getIconUrl(),
                 plant.getDescription()
         );
+    }
+
+    @Override
+    @Transactional
+    public void softDeleteUserDiagnosis(UUID userId, UUID diagnosisId) {
+        Diagnosis diagnosis = diagnosisRepository.findByIdAndDeletedAtIsNull(diagnosisId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.DIAGNOSIS_NOT_FOUND));
+
+        if (userId != null && (diagnosis.getUser() == null || !diagnosis.getUser().getId().equals(userId))) {
+            throw new BusinessException(ErrorCode.DIAGNOSIS_NOT_FOUND);
+        }
+
+        diagnosis.setDeletedAt(Instant.now());
+        diagnosisRepository.save(diagnosis);
+        idempotencyService.evictById(diagnosisId);
+        log.info("Soft-deleted diagnosis session id='{}' for user='{}'", diagnosisId, userId);
     }
 }
