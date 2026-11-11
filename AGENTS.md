@@ -92,6 +92,8 @@ Khi người dùng bắt đầu câu lệnh, Agent cần kiểm tra ngay lập t
 3. **Phân bổ Sprint rõ ràng:** Mỗi task phải gắn liền với Sprint cụ thể (từ Sprint 1 đến 5). Không nhảy cóc sang tính năng của Sprint sau khi Sprint trước chưa hoàn thành Definition of Done.
 4. **Tối ưu phản hồi (ADHD / Action-first):** Bắt đầu phản hồi bằng hành động/lệnh cụ thể có thể chạy được ngay; chia nhỏ bước việc rõ ràng; không nói vòng vo hoặc tóm tắt thừa thãi.
 5. **Chuẩn hóa danh xưng & thương hiệu (CẤM NGOẠI LỆ):** Tên hệ thống là **EIU Plant Disease Detection System** (**EIU PDDS**). Tuyệt đối cấm sử dụng các danh xưng cũ "CropPulse", "PhytoGuard" trong mã nguồn, tên package Java (`com.eiu.pdds`), tài liệu, commit hay UI.
+6. **Quy chuẩn Mockito Stubbing & Test Integrity:** Khi tái cấu trúc tầng truy vấn nội bộ (ví dụ: chuyển từ single query sang batch query `findByDiseaseCodeIn`), việc cập nhật mock stub trong unit test là bắt buộc để khớp hợp đồng mới, nhưng Agent phải giải trình minh bạch lý do thay đổi stub, TUYỆT ĐỐI KHÔNG âm thầm sửa đổi test assertions/expectations để "làm test xanh một cách đối phó".
+7. **Điều phối Subagent tuần tự (Sequential Subagent Execution):** Với các module backend dùng chung codebase (như Spring Boot trên Windows), ưu tiên điều phối subagent chạy tuần tự theo từng task, kiểm thử độc lập và commit từng chặng, tránh chạy song song gây xung đột file locks (Maven target locks) hoặc Git merge collisions.
 
 ---
 
@@ -116,15 +118,27 @@ Khi người dùng bắt đầu câu lệnh, Agent cần kiểm tra ngay lập t
   * **Task 2.5.4:** Cấu hình Spring Security 6 Stateless Filter Chain, `JwtAuthenticationFilter`, `JwtAuthenticationEntryPoint` (401), `CustomAccessDeniedHandler` (403), và RBAC phân quyền 3 cấp (`ROLE_USER`, `ROLE_EXPERT`, `ROLE_ADMIN`) $\rightarrow$ `[COMPLETED]`
   * **Task 2.5.5:** Triển khai bộ REST API `/api/v1/auth/*` (`register`, `login`, `google`, `refresh`, `logout`, `me`), tích hợp OpenAPI Bearer Auth và hoàn thiện bộ kiểm thử tự động toàn diện đạt 100% (94/94 tests PASS toàn dự án) $\rightarrow$ `[COMPLETED]`
 
-### 6.2. Danh mục 8 Bảng Cơ Sở Dữ Liệu & Mục Đích Nghiệp Vụ
+* **Sprint 3: Lưu Trữ Lịch Sử, GPS & Danh Mục Phác Đồ (Core CRUD & Management)** $\rightarrow$ `[COMPLETED]`
+  * **Task 3.1:** API Lưu Vết Lịch Sử Chẩn Đoán Kèm GPS, phân tách CQRS-lite (`DiagnosisQueryService`), bảo mật IDOR Zero-Trust, phân trang động `DiagnosisSpecifications`, tái tạo hệ tọa độ kép Pixel + Normalized $\rightarrow$ `[COMPLETED]`
+  * **Task 3.2:** Bộ REST CRUD Quản Trị Danh Mục Bệnh & Phác Đồ Điều Trị (`DiseaseQueryService`, `DiseaseManagementService`, `TreatmentManagementService`), hỗ trợ tra cứu kép UUID/code, lọc đa tiêu chí và phân quyền RBAC (`ROLE_ADMIN`, `ROLE_EXPERT`) $\rightarrow$ `[COMPLETED]`
+  * **Task 3.3:** Nạp Dữ Liệu Nông Học Mẫu Chuẩn Quốc Tế (Flyway `V5__seed_demo_diseases_and_treatments.sql` & `MasterDataSeeder` 9 cây trồng, 15 bệnh hại, 38 phác đồ điều trị tiếng Anh chuyên ngành) $\rightarrow$ `[COMPLETED]`
+
+* **Sprint 3.5: Gia Cố Nền Tảng & Triệt Tiêu Nợ Kỹ Thuật (Core Hardening & Resilience)** $\rightarrow$ `[COMPLETED]`
+  * **Task 3.5.1:** Nâng cấp khóa chính sang RFC 9562 UUIDv7 với cơ chế Idempotent Pre-persist (`if (this.id == null)`), triệt tiêu phân mảnh chỉ mục PostgreSQL B-Tree và sẵn sàng cho ID ngoại tuyến Phase 3 $\rightarrow$ `[COMPLETED]`
+  * **Task 3.5.2:** Khả năng chịu lỗi I/O: Tự chữa lành 2 tầng (Dual-Layer Self-Healing) cho MinIO S3 bucket, Capped Exponential Backoff có Jitter chống 429 Roboflow, chuyển RestClient sang Java 21 `JdkClientHttpRequestFactory` (HTTP/2) $\rightarrow$ `[COMPLETED]`
+  * **Task 3.5.3:** Chuẩn hóa Java 21 Virtual Threads (`Executors.newVirtualThreadPerTaskExecutor()`), Google OAuth Multi-Audience an toàn cho Mobile/Web, khóa chặt Actuator (`ROLE_ADMIN`), và phòng vệ Pixel Bomb DoS ($8192 \times 8192\text{px}$) $\rightarrow$ `[COMPLETED]`
+  * **Task 3.5.4:** Tái cấu trúc SOLID toàn diện: Gom truy vấn Batch `findByDiseaseCodeIn` triệt tiêu N+1 Query, tuân thủ nghiêm ngặt CQS (Command-Query Separation), Parameter Object `DiagnosisSaveCommand`, và chuẩn hóa HTTP Error Contract (400 `MALFORMED_JSON_PAYLOAD`, 409 `RESOURCE_CONFLICT`). Toàn bộ 174/174 tests PASS 100% $\rightarrow$ `[COMPLETED]`
+
+### 6.2. Danh mục 9 Bảng Cơ Sở Dữ Liệu & Mục Đích Nghiệp Vụ
 1. `users`: Quản lý danh tính người dùng trong hệ sinh thái (Nông dân - `ROLE_USER`, Chuyên gia nông nghiệp - `ROLE_EXPERT`, Quản trị viên - `ROLE_ADMIN`).
-2. `plants`: Danh mục cây trồng được hỗ trợ (Lúa, Cà chua, Ngô, Khoai tây...). Lưu mã định danh khoa học, tên phổ thông và biểu tượng hiển thị trên Mobile.
-3. `diseases`: Danh mục chuẩn hóa các bệnh hại cây trồng với phân cấp mức độ nguy hại (`LOW`, `MODERATE`, `HIGH`, `CRITICAL`), mô tả triệu chứng học phục vụ tra cứu.
-4. `plant_diseases`: Bảng nối quan hệ Many-to-Many giữa cây trồng và bệnh hại; đặc tả triệu chứng cụ thể trên từng loại cây (`specific_symptoms`) và mùa vụ bùng phát nguy cơ cao (`risk_season`).
-5. `treatments`: Kho tri thức phác đồ điều trị và phòng ngừa theo từng bệnh/cây. Phân loại theo `BIOLOGICAL` (sinh học), `CHEMICAL` (hóa học), `PREVENTIVE` (phòng ngừa), `CULTURAL` (canh tác); lưu hoạt chất, liều lượng và thời gian cách ly an toàn (`safety_interval_days`).
-6. `diagnoses`: Nhật ký các phiên chẩn đoán hình ảnh từ thiết bị di động. Lưu URL ảnh gốc (S3), kích thước ảnh, tọa độ GPS địa lý, thiết bị chụp, nhãn bệnh chiếm ưu thế, thời gian suy luận AI và toàn vẹn telemetry payload.
-7. `bounding_boxes`: Tọa độ các hộp bao phát hiện từ mô hình Computer Vision (`x`, `y`, `width`, `height`), độ tin cậy và liên kết tới danh mục bệnh phục vụ Mobile vẽ SVG/Canvas đè lên ảnh.
-8. `diagnosis_feedbacks`: Cơ chế phản hồi Human-in-the-loop. Cho phép nông dân đánh giá độ chính xác, đề xuất bệnh đúng, và chuyên gia nông nghiệp thẩm định (`expert_verified`) nhằm thu thập dữ liệu huấn luyện cải tiến mô hình AI (Active Learning).
+2. `user_identities`: Bảng liên kết danh tính đa kênh (Federated Identity Pattern - `LOCAL`, `GOOGLE`, `APPLE`) với hồ sơ người dùng `users`, hỗ trợ đăng nhập một chạm từ Google OAuth2 và Apple Sign-In mà không phân mảnh tài khoản.
+3. `plants`: Danh mục cây trồng được hỗ trợ (Lúa, Cà chua, Ngô, Khoai tây...). Lưu mã định danh khoa học, tên phổ thông và biểu tượng hiển thị trên Mobile.
+4. `diseases`: Danh mục chuẩn hóa các bệnh hại cây trồng với phân cấp mức độ nguy hại (`LOW`, `MODERATE`, `HIGH`, `CRITICAL`), mô tả triệu chứng học phục vụ tra cứu.
+5. `plant_diseases`: Bảng nối quan hệ Many-to-Many giữa cây trồng và bệnh hại; đặc tả triệu chứng cụ thể trên từng loại cây (`specific_symptoms`) và mùa vụ bùng phát nguy cơ cao (`risk_season`).
+6. `treatments`: Kho tri thức phác đồ điều trị và phòng ngừa theo từng bệnh/cây. Phân loại theo `BIOLOGICAL` (sinh học), `CHEMICAL` (hóa học), `PREVENTIVE` (phòng ngừa), `CULTURAL` (canh tác); lưu hoạt chất, liều lượng và thời gian cách ly an toàn (`safety_interval_days`).
+7. `diagnoses`: Nhật ký các phiên chẩn đoán hình ảnh từ thiết bị di động. Lưu URL ảnh gốc (S3), kích thước ảnh, tọa độ GPS địa lý, thiết bị chụp, nhãn bệnh chiếm ưu thế, thời gian suy luận AI và toàn vẹn telemetry payload.
+8. `bounding_boxes`: Tọa độ các hộp bao phát hiện từ mô hình Computer Vision (`x`, `y`, `width`, `height`), độ tin cậy và liên kết tới danh mục bệnh phục vụ Mobile vẽ SVG/Canvas đè lên ảnh.
+9. `diagnosis_feedbacks`: Cơ chế phản hồi Human-in-the-loop. Cho phép nông dân đánh giá độ chính xác, đề xuất bệnh đúng, và chuyên gia nông nghiệp thẩm định (`expert_verified`) nhằm thu thập dữ liệu huấn luyện cải tiến mô hình AI (Active Learning).
 
 ### 6.3. Lý Do & Thủ Thuật Thiết Kế Nền Tảng (Architectural Decisions)
 * **Khóa chính UUID (`gen_random_uuid()`):**
@@ -158,6 +172,26 @@ Khi người dùng bắt đầu câu lệnh, Agent cần kiểm tra ngay lập t
   * Xóa bỏ hoàn toàn việc fallback về magic numbers `399` và `501`, ngăn chặn triệt để hiện tượng méo tỷ lệ khung hình (Aspect Ratio Distortion) làm lệch tâm và kẹt góc bounding box trên Mobile.
   * **Source of Truth:** Trích xuất kích thước pixel thật siêu tốc ($< 0.05\text{ ms}$) trực tiếp từ header ảnh nguồn (`FileSecurityValidator.extractDimensions`) cho JPEG, PNG và WebP mà không cần giải mã toàn bộ raster ảnh.
   * **Fail-Fast:** Ném ngay ngoại lệ `BusinessException(ROBOFLOW_API_ERROR)` khi cả AI provider lẫn ảnh nguồn đều không xác định được kích thước hợp lệ.
+* **Khóa Chính UUIDv7 Tuân Thủ Chuẩn RFC 9562 & Idempotent Pre-persist Assignment (Sprint 3.5):**
+  * Nâng cấp toàn bộ primary keys sang UUIDv7 tuần tự theo thời gian epoch (`com.github.f4b6a3:uuid-creator:6.0.0`), triệt tiêu phân mảnh chỉ mục PostgreSQL B-Tree (Page Splits) và tăng tốc độ ghi dữ liệu phân tán.
+  * Sử dụng `@PrePersist` kèm điều kiện guard `if (this.id == null)` trên `BaseAuditEntity`, `BoundingBox`, và `PlantDisease`: Tôn trọng tuyệt đối các khóa ID do Mobile Client tự sinh ngoại tuyến trong Phase 2 & 3 mà không cần can thiệp sâu vào Hibernate SPI nội bộ.
+* **Cơ Chế Tự Chữa Lành Kép Cho MinIO S3 (Dual-Layer Self-Healing):**
+  * Layer 1 (Startup Runner): Tự động tạo bucket `eiu-pdds-plants` qua `ApplicationRunner` khi bật cờ cấu hình; bọc khối `try-catch` log WARN để không làm sập ứng dụng/test suite khi thiếu container S3 cục bộ.
+  * Layer 2 (Runtime Fallback): Bắt `NoSuchBucketException` trong quá trình tải ảnh thực tế, tự động tạo bucket và thử lại upload 1 lần duy nhất, đảm bảo tính liên tục 100% trong quá trình demo.
+* **Capped Exponential Backoff Chống Nghẽn Quota Roboflow API (HTTP 429):**
+  * Tự động bắt lỗi HTTP 429, đọc header `Retry-After` (nếu $\le 3\text{s}$) kết hợp thuật toán tính lùi lũy thừa kèm độ nhiễu (Jitter: $500\text{ms} \times 2^{\text{attempt}} + \text{jitter}$, trần tối đa $2000\text{ms}$, tối đa 2 lần thử lại).
+  * Khống chế tổng thời gian chờ $< 3.5\text{s}$, bảo vệ Latency Budget trên ứng dụng Mobile, tránh làm treo UI của nông dân.
+  * Nâng cấp `RestClient` sang Java 21 `JdkClientHttpRequestFactory` tận dụng HTTP/2 multiplexing và connection pool native.
+* **Tối Ưu Hóa I/O Với Java 21 Virtual Threads & Khóa Chặt Bảo Mật Nền Tảng:**
+  * Điều phối các tác vụ I/O song song (upload S3 và gọi Cloud AI) qua Virtual Threads chuyên dụng (`Executors.newVirtualThreadPerTaskExecutor()`), chấm dứt việc chiếm dụng pool luồng nền tảng `ForkJoinPool.commonPool()`.
+  * Hỗ trợ đa Client ID Google OAuth (Mobile Expo & Web Next.js) qua cấu hình danh sách phân tách dấu phẩy (`security.oauth2.google.client-ids`), phòng chống tấn công Audience Confusion.
+  * Khóa toàn bộ các endpoint Actuator nhạy cảm (`/actuator/**`) yêu cầu quyền `ROLE_ADMIN`, chỉ mở công khai `/actuator/health` và `/actuator/health/liveness` cho Docker healthcheck.
+  * Phòng vệ DoS / Canvas Bomb: Kiểm tra siêu tốc header ảnh ($< 0.05\text{ms}$) từ chối các ảnh có kích thước vượt quá $8192 \times 8192\text{px}$, ngăn tràn bộ nhớ backend và vỡ canvas render trên Mobile.
+* **Tái Cấu Trúc Hướng Đối Tượng SOLID, Triệt Tiêu N+1 & Chuẩn Hóa CQS:**
+  * Khử N+1 Query: Sử dụng `diseaseRepository.findByDiseaseCodeIn(codes)` gom truy vấn batch 1 lần duy nhất cho toàn bộ danh sách bounding box trong ảnh thay vì lặp từng câu lệnh đơn lẻ.
+  * Phân tách Command-Query Separation (CQS): Đưa phương thức xóa mềm `softDeleteUserDiagnosis` về đúng Facade `DiagnosisService`, chuyển đổi `DiagnosisQueryService` thành dịch vụ thuần truy vấn đọc dữ liệu với `@Transactional(readOnly = true)`.
+  * Đóng gói DTO Command: Gom 13 tham số rời rạc vào Java 21 Record `DiagnosisSaveCommand`, loại bỏ hoàn toàn code smell *Long Parameter List*.
+  * Chuẩn hóa HTTP Error Contract: Ánh xạ lỗi payload JSON dị dạng sang HTTP 400 (`MALFORMED_JSON_PAYLOAD`) và xung đột phiên bản Optimistic Locking sang HTTP 409 (`RESOURCE_CONFLICT`).
 
 ---
 
