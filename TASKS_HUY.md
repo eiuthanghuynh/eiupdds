@@ -48,19 +48,19 @@
 ## Sprint 2: Core MVP — Hiển Thị Bounding Box & Phác Đồ (Tuần 3 - 4)
 **Mục tiêu Sprint:** Tải ảnh lên Backend, nhận diện vết bệnh và vẽ khung Bounding Box chuẩn xác đè lên ảnh.
 
-- [ ] **Task 2.1: Module Thuật Toán Scale & Vẽ Bounding Box (Visual Overlay)** (10h)
+- [x] **Task 2.1: Module Thuật Toán Scale & Vẽ Bounding Box (Visual Overlay)** (10h)
   - Cài đặt thư viện vẽ vector `react-native-svg`.
   - Viết giải thuật chuyển đổi tọa độ chuẩn hóa `[x_center, y_center, width, height]` sang pixel thực tế theo kích thước màn hình hiển thị (Aspect Ratio Scaling).
   - Vẽ khung chữ nhật bo góc kèm nhãn bệnh và % tin cậy nổi bật ngay trên đốm lá bị bệnh.
   - *Acceptance Criteria:* Bounding Box ôm khít vết bệnh trên ảnh dù xoay ngang hay xoay dọc màn hình.
 
-- [ ] **Task 2.2: Tích Hợp Gửi Ảnh Lên Backend Thắng** (6h)
+- [x] **Task 2.2: Tích Hợp Gửi Ảnh Lên Backend Thắng** (6h)
   - Đóng gói ảnh dưới dạng `FormData` (Multipart) gửi tới endpoint `POST /api/v1/diagnoses/analyze`.
   - Thêm hiệu ứng Skeleton / Loading spinner xoay vòng trong lúc chờ phản hồi (3-5 giây).
   - Lấy tọa độ GPS thiết bị qua `expo-location` đính kèm vào payload gửi đi.
   - *Acceptance Criteria:* Bấm "Gửi", ảnh được đẩy lên Backend và nhận về tọa độ thật từ Roboflow để vẽ lên màn hình.
 
-- [ ] **Task 2.3: Màn Hình Kết Quả Chẩn Đoán Chi Tiết** (6h)
+- [x] **Task 2.3: Màn Hình Kết Quả Chẩn Đoán Chi Tiết** (6h)
   - Hiển thị tên bệnh (tiếng Việt), độ tin cậy (Confidence score).
   - Nút bấm xem nhanh "Phác đồ điều trị khẩn cấp" (sơ cứu cách ly, thuốc đề xuất).
   - *Acceptance Criteria:* Người dùng nhìn thấy rõ ràng lá cây bị bệnh gì và cần làm gì ngay lập tức.

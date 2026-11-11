@@ -14,6 +14,7 @@ import {
 } from 'expo-camera';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { router, useIsFocused } from 'expo-router';
 import {
   Camera,
@@ -135,7 +136,30 @@ export default function CameraScreen() {
     if (!photo || isAnalyzing) return;
     try {
       setConfirmed(true);
-      await analyzePhoto(photo.uri);
+
+      // Attempt to retrieve device GPS location with timeout protection
+      let latitude: number | undefined;
+      let longitude: number | undefined;
+
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Promise.race([
+            Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Balanced,
+            }),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+          ]);
+          if (loc && 'coords' in loc) {
+            latitude = loc.coords.latitude;
+            longitude = loc.coords.longitude;
+          }
+        }
+      } catch (locErr) {
+        console.warn('GPS location request failed or was skipped:', locErr);
+      }
+
+      await analyzePhoto(photo.uri, { latitude, longitude });
       router.push('/result' as any);
     } catch (error: any) {
       setConfirmed(false);
