@@ -21,6 +21,10 @@ public record ApiResponse<T>(
         return new ApiResponse<>(false, code, message, null, Instant.now());
     }
 
+    public static <T> ApiResponse<T> error(com.eiu.pdds.common.exception.ErrorCode errorCode, String message) {
+        return new ApiResponse<>(false, errorCode.getCode(), message, null, Instant.now());
+    }
+
     public static <T> ApiResponse<T> error(String code, String message, T errorDetails) {
         return new ApiResponse<>(false, code, message, errorDetails, Instant.now());
     }

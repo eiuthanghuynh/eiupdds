@@ -49,4 +49,13 @@ public interface DiagnosisService {
             String deviceInfo,
             UUID userId
     );
+
+    /**
+     * Soft-deletes a diagnosis session belonging to the authenticated user.
+     * Enforces strict data ownership and evicts from idempotency cache.
+     *
+     * @param userId      the authenticated user identifier
+     * @param diagnosisId the diagnosis session UUID
+     */
+    void softDeleteUserDiagnosis(UUID userId, UUID diagnosisId);
 }

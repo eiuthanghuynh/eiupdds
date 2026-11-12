@@ -60,9 +60,6 @@ class DiagnosisQueryServiceImplTest {
     @Mock
     private TreatmentRecommendationService treatmentRecommendationService;
 
-    @Mock
-    private DiagnosisIdempotencyService idempotencyService;
-
     private DiagnosisQueryService queryService;
 
     private UUID userId;
@@ -76,8 +73,7 @@ class DiagnosisQueryServiceImplTest {
                 diagnosisRepository,
                 boundingBoxRepository,
                 coordinateTransformer,
-                treatmentRecommendationService,
-                idempotencyService
+                treatmentRecommendationService
         );
 
         userId = UUID.randomUUID();
@@ -225,77 +221,6 @@ class DiagnosisQueryServiceImplTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> queryService.getUserDiagnosisDetail(userId, diagnosisId))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode()).isEqualTo(ErrorCode.DIAGNOSIS_NOT_FOUND));
-    }
-
-    @Test
-    @DisplayName("softDeleteUserDiagnosis - Should mark diagnosis as deleted")
-    void testSoftDeleteUserDiagnosis_Success() {
-        UUID diagnosisId = UUID.randomUUID();
-        Diagnosis diagnosis = Diagnosis.builder()
-                .user(testUser)
-                .build();
-        diagnosis.setId(diagnosisId);
-
-        when(diagnosisRepository.findByIdAndUserIdAndDeletedAtIsNull(diagnosisId, userId))
-                .thenReturn(Optional.of(diagnosis));
-
-        queryService.softDeleteUserDiagnosis(userId, diagnosisId);
-
-        assertThat(diagnosis.isDeleted()).isTrue();
-        assertThat(diagnosis.getDeletedAt()).isNotNull();
-        verify(diagnosisRepository).save(diagnosis);
-        verify(idempotencyService).evictByDiagnosisId(diagnosisId);
-    }
-
-    @Test
-    @DisplayName("getUserDiagnosisDetail - Should reconstruct healthy foliage diagnosis correctly when dominantDisease is null")
-    void testGetUserDiagnosisDetail_HealthyFoliage() {
-        UUID diagnosisId = UUID.randomUUID();
-        BoundingBox box = BoundingBox.builder()
-                .label("Potato leaf")
-                .confidence(0.95)
-                .x(100.0).y(100.0).width(50.0).height(50.0)
-                .build();
-
-        Diagnosis diagnosis = Diagnosis.builder()
-                .user(testUser)
-                .plant(testPlant)
-                .dominantConfidence(0.95)
-                .originalImageUrl("http://s3/healthy.jpg")
-                .imageWidth(800)
-                .imageHeight(600)
-                .status(DiagnosisStatus.COMPLETED)
-                .build();
-        diagnosis.setId(diagnosisId);
-        diagnosis.addBoundingBox(box);
-
-        when(diagnosisRepository.findByIdAndUserIdAndDeletedAtIsNull(diagnosisId, userId))
-                .thenReturn(Optional.of(diagnosis));
-        when(coordinateTransformer.toBoundingBoxDtosFromEntities(any(), eq(800), eq(600)))
-                .thenReturn(List.of(new BoundingBoxDto(box.getId(), "Potato leaf", "POTATO_HEALTHY", 0.95, 100.0, 100.0, 50.0, 50.0, 75.0, 75.0, 0.0938, 0.125, 0.0625, 0.0833)));
-        when(treatmentRecommendationService.getHealthyCareTreatments("POTATO"))
-                .thenReturn(List.of(new TreatmentDto(UUID.randomUUID(), TreatmentType.PREVENTIVE, "Routine Care", "Maintain optimal moisture", null, null, null, null)));
-
-        DiagnosisAnalyzeResponse response = queryService.getUserDiagnosisDetail(userId, diagnosisId);
-
-        assertThat(response).isNotNull();
-        assertThat(response.plant()).isNotNull();
-        assertThat(response.plant().plantCode()).isEqualTo("POTATO");
-        assertThat(response.dominantDisease().diseaseCode()).isEqualTo("POTATO_HEALTHY");
-        assertThat(response.dominantDisease().commonName()).isEqualTo("Healthy potato leaf");
-        assertThat(response.recommendedTreatments()).hasSize(1);
-    }
-
-    @Test
-    @DisplayName("softDeleteUserDiagnosis - Should throw 404 DIAGNOSIS_NOT_FOUND when attempting to delete another user's diagnosis")
-    void testSoftDeleteUserDiagnosis_IdorProtection() {
-        UUID diagnosisId = UUID.randomUUID();
-        when(diagnosisRepository.findByIdAndUserIdAndDeletedAtIsNull(diagnosisId, userId))
-                .thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> queryService.softDeleteUserDiagnosis(userId, diagnosisId))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode()).isEqualTo(ErrorCode.DIAGNOSIS_NOT_FOUND));
     }

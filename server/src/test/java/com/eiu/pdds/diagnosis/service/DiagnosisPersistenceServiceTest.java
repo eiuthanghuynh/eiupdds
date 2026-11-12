@@ -50,7 +50,7 @@ class DiagnosisPersistenceServiceTest {
         Disease disease = Disease.builder().diseaseCode("POTATO_LATE_BLIGHT").build();
         disease.setId(UUID.randomUUID());
 
-        when(diseaseRepository.findByDiseaseCode("POTATO_LATE_BLIGHT")).thenReturn(Optional.of(disease));
+        when(diseaseRepository.findByDiseaseCodeIn(any())).thenReturn(List.of(disease));
         when(diagnosisRepository.save(any(Diagnosis.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         BoundingBoxDto boxDto = new BoundingBoxDto(

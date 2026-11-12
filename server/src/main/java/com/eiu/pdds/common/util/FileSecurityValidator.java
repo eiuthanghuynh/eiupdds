@@ -23,6 +23,8 @@ import java.util.Optional;
 public final class FileSecurityValidator {
 
     public static final long MAX_FILE_SIZE_BYTES = 15L * 1024 * 1024; // 15MB
+    public static final int MAX_IMAGE_WIDTH = 8192;
+    public static final int MAX_IMAGE_HEIGHT = 8192;
 
     public record ImageDimensions(int width, int height) {
         public ImageDimensions {
@@ -60,6 +62,19 @@ public final class FileSecurityValidator {
         } catch (IOException e) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST_PAYLOAD, "Failed to read image byte stream: " + e.getMessage());
         }
+
+        try {
+            byte[] bytes = file.getBytes();
+            extractDimensions(bytes).ifPresent(dims -> {
+                if (dims.width() > MAX_IMAGE_WIDTH || dims.height() > MAX_IMAGE_HEIGHT) {
+                    throw new BusinessException(ErrorCode.INVALID_REQUEST_PAYLOAD,
+                            String.format("Image dimensions exceed maximum allowed limit of %dx%d pixels (was %dx%d)",
+                                    MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, dims.width(), dims.height()));
+                }
+            });
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_PAYLOAD, "Failed to read image byte stream: " + e.getMessage());
+        }
     }
 
     public static byte[] validateAndExtractBytes(MultipartFile file) {
@@ -81,6 +96,13 @@ public final class FileSecurityValidator {
         if (bytes.length < 12 || !isAllowedImageSignature(bytes)) {
             throw new BusinessException(ErrorCode.INVALID_FILE_TYPE);
         }
+        extractDimensions(bytes).ifPresent(dims -> {
+            if (dims.width() > MAX_IMAGE_WIDTH || dims.height() > MAX_IMAGE_HEIGHT) {
+                throw new BusinessException(ErrorCode.INVALID_REQUEST_PAYLOAD,
+                        String.format("Image dimensions exceed maximum allowed limit of %dx%d pixels (was %dx%d)",
+                                MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, dims.width(), dims.height()));
+            }
+        });
     }
 
     /**

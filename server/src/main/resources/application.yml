@@ -52,7 +52,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health
   endpoint:
     health:
       show-details: when_authorized
@@ -92,5 +92,5 @@ jwt:
 security:
   oauth2:
     google:
-      client-id: ${GOOGLE_CLIENT_ID:eiu-pdds-mobile.apps.googleusercontent.com}
+      client-ids: ${GOOGLE_CLIENT_IDS:${GOOGLE_CLIENT_ID:eiu-pdds-mobile.apps.googleusercontent.com}}
 
