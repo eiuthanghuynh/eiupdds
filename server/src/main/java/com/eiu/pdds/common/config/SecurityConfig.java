@@ -65,11 +65,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/plants/**", "/api/v1/diseases/**", "/api/v1/treatments/**").permitAll()
 
                         // 5. Admin & Expert Management RBAC
+                        .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/diseases/**", "/api/v1/treatments/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EXPERT")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/diseases/**", "/api/v1/treatments/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EXPERT")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/diseases/**", "/api/v1/treatments/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EXPERT")
 
-                        // 6. Protected Diagnosis Endpoints (Requires Authentication)
+                        // 6. Diagnosis Endpoints (Public guest inference, protected history & management)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/diagnoses/analyze").permitAll()
                         .requestMatchers("/api/v1/diagnoses/**").authenticated()
 
                         .anyRequest().authenticated()

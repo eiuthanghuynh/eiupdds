@@ -37,5 +37,7 @@ public interface DiagnosisRepository extends JpaRepository<Diagnosis, UUID>, Jpa
 
     long countByDominantDiseaseIdAndDeletedAtIsNull(UUID diseaseId);
 
+    long countByUserIdAndDeletedAtIsNull(UUID userId);
+
     List<Diagnosis> findByDeletedAtIsNullOrderByCreatedAtDesc();
 }
