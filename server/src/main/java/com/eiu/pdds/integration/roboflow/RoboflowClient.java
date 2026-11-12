@@ -9,8 +9,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -21,6 +22,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * High-performance Roboflow Serverless Workflow client built on Java 21 RestClient.
@@ -55,8 +57,7 @@ public class RoboflowClient {
             @Value("${roboflow.timeout-seconds:15}") int timeoutSeconds
     ) {
         this.objectMapper = objectMapper;
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(Duration.ofSeconds(5));
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory();
         requestFactory.setReadTimeout(Duration.ofSeconds(timeoutSeconds));
         this.restClient = restClientBuilder
                 .requestFactory(requestFactory)
@@ -140,7 +141,19 @@ public class RoboflowClient {
                 return parseWorkflowResponse(responseBody);
 
             } catch (HttpClientErrorException clientEx) {
-                // Client error (4xx): Invalid key, bad request -> DO NOT RETRY
+                if (clientEx.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS && attempt < maxRetries) {
+                    long waitTimeMs = extractRetryAfterMs(clientEx.getResponseHeaders(), attempt);
+                    log.warn("Roboflow 429 Too Many Requests on attempt {}/{}. Backing off for {} ms...",
+                            attempt + 1, maxRetries + 1, waitTimeMs);
+                    try {
+                        Thread.sleep(waitTimeMs);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new BusinessException(ErrorCode.ROBOFLOW_API_ERROR, "Interrupted during backoff");
+                    }
+                    attempt++;
+                    continue;
+                }
                 log.error("Roboflow client error [HTTP {}]: {}", clientEx.getStatusCode(), clientEx.getResponseBodyAsString());
                 throw new BusinessException(ErrorCode.ROBOFLOW_API_ERROR, "Roboflow client error: " + clientEx.getMessage());
 
@@ -174,6 +187,20 @@ public class RoboflowClient {
 
         throw new BusinessException(ErrorCode.ROBOFLOW_API_ERROR,
                 "Roboflow workflow failed after " + (maxRetries + 1) + " attempts. Last error: " + (lastException != null ? lastException.getMessage() : "Unknown"));
+    }
+
+    private long extractRetryAfterMs(HttpHeaders headers, int attempt) {
+        String retryAfter = headers != null ? headers.getFirst("Retry-After") : null;
+        if (retryAfter != null) {
+            try {
+                long seconds = Long.parseLong(retryAfter);
+                if (seconds > 0 && seconds <= 3) {
+                    return seconds * 1000L;
+                }
+            } catch (NumberFormatException ignored) {}
+        }
+        long exponentialWait = (long) (500 * Math.pow(2, attempt)) + ThreadLocalRandom.current().nextInt(100);
+        return Math.min(exponentialWait, 2000L);
     }
 
     private RoboflowWorkflowResponse.ModelOutput parseWorkflowResponse(String responseBody) {

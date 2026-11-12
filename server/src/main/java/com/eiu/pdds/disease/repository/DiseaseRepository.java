@@ -15,6 +15,8 @@ public interface DiseaseRepository extends JpaRepository<Disease, UUID>, JpaSpec
 
     Optional<Disease> findByDiseaseCode(String diseaseCode);
 
+    List<Disease> findByDiseaseCodeIn(java.util.Collection<String> diseaseCodes);
+
     Optional<Disease> findByDiseaseCodeAndDeletedAtIsNull(String diseaseCode);
 
     Optional<Disease> findByIdAndDeletedAtIsNull(UUID id);

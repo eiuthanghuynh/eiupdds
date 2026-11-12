@@ -164,6 +164,43 @@
 
 ---
 
+## Sprint 3.5: Kiểm Tra, Gia Cố Hệ Thống & Tinh Chỉnh Nền Tảng (Hardening & Refinement)
+**Mục tiêu Sprint:** Rà soát toàn bộ codebase, loại bỏ nợ kỹ thuật, gia cố độ bền vững hệ thống và chuẩn hóa kiến trúc SOLID phục vụ an toàn tuyệt đối cho Demo Phase 1 và sẵn sàng cho Edge AI (Phase 2) & Offline-First (Phase 3).
+
+- [x] **Task 3.5.1: Nâng Cấp Khóa Chính Sang UUIDv7 (RFC 9562) & Sẵn Sàng Cho Offline-First** (2h)
+  - Tích hợp thư viện siêu nhẹ `com.github.f4b6a3:uuid-creator:6.0.0` (0 transitive dependencies).
+  - Áp dụng cơ chế Idempotent Pre-persist Assignment (`@PrePersist` kiểm tra `if (this.id == null) this.id = UuidCreator.getTimeOrderedEpoch()`) trên `BaseAuditEntity`, `BoundingBox`, và `PlantDisease`.
+  - Tôn trọng và giữ nguyên ID khi Mobile Client tự sinh ngoại tuyến (trong Phase 2 & Phase 3), không can thiệp Hibernate SPI nội bộ để tránh ghi đè ID và tránh phụ thuộc framework chặt chẽ.
+  - Tối ưu hóa phân bố thứ tự thời gian trên PostgreSQL 16 B-Tree, triệt tiêu hoàn toàn hiện tượng phân mảnh chỉ mục (Page Splits).
+  - *Acceptance Criteria:* Toàn bộ entity mới tự động sinh UUIDv7 có thứ tự thời gian; hỗ trợ nhận ID ngoại tuyến nếu đã có sẵn; 100% test suite hiện tại (160/160 tests) tiếp tục PASS.
+
+- [x] **Task 3.5.2: Khả Năng Chịu Lỗi I/O, MinIO Dual-Layer Self-Healing & Roboflow Capped Backoff** (2.5h)
+  - Cơ chế tự chữa lành kép (Dual-layer Self-healing) cho MinIO:
+    - Layer 1 (Startup): `@ConditionalOnProperty(name = "storage.minio.auto-create-bucket", havingValue = "true", matchIfMissing = true)` trong `MinioConfig.java` kèm khối `try-catch` log WARN (tránh sập test suite khi thiếu MinIO container).
+    - Layer 2 (Runtime Fallback): Trong `MinioStorageServiceImpl.java`, bắt ngoại lệ `NoSuchBucketException` để tự động tạo bucket `eiu-pdds-plants` và thử lại upload 1 lần duy nhất (100% demo an toàn).
+  - RoboflowClient Resilient Capped Exponential Backoff:
+    - Bắt riêng `HttpStatus.TOO_MANY_REQUESTS` (HTTP 429) trong `RoboflowClient.java`.
+    - Trích xuất header `Retry-After` (nếu có và $\le 3\text{s}$ thì tuân thủ).
+    - Áp dụng thuật toán Capped Backoff có Jitter: `waitTimeMs = Math.min(500 * Math.pow(2, attempt) + ThreadLocalRandom.current().nextInt(100), 2000)` với `maxRetries = 2`, bảo vệ Latency Budget trên Mobile (< 3.5s tổng chờ), tránh làm đơ ứng dụng khi demo.
+  - Chuyển `RoboflowClient` RestClient sang `JdkClientHttpRequestFactory` tận dụng HTTP/2 và connection pooling chuẩn Java 21.
+  - *Acceptance Criteria:* Khởi động ứng dụng hoặc chụp ảnh khi bucket chưa có tự động tạo bucket an toàn; Roboflow bị 429 tự động phục hồi mà không làm văng HTTP 500 ra Mobile Client.
+
+- [x] **Task 3.5.3: Chuẩn Hóa Java 21 Virtual Threads & Khóa Chặt Bảo Mật Nền Tảng** (2h)
+  - Virtual Threads I/O: Cấu hình Bean `AsyncTaskExecutor` Virtual Threads (`Executors.newVirtualThreadPerTaskExecutor()`); truyền executor tường minh vào `CompletableFuture.supplyAsync()` trong `DiagnosisServiceImpl.java` để chấm dứt chiếm dụng `ForkJoinPool.commonPool()` platform threads.
+  - Bảo mật Google OAuth Đa Nền Tảng (Multi-Audience): Cấu hình danh sách `security.oauth2.google.client-ids: ${GOOGLE_CLIENT_IDS:}` trong `application.yml` hỗ trợ đồng thời Expo Mobile App (Android/iOS) và Web Admin (Next.js); chặn lỗ hổng Audience Confusion tại runtime `verifyToken` mà không làm sập server lúc khởi động máy dev/test.
+  - Khóa chặt Actuator Endpoint: Cập nhật `SecurityConfig.java` và `application.yml` chỉ mở công khai `/actuator/health` cho Docker healthcheck; khóa toàn bộ `/actuator/**` (metrics, env, beans) yêu cầu quyền `ROLE_ADMIN`.
+  - Phòng vệ DoS / Canvas Bomb trên Mobile: Bổ sung giới hạn pixel ảnh tối đa (`MAX_IMAGE_WIDTH = 8192`, `MAX_IMAGE_HEIGHT = 8192`) trong `FileSecurityValidator.java`.
+  - *Acceptance Criteria:* I/O chẩn đoán chạy 100% trên Virtual Threads; token Google của Mobile và Web đều được xác thực hợp lệ; Actuator metrics được bảo vệ.
+
+- [x] **Task 3.5.4: Tái Cấu Trúc SOLID, Khử N+1 Persistence & Hoàn Thiện HTTP Error Contract** (2.5h)
+  - Khử N+1 Query trong lưu trữ Bounding Boxes: Tối ưu hóa `DiagnosisPersistenceServiceImpl.java` gom mã bệnh và truy vấn batch 1 lần duy nhất bằng `diseaseRepository.findByDiseaseCodeIn(codes)`.
+  - Tuân thủ nguyên lý CQS (Command-Query Separation): Di chuyển `softDeleteUserDiagnosis` từ `DiagnosisQueryService` sang Facade `DiagnosisService` / `DiagnosisPersistenceService`, trả lại bản chất 100% `@Transactional(readOnly = true)` cho Query Service; cập nhật đồng bộ `DiagnosisController` và các test suites liên quan.
+  - Loại bỏ Code Smell *Long Parameter List*: Gom 13 tham số rời rạc của `DiagnosisPersistenceService.saveDiagnosis` thành Java 21 Parameter Object `record DiagnosisSaveCommand(...)`.
+  - Bổ sung HTTP Status Code chuẩn trong `GlobalExceptionHandler.java`: Bắt `HttpMessageNotReadableException` (HTTP 400 Bad Request) và `ObjectOptimisticLockingFailureException` (HTTP 409 Conflict) phục vụ giải quyết xung đột đồng bộ cho Phase 3.
+  - *Acceptance Criteria:* Pass 100% bộ kiểm thử tự động toàn diện (dự kiến ~165+ tests); triệt tiêu log N+1 query; API trả về mã lỗi HTTP 400 và 409 chuẩn RFC.
+
+---
+
 ## Sprint 4: Bảo Mật, Rate Limiting & Tối Ưu Triển Khai (Tuần 7 - 8)
 **Mục tiêu Sprint:** Bảo vệ API, tránh lãng phí quota AI và đóng gói Docker chuẩn hóa.
 
