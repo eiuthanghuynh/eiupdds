@@ -20,6 +20,6 @@ EXPOSE 8080
 ENV SPRING_PROFILES_ACTIVE=docker \
     SPRING_DEVTOOLS_RESTART_ENABLED=true
 
-# Launch directly with Maven spring-boot:run
+# Launch with Maven clean spring-boot:run to ensure stale target artifacts are purged
 # Dependencies are cached persistently in the named volume /root/.m2 across runs
-CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.jvmArguments=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"]
+CMD ["mvn", "clean", "spring-boot:run", "-Dspring-boot.run.jvmArguments=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"]

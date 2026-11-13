@@ -55,4 +55,13 @@ public interface DiagnosisIdempotencyService {
      * @param diagnosisId unique diagnosis identifier to evict
      */
     void evictByDiagnosisId(UUID diagnosisId);
+
+    /**
+     * Alias for evictByDiagnosisId (CQS & idempotency eviction).
+     *
+     * @param diagnosisId unique diagnosis identifier to evict
+     */
+    default void evictById(UUID diagnosisId) {
+        evictByDiagnosisId(diagnosisId);
+    }
 }

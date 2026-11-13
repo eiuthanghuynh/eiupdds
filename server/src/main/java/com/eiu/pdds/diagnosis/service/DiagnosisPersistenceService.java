@@ -1,5 +1,6 @@
 package com.eiu.pdds.diagnosis.service;
 
+import com.eiu.pdds.diagnosis.dto.DiagnosisSaveCommand;
 import com.eiu.pdds.diagnosis.entity.Diagnosis;
 import com.eiu.pdds.disease.entity.Disease;
 import com.eiu.pdds.dto.diagnosis.BoundingBoxDto;
@@ -14,9 +15,17 @@ import java.util.UUID;
 public interface DiagnosisPersistenceService {
 
     /**
-     * Persists a completed diagnosis transaction with cascaded bounding boxes and linked user.
+     * Primary method: Persists a completed diagnosis transaction using an encapsulated parameter object.
+     *
+     * @param command parameter object containing diagnosis metadata, leaf image attributes, and detected boxes
+     * @return persisted Diagnosis entity
      */
-    Diagnosis saveDiagnosis(
+    Diagnosis saveDiagnosis(DiagnosisSaveCommand command);
+
+    /**
+     * Backwards-compatible overload wrapping individual arguments into DiagnosisSaveCommand.
+     */
+    default Diagnosis saveDiagnosis(
             UUID userId,
             Plant plant,
             String s3ImageUrl,
@@ -30,7 +39,23 @@ public interface DiagnosisPersistenceService {
             int inferenceTimeMs,
             String rawAiJson,
             List<BoundingBoxDto> boundingBoxDtos
-    );
+    ) {
+        return saveDiagnosis(new DiagnosisSaveCommand(
+                userId,
+                plant,
+                s3ImageUrl,
+                imageWidth,
+                imageHeight,
+                latitude,
+                longitude,
+                deviceInfo,
+                dominantDiseaseEntity,
+                dominantConfidence,
+                inferenceTimeMs,
+                rawAiJson,
+                boundingBoxDtos
+        ));
+    }
 
     default Diagnosis saveDiagnosis(
             Plant plant,

@@ -11,7 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Adapter implementing GoogleTokenVerifier via Google API Client SDK.
@@ -20,21 +21,32 @@ import java.util.Collections;
 @Component
 public class GoogleTokenVerifierImpl implements GoogleTokenVerifier {
 
+    private final List<String> allowedClientIds;
     private final GoogleIdTokenVerifier verifier;
 
-    public GoogleTokenVerifierImpl(@Value("${security.oauth2.google.client-id:}") String clientId) {
+    public GoogleTokenVerifierImpl(@Value("${security.oauth2.google.client-ids:}") String rawClientIds) {
+        this.allowedClientIds = Arrays.stream(rawClientIds.split(","))
+                .map(String::trim)
+                .filter(id -> !id.isBlank())
+                .toList();
+
         GoogleIdTokenVerifier.Builder builder = new GoogleIdTokenVerifier.Builder(
                 new NetHttpTransport(),
                 GsonFactory.getDefaultInstance()
         );
-        if (clientId != null && !clientId.isBlank()) {
-            builder.setAudience(Collections.singletonList(clientId));
+        if (!this.allowedClientIds.isEmpty()) {
+            builder.setAudience(this.allowedClientIds);
         }
         this.verifier = builder.build();
     }
 
     @Override
     public GoogleUserPayload verify(String idTokenString) {
+        if (this.allowedClientIds.isEmpty()) {
+            log.error("Google OAuth2 login attempted but no client IDs configured on server");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Google login is not configured on this server");
+        }
+
         if (idTokenString == null || idTokenString.isBlank()) {
             throw new BusinessException(ErrorCode.GOOGLE_AUTH_FAILED, "Google ID token must not be null or empty");
         }

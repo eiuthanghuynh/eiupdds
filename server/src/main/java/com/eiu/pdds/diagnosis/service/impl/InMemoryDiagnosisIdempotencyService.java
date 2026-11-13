@@ -91,6 +91,11 @@ public class InMemoryDiagnosisIdempotencyService implements DiagnosisIdempotency
         }
     }
 
+    @Override
+    public void evictById(UUID diagnosisId) {
+        evictByDiagnosisId(diagnosisId);
+    }
+
     private String buildKey(UUID userId, String imageHash) {
         return (userId != null ? userId.toString() : "anon") + ":" + imageHash;
     }

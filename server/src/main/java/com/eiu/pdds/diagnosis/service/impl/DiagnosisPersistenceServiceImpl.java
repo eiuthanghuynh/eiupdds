@@ -1,5 +1,8 @@
 package com.eiu.pdds.diagnosis.service.impl;
 
+import com.eiu.pdds.common.exception.BusinessException;
+import com.eiu.pdds.common.exception.ErrorCode;
+import com.eiu.pdds.diagnosis.dto.DiagnosisSaveCommand;
 import com.eiu.pdds.diagnosis.entity.BoundingBox;
 import com.eiu.pdds.diagnosis.entity.Diagnosis;
 import com.eiu.pdds.diagnosis.entity.DiagnosisStatus;
@@ -16,8 +19,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Production implementation of DiagnosisPersistenceService (SRP).
@@ -33,43 +40,42 @@ public class DiagnosisPersistenceServiceImpl implements DiagnosisPersistenceServ
 
     @Override
     @Transactional
-    public Diagnosis saveDiagnosis(
-            UUID userId,
-            Plant plant,
-            String s3ImageUrl,
-            int imageWidth,
-            int imageHeight,
-            Double latitude,
-            Double longitude,
-            String deviceInfo,
-            Disease dominantDiseaseEntity,
-            Double dominantConfidence,
-            int inferenceTimeMs,
-            String rawAiJson,
-            List<BoundingBoxDto> boundingBoxDtos
-    ) {
-        User user = userId != null ? userRepository.getReferenceById(userId) : null;
+    public Diagnosis saveDiagnosis(DiagnosisSaveCommand command) {
+        if (command == null) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_PAYLOAD, "DiagnosisSaveCommand must not be null");
+        }
+
+        User user = command.userId() != null ? userRepository.getReferenceById(command.userId()) : null;
 
         Diagnosis diagnosis = Diagnosis.builder()
                 .user(user)
-                .plant(plant)
-                .originalImageUrl(s3ImageUrl)
-                .imageWidth(imageWidth)
-                .imageHeight(imageHeight)
-                .latitude(latitude)
-                .longitude(longitude)
-                .deviceInfo(deviceInfo)
-                .dominantDisease(dominantDiseaseEntity)
-                .dominantConfidence(dominantConfidence)
-                .inferenceTimeMs(inferenceTimeMs)
-                .rawAiResponse(rawAiJson)
+                .plant(command.plant())
+                .originalImageUrl(command.s3ImageUrl())
+                .imageWidth(command.imageWidth())
+                .imageHeight(command.imageHeight())
+                .latitude(command.latitude())
+                .longitude(command.longitude())
+                .deviceInfo(command.deviceInfo())
+                .dominantDisease(command.dominantDisease())
+                .dominantConfidence(command.dominantConfidence())
+                .inferenceTimeMs(command.inferenceTimeMs())
+                .rawAiResponse(command.rawAiJson() != null ? command.rawAiJson() : "{}")
                 .status(DiagnosisStatus.COMPLETED)
                 .build();
 
-        if (boundingBoxDtos != null) {
-            for (BoundingBoxDto boxDto : boundingBoxDtos) {
+        if (command.boundingBoxes() != null && !command.boundingBoxes().isEmpty()) {
+            Set<String> diseaseCodes = command.boundingBoxes().stream()
+                    .map(BoundingBoxDto::diseaseCode)
+                    .filter(code -> code != null && !code.endsWith("_HEALTHY"))
+                    .collect(Collectors.toSet());
+
+            Map<String, Disease> diseaseMap = diseaseCodes.isEmpty() ? Collections.emptyMap() :
+                    diseaseRepository.findByDiseaseCodeIn(diseaseCodes).stream()
+                            .collect(Collectors.toMap(Disease::getDiseaseCode, d -> d, (d1, d2) -> d1));
+
+            for (BoundingBoxDto boxDto : command.boundingBoxes()) {
                 Disease boxDisease = (boxDto.diseaseCode() != null && !boxDto.diseaseCode().endsWith("_HEALTHY"))
-                        ? diseaseRepository.findByDiseaseCode(boxDto.diseaseCode()).orElse(null)
+                        ? diseaseMap.get(boxDto.diseaseCode())
                         : null;
 
                 BoundingBox box = BoundingBox.builder()
@@ -91,5 +97,39 @@ public class DiagnosisPersistenceServiceImpl implements DiagnosisPersistenceServ
                 saved.getId(), saved.getBoundingBoxes().size());
 
         return saved;
+    }
+
+    @Override
+    @Transactional
+    public Diagnosis saveDiagnosis(
+            UUID userId,
+            Plant plant,
+            String s3ImageUrl,
+            int imageWidth,
+            int imageHeight,
+            Double latitude,
+            Double longitude,
+            String deviceInfo,
+            Disease dominantDiseaseEntity,
+            Double dominantConfidence,
+            int inferenceTimeMs,
+            String rawAiJson,
+            List<BoundingBoxDto> boundingBoxDtos
+    ) {
+        return saveDiagnosis(new DiagnosisSaveCommand(
+                userId,
+                plant,
+                s3ImageUrl,
+                imageWidth,
+                imageHeight,
+                latitude,
+                longitude,
+                deviceInfo,
+                dominantDiseaseEntity,
+                dominantConfidence,
+                inferenceTimeMs,
+                rawAiJson,
+                boundingBoxDtos
+        ));
     }
 }
