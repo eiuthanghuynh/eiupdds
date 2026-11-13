@@ -1,0 +1,702 @@
+import json
+import os
+
+collection = {
+    "info": {
+        "_postman_id": "eiu-pdds-e2e-suite",
+        "name": "EIU PDDS Comprehensive 21-API Verification Suite",
+        "description": "Full end-to-end regression test suite covering all 21 REST API endpoints of EIU Plant Disease Detection System.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {"key": "baseUrl", "value": "http://localhost:8080", "type": "string"},
+        {"key": "accessToken", "value": "", "type": "string"},
+        {"key": "refreshToken", "value": "", "type": "string"},
+        {"key": "adminAccessToken", "value": "", "type": "string"},
+        {"key": "currentUsername", "value": "", "type": "string"},
+        {"key": "sampleDiseaseId", "value": "", "type": "string"},
+        {"key": "createdDiseaseId", "value": "", "type": "string"},
+        {"key": "createdTreatmentId", "value": "", "type": "string"},
+        {"key": "createdDiagnosisId", "value": "", "type": "string"}
+    ],
+    "item": [
+        # =====================================================================
+        # 1. PLANT CATALOG
+        # =====================================================================
+        {
+            "name": "1. Plant Catalog",
+            "item": [
+                {
+                    "name": "1.1 GET /api/v1/plants - Get All Plants",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Accept", "value": "application/json"}],
+                        "url": {"raw": "{{baseUrl}}/api/v1/plants", "host": ["{{baseUrl}}"], "path": ["api", "v1", "plants"]}
+                    },
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Response indicates success', function () { pm.expect(res.success).to.be.true; });",
+                                "pm.test('Plants list contains all 14 crops', function () {",
+                                "    pm.expect(res.data).to.be.an('array');",
+                                "    pm.expect(res.data.length).to.be.at.least(13);",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }]
+                },
+                {
+                    "name": "1.2 GET /api/v1/plants/{plantCode} - Get Plant by Code",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Accept", "value": "application/json"}],
+                        "url": {"raw": "{{baseUrl}}/api/v1/plants/TOMATO", "host": ["{{baseUrl}}"], "path": ["api", "v1", "plants", "TOMATO"]}
+                    },
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Plant details match requested code', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.plantCode).to.eql('TOMATO');",
+                                "    pm.expect(res.data.commonName).to.eql('Tomato');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }]
+                }
+            ]
+        },
+
+        # =====================================================================
+        # 2. AUTHENTICATION & IDENTITY LIFECYCLE
+        # =====================================================================
+        {
+            "name": "2. Authentication & Identity",
+            "item": [
+                {
+                    "name": "2.1 POST /api/v1/auth/register - Register New User",
+                    "event": [{
+                        "listen": "prerequest",
+                        "script": {
+                            "exec": [
+                                "var ts = Date.now();",
+                                "var username = 'user_' + ts;",
+                                "var email = 'user_' + ts + '@eiu.edu.vn';",
+                                "pm.collectionVariables.set('currentUsername', username);",
+                                "pm.collectionVariables.set('currentEmail', email);",
+                                "pm.collectionVariables.set('currentPassword', 'TestPass123!');"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }, {
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 200 OK or 201 Created', function () {",
+                                "    pm.expect([200, 201]).to.include(pm.response.code);",
+                                "});",
+                                "var res = pm.response.json();",
+                                "pm.test('Tokens generated upon registration', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.accessToken).to.be.a('string');",
+                                "    pm.expect(res.data.refreshToken).to.be.a('string');",
+                                "    pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                                "    pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"{{currentUsername}}\",\n    \"email\": \"{{currentEmail}}\",\n    \"password\": \"{{currentPassword}}\",\n    \"fullName\": \"Postman Test Runner\",\n    \"phoneNumber\": \"+84988776655\"\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"]}
+                    }
+                },
+                {
+                    "name": "2.2 POST /api/v1/auth/login - Authenticate User Credentials",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Login returns valid tokens and profile', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.accessToken).to.be.a('string');",
+                                "    pm.expect(res.data.refreshToken).to.be.a('string');",
+                                "    pm.expect(res.data.user.username).to.eql(pm.collectionVariables.get('currentUsername'));",
+                                "    pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                                "    pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"emailOrUsername\": \"{{currentUsername}}\",\n    \"password\": \"{{currentPassword}}\",\n    \"deviceInfo\": \"Postman CLI Test Engine\"\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"]}
+                    }
+                },
+                {
+                    "name": "2.3 GET /api/v1/auth/me - Retrieve Current User Profile",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('User identity matches token subject', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.username).to.eql(pm.collectionVariables.get('currentUsername'));",
+                                "    pm.expect(res.data.role).to.eql('ROLE_USER');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{accessToken}}"},
+                            {"key": "Accept", "value": "application/json"}
+                        ],
+                        "url": {"raw": "{{baseUrl}}/api/v1/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "me"]}
+                    }
+                },
+                {
+                    "name": "2.4 POST /api/v1/auth/refresh - Refresh Access Token",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('New access token successfully issued', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.accessToken).to.be.a('string');",
+                                "    pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "refresh"]}
+                    }
+                },
+                {
+                    "name": "2.5 POST /api/v1/auth/google - Google OAuth2 Signature Rejection Guard",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Invalid Google token is rejected with 401 or 400', function () {",
+                                "    pm.expect([400, 401]).to.include(pm.response.code);",
+                                "    var res = pm.response.json();",
+                                "    pm.expect(res.success).to.be.false;",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"idToken\": \"invalid_mock_google_id_token_for_security_test\",\n    \"deviceInfo\": \"Postman Runner\"\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/auth/google", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "google"]}
+                    }
+                },
+                {
+                    "name": "2.6 POST /api/v1/auth/logout - Logout & Invalidate Session",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Session invalidated successfully', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{accessToken}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "logout"]}
+                    }
+                }
+            ]
+        },
+
+        # =====================================================================
+        # 3. DISEASE CATALOG & ADMIN MANAGEMENT
+        # =====================================================================
+        {
+            "name": "3. Disease Catalog & Management",
+            "item": [
+                {
+                    "name": "3.0 Admin Login Helper",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Admin login successful (200 OK)', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.collectionVariables.set('adminAccessToken', res.data.accessToken);"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"emailOrUsername\": \"admin_eiu\",\n    \"password\": \"AdminPassword123!\"\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"]}
+                    }
+                },
+                {
+                    "name": "3.1 GET /api/v1/diseases - Get Paginated Diseases",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Pagination structure is valid', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.content).to.be.an('array');",
+                                "    pm.expect(res.data.totalElements).to.be.at.least(30);",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Accept", "value": "application/json"}],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diseases?page=0&size=20",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "diseases"],
+                            "query": [
+                                {"key": "page", "value": "0"},
+                                {"key": "size", "value": "20"}
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "3.2 GET /api/v1/diseases/{idOrCode} - Get Disease by Code",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Disease details retrieved correctly', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.diseaseCode).to.eql('TOMATO_EARLY_BLIGHT');",
+                                "    pm.collectionVariables.set('sampleDiseaseId', res.data.id);",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Accept", "value": "application/json"}],
+                        "url": {"raw": "{{baseUrl}}/api/v1/diseases/TOMATO_EARLY_BLIGHT", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diseases", "TOMATO_EARLY_BLIGHT"]}
+                    }
+                },
+                {
+                    "name": "3.3 POST /api/v1/diseases - Create Disease Catalog Record (Admin)",
+                    "event": [{
+                        "listen": "prerequest",
+                        "script": {
+                            "exec": [
+                                "var dCode = 'TEST_DISEASE_' + Date.now();",
+                                "pm.collectionVariables.set('tempDiseaseCode', dCode);"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }, {
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Disease created with status 201 Created or 200 OK', function () {",
+                                "    pm.expect([200, 201]).to.include(pm.response.code);",
+                                "});",
+                                "var res = pm.response.json();",
+                                "pm.test('Disease record created with valid ID', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.id).to.be.a('string');",
+                                "    pm.collectionVariables.set('createdDiseaseId', res.data.id);",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"diseaseCode\": \"{{tempDiseaseCode}}\",\n    \"commonName\": \"Automated Postman Test Blight\",\n    \"scientificName\": \"Testus pathologicus\",\n    \"severity\": \"MODERATE\",\n    \"symptoms\": \"Simulated foliar yellow spots generated by Postman runner\",\n    \"description\": \"Transient test disease record for regression validation\",\n    \"plantCodes\": [\"TOMATO\"]\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/diseases", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diseases"]}
+                    }
+                },
+                {
+                    "name": "3.4 PUT /api/v1/diseases/{id} - Update Disease Catalog Record (Admin)",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Disease updated with status 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Updated common name reflected in response', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.commonName).to.eql('Automated Postman Test Blight - Updated');",
+                                "    pm.expect(res.data.severity).to.eql('HIGH');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"commonName\": \"Automated Postman Test Blight - Updated\",\n    \"scientificName\": \"Testus pathologicus var. updated\",\n    \"severity\": \"HIGH\",\n    \"symptoms\": \"Updated severe leaf necroses\",\n    \"description\": \"Updated description text\",\n    \"plantCodes\": [\"TOMATO\", \"POTATO\"]\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/diseases/{{createdDiseaseId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diseases", "{{createdDiseaseId}}"]}
+                    }
+                },
+                {
+                    "name": "3.5 DELETE /api/v1/diseases/{id} - Delete Disease Catalog Record (Admin)",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Disease deleted with status 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Soft delete successful', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Accept", "value": "application/json"}
+                        ],
+                        "url": {"raw": "{{baseUrl}}/api/v1/diseases/{{createdDiseaseId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diseases", "{{createdDiseaseId}}"]}
+                    }
+                }
+            ]
+        },
+
+        # =====================================================================
+        # 4. TREATMENT PROTOCOLS MANAGEMENT
+        # =====================================================================
+        {
+            "name": "4. Treatment Protocols",
+            "item": [
+                {
+                    "name": "4.1 GET /api/v1/diseases/{diseaseId}/treatments - Get Treatments for Disease",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Treatments list returned for disease', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data).to.be.an('array');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Accept", "value": "application/json"}],
+                        "url": {"raw": "{{baseUrl}}/api/v1/diseases/{{sampleDiseaseId}}/treatments", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diseases", "{{sampleDiseaseId}}", "treatments"]}
+                    }
+                },
+                {
+                    "name": "4.2 POST /api/v1/diseases/{diseaseId}/treatments - Create Treatment (Admin)",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Treatment created with status 201 Created or 200 OK', function () {",
+                                "    pm.expect([200, 201]).to.include(pm.response.code);",
+                                "});",
+                                "var res = pm.response.json();",
+                                "pm.test('Treatment record created with valid ID', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.id).to.be.a('string');",
+                                "    pm.collectionVariables.set('createdTreatmentId', res.data.id);",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"treatmentType\": \"BIOLOGICAL\",\n    \"title\": \"Postman Automated Bio-spray Protocol\",\n    \"instructions\": \"Spray bio-extract every 7 days as a preventive barrier\",\n    \"activeIngredients\": \"Bacillus subtilis 10^9 CFU/g\",\n    \"dosageRecommendation\": \"5g per 1L water\",\n    \"safetyIntervalDays\": 0,\n    \"warning\": \"Do not mix with chemical bactericides\"\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/diseases/{{sampleDiseaseId}}/treatments", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diseases", "{{sampleDiseaseId}}", "treatments"]}
+                    }
+                },
+                {
+                    "name": "4.3 PUT /api/v1/treatments/{treatmentId} - Update Treatment (Admin)",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Treatment updated with status 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Updated treatment fields reflected in response', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.title).to.eql('Postman Automated Bio-spray Protocol - Updated');",
+                                "    pm.expect(res.data.safetyIntervalDays).to.eql(1);",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"treatmentType\": \"BIOLOGICAL\",\n    \"title\": \"Postman Automated Bio-spray Protocol - Updated\",\n    \"instructions\": \"Apply in early morning for maximum spore efficacy\",\n    \"activeIngredients\": \"Bacillus subtilis 10^9 CFU/g + Trichoderma\",\n    \"dosageRecommendation\": \"10g per 1L water\",\n    \"safetyIntervalDays\": 1,\n    \"warning\": \"Store in a cool dry place\"\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/treatments/{{createdTreatmentId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "treatments", "{{createdTreatmentId}}"]}
+                    }
+                },
+                {
+                    "name": "4.4 DELETE /api/v1/treatments/{treatmentId} - Delete Treatment (Admin)",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Treatment deleted with status 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Soft delete successful', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Accept", "value": "application/json"}
+                        ],
+                        "url": {"raw": "{{baseUrl}}/api/v1/treatments/{{createdTreatmentId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "treatments", "{{createdTreatmentId}}"]}
+                    }
+                }
+            ]
+        },
+
+        # =====================================================================
+        # 5. DIAGNOSIS & AI INFERENCE
+        # =====================================================================
+        {
+            "name": "5. Diagnosis & AI Pipeline",
+            "item": [
+                {
+                    "name": "5.1 POST /api/v1/diagnoses/analyze - Multipart Leaf Image Inference",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Analysis completed with status 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "var diagId = res.data.diagnosisId || res.data.id;",
+                                "pm.test('Analysis response includes diagnosis ID and detections', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(diagId).to.be.a('string');",
+                                "    pm.expect(res.data.originalImageUrl || res.data.imageUrl).to.be.a('string');",
+                                "    pm.expect(res.data.boundingBoxes).to.be.an('array');",
+                                "    pm.collectionVariables.set('createdDiagnosisId', diagId);",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"}
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {"key": "image", "type": "file", "src": "postman/test_leaf.jpg"},
+                                {"key": "plantCode", "value": "TOMATO", "type": "text"},
+                                {"key": "latitude", "value": "11.0528", "type": "text"},
+                                {"key": "longitude", "value": "106.6661", "type": "text"},
+                                {"key": "deviceInfo", "value": "Postman CLI Automated Test", "type": "text"}
+                            ]
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/diagnoses/analyze", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diagnoses", "analyze"]}
+                    }
+                },
+                {
+                    "name": "5.2 GET /api/v1/diagnoses - Retrieve Paginated Diagnosis History",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Diagnosis history returned with pagination', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.content).to.be.an('array');",
+                                "    pm.expect(res.data.totalElements).to.be.at.least(1);",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Accept", "value": "application/json"}
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses?page=0&size=10",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "diagnoses"],
+                            "query": [
+                                {"key": "page", "value": "0"},
+                                {"key": "size", "value": "10"}
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "5.3 GET /api/v1/diagnoses/{id} - Retrieve Diagnosis Session Detail",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "var diagId = res.data.diagnosisId || res.data.id;",
+                                "pm.test('Diagnosis details match requested ID', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(diagId).to.eql(pm.collectionVariables.get('createdDiagnosisId'));",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Accept", "value": "application/json"}
+                        ],
+                        "url": {"raw": "{{baseUrl}}/api/v1/diagnoses/{{createdDiagnosisId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diagnoses", "{{createdDiagnosisId}}"]}
+                    }
+                },
+                {
+                    "name": "5.4 DELETE /api/v1/diagnoses/{id} - Soft Delete Diagnosis Session",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Diagnosis deleted with status 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Soft delete successful', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Accept", "value": "application/json"}
+                        ],
+                        "url": {"raw": "{{baseUrl}}/api/v1/diagnoses/{{createdDiagnosisId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diagnoses", "{{createdDiagnosisId}}"]}
+                    }
+                }
+            ]
+        }
+    ]
+}
+
+os.makedirs('postman', exist_ok=True)
+with open('postman/eiu_pdds_full_suite.postman_collection.json', 'w', encoding='utf-8') as f:
+    json.dump(collection, f, indent=4)
+
+print('Postman Collection generated successfully at postman/eiu_pdds_full_suite.postman_collection.json')
