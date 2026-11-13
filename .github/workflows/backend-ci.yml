@@ -7,7 +7,7 @@ on:
     paths:
       - 'server/**'
       - 'infra/**'
-      - '.github/workflows/**'
+      - '.github/**'
       - '.gitleaks.toml'
   push:
     branches:
@@ -15,12 +15,15 @@ on:
     paths:
       - 'server/**'
       - 'infra/**'
-      - '.github/workflows/**'
+      - '.github/**'
       - '.gitleaks.toml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   security-scan:
@@ -38,9 +41,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
 
+  migration-lint:
+    name: Flyway Migration Lint & Immutability Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate Flyway migration naming, versions, and immutability
+        run: bash .github/scripts/validate-migrations.sh
+
   backend-test:
     name: Backend Test and DB Verification
-    needs: security-scan
+    needs: [security-scan, migration-lint]
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -89,23 +104,13 @@ jobs:
           -Dflyway.password=test_password
           -Dflyway.locations=classpath:db/migration
 
-  docker-build-check:
-    name: Docker Build Verification
+  docker-compose-smoke-test:
+    name: Docker Compose Runtime Verification
     needs: backend-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./server
-          file: ./server/Dockerfile
-          push: false
-          tags: eiu-pdds-server:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Run Docker Compose runtime smoke test
+        run: bash .github/scripts/docker-smoke-test.sh
