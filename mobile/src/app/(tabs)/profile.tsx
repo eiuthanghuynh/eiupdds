@@ -6,6 +6,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Bell,
@@ -93,6 +94,22 @@ export default function ProfileScreen() {
                 </View>
               </View>
             </View>
+
+            {/* Quick Auth Navigation Button */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Đăng nhập hoặc Đăng ký tài khoản"
+              style={({ pressed }) => [
+                styles.authActionBtn,
+                { backgroundColor: '#CFFF74' },
+                pressed && styles.pressed,
+              ]}
+              onPress={() => router.push('/login' as any)}>
+              <ThemedText style={styles.authActionBtnText}>
+                Đăng nhập / Đổi tài khoản
+              </ThemedText>
+              <ChevronRight size={16} color="#2F3A10" />
+            </Pressable>
           </ThemedView>
 
           {/* Section: App Settings */}
@@ -717,5 +734,20 @@ const styles = StyleSheet.create({
   },
   flagEmoji: {
     fontSize: 24,
+  },
+  authActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    borderRadius: 12,
+    marginTop: Spacing.three,
+    gap: Spacing.one,
+    paddingHorizontal: Spacing.three,
+  },
+  authActionBtnText: {
+    color: '#2F3A10',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

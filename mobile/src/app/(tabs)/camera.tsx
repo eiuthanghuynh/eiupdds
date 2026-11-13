@@ -14,7 +14,6 @@ import {
 } from 'expo-camera';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
 import { router, useIsFocused } from 'expo-router';
 import {
   Camera,
@@ -31,6 +30,15 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useDiagnosis } from '@/context/DiagnosisContext';
+
+// Safe optional module import to prevent crash if native module ExpoLocation is not compiled in current binary
+let LocationModule: typeof import('expo-location') | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  LocationModule = require('expo-location');
+} catch {
+  // ExpoLocation native module not present in current binary runtime
+}
 
 export interface PhotoPreviewData {
   uri: string;
@@ -137,26 +145,28 @@ export default function CameraScreen() {
     try {
       setConfirmed(true);
 
-      // Attempt to retrieve device GPS location with timeout protection
+      // Attempt to retrieve device GPS location with timeout protection (if native module available)
       let latitude: number | undefined;
       let longitude: number | undefined;
 
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          const loc = await Promise.race([
-            Location.getCurrentPositionAsync({
-              accuracy: Location.Accuracy.Balanced,
-            }),
-            new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
-          ]);
-          if (loc && 'coords' in loc) {
-            latitude = loc.coords.latitude;
-            longitude = loc.coords.longitude;
+      if (LocationModule?.requestForegroundPermissionsAsync) {
+        try {
+          const { status } = await LocationModule.requestForegroundPermissionsAsync();
+          if (status === 'granted') {
+            const loc = await Promise.race([
+              LocationModule.getCurrentPositionAsync({
+                accuracy: LocationModule.Accuracy.Balanced,
+              }),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+            ]);
+            if (loc && 'coords' in loc) {
+              latitude = loc.coords.latitude;
+              longitude = loc.coords.longitude;
+            }
           }
+        } catch (locErr) {
+          console.warn('GPS location request failed or was skipped:', locErr);
         }
-      } catch (locErr) {
-        console.warn('GPS location request failed or was skipped:', locErr);
       }
 
       await analyzePhoto(photo.uri, { latitude, longitude });
