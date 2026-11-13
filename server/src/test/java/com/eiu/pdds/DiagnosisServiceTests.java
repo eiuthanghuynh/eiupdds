@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -243,5 +244,43 @@ class DiagnosisServiceTests {
 
         // Verify Roboflow was only called ONCE, saving API quota!
         Mockito.verify(roboflowClient, Mockito.times(1)).inferPlantDisease(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.nullable(Double.class));
+    }
+
+    @Test
+    @DisplayName("softDeleteUserDiagnosis - Should mark diagnosis as deleted and evict cache")
+    void testSoftDeleteUserDiagnosis_Success() {
+        MockMultipartFile file = new MockMultipartFile("image", "potato-delete.jpg", "image/jpeg", VALID_JPEG_BYTES);
+
+        when(storageService.uploadImage(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
+                .thenReturn("http://localhost:9000/eiu-pdds-plants/diagnoses/delete-sample.jpg");
+
+        RoboflowWorkflowResponse.ModelOutput mockOutput = new RoboflowWorkflowResponse.ModelOutput(
+                new RoboflowWorkflowResponse.ImageInfo(399, 501),
+                List.of(
+                        new RoboflowWorkflowResponse.Prediction(322.0, 426.0, 154.0, 150.0, 0.7994, 13, "Potato leaf late blight", "det-1", "image")
+                )
+        );
+
+        when(roboflowClient.inferPlantDisease(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.nullable(Double.class)))
+                .thenReturn(mockOutput);
+
+        DiagnosisAnalyzeResponse response = diagnosisService.analyzeImage(file, "POTATO", null, null, null);
+        UUID diagnosisId = response.diagnosisId();
+
+        // Perform soft delete via command service (DiagnosisService)
+        diagnosisService.softDeleteUserDiagnosis(null, diagnosisId);
+
+        Diagnosis deleted = diagnosisRepository.findById(diagnosisId).orElseThrow();
+        assertThat(deleted.isDeleted()).isTrue();
+        assertThat(deleted.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("softDeleteUserDiagnosis - Should throw 404 DIAGNOSIS_NOT_FOUND when non-existent ID")
+    void testSoftDeleteUserDiagnosis_NotFound() {
+        UUID nonExistentId = UUID.randomUUID();
+        assertThatThrownBy(() -> diagnosisService.softDeleteUserDiagnosis(null, nonExistentId))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode()).isEqualTo(ErrorCode.DIAGNOSIS_NOT_FOUND));
     }
 }

@@ -9,7 +9,6 @@ import com.eiu.pdds.diagnosis.repository.BoundingBoxRepository;
 import com.eiu.pdds.diagnosis.repository.DiagnosisRepository;
 import com.eiu.pdds.diagnosis.repository.DiagnosisSpecifications;
 import com.eiu.pdds.diagnosis.service.CoordinateTransformer;
-import com.eiu.pdds.diagnosis.service.DiagnosisIdempotencyService;
 import com.eiu.pdds.diagnosis.service.DiagnosisQueryService;
 import com.eiu.pdds.disease.entity.Disease;
 import com.eiu.pdds.disease.entity.Severity;
@@ -48,13 +47,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class DiagnosisQueryServiceImpl implements DiagnosisQueryService {
 
     private final DiagnosisRepository diagnosisRepository;
     private final BoundingBoxRepository boundingBoxRepository;
     private final CoordinateTransformer coordinateTransformer;
     private final TreatmentRecommendationService treatmentRecommendationService;
-    private final DiagnosisIdempotencyService idempotencyService;
 
     @Override
     @Transactional(readOnly = true)
@@ -126,22 +125,6 @@ public class DiagnosisQueryServiceImpl implements DiagnosisQueryService {
                 diagnosis.getStatus() != null ? diagnosis.getStatus().name() : "COMPLETED",
                 diagnosis.getCreatedAt() != null ? diagnosis.getCreatedAt() : Instant.now()
         );
-    }
-
-    @Override
-    @Transactional
-    public void softDeleteUserDiagnosis(UUID userId, UUID diagnosisId) {
-        if (userId == null || diagnosisId == null) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_PAYLOAD, "User ID and Diagnosis ID are required");
-        }
-
-        Diagnosis diagnosis = diagnosisRepository.findByIdAndUserIdAndDeletedAtIsNull(diagnosisId, userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.DIAGNOSIS_NOT_FOUND, "Diagnosis session not found or access denied"));
-
-        diagnosis.markDeleted();
-        diagnosisRepository.save(diagnosis);
-        idempotencyService.evictByDiagnosisId(diagnosisId);
-        log.info("Soft-deleted diagnosis session id='{}' for user='{}'", diagnosisId, userId);
     }
 
     private DiseaseSummaryDto resolveDominantDiseaseDto(Diagnosis diagnosis) {

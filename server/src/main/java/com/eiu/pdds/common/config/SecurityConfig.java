@@ -54,7 +54,8 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // 2. Public Healthcheck & Actuator
-                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers("/actuator/**").hasAuthority("ROLE_ADMIN")
 
                         // 3. Authentication & Profile Endpoints
                         .requestMatchers("/api/v1/auth/me").authenticated()

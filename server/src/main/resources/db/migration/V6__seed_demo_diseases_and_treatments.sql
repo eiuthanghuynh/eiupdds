@@ -16,7 +16,7 @@ VALUES
     ('11111111-1111-1111-1111-111111111109', 'GRAPE', 'Grape', 'Vitis vinifera', 'https://cdn.eiu.edu.vn/icons/grape.svg', 'Perennial woody deciduous vine producing fruit clusters for table consumption and winemaking.'),
     ('11111111-1111-1111-1111-111111111110', 'PEACH', 'Peach', 'Prunus persica', 'https://cdn.eiu.edu.vn/icons/peach.svg', 'Deciduous stone fruit tree native to Northwest China, prized for juicy edible fruit.'),
     ('11111111-1111-1111-1111-111111111112', 'SOYBEAN', 'Soybean', 'Glycine max', 'https://cdn.eiu.edu.vn/icons/soybean.svg', 'High-protein legume crop cultivated worldwide for oil production and animal feed.'),
-    ('11111111-1111-1111-1111-111111111115', 'RICE', 'Rice', 'Oryza sativa', 'https://cdn.eiu.edu.vn/icons/rice.svg', 'Primary staple cereal grain supporting global food security, cultivated predominantly in submerged paddy ecosystems.')
+    ('11111111-1111-1111-1111-111111111103', 'RICE', 'Rice', 'Oryza sativa', 'https://cdn.eiu.edu.vn/icons/rice.svg', 'Primary staple cereal grain supporting global food security, cultivated predominantly in submerged paddy ecosystems.')
 ON CONFLICT (plant_code) DO NOTHING;
 
 -- ============================================================================
@@ -95,7 +95,7 @@ VALUES
      'Devastating begomovirus transmitted exclusively by the sweetpotato whitefly (Bemisia tabaci), causing near-total crop failure when infected early.', 'CRITICAL'),
 
     -- 15. Rice Blast
-    ('22222222-2222-2222-2222-222222222240', 'RICE_BLAST', 'Rice blast', 'Magnaporthe oryzae',
+    ('22222222-2222-2222-2222-222222222205', 'RICE_BLAST', 'Rice blast', 'Magnaporthe oryzae',
      'Spindle- or diamond-shaped lesions with grayish-white necrotic centers and reddish-brown margins on leaf blades; dark rotten lesions at the panicle neck.',
      'The most destructive fungal pathology in global rice agriculture, capable of collapsing entire paddy stands and choking grain filling.', 'CRITICAL')
 ON CONFLICT (disease_code) DO NOTHING;
@@ -168,7 +168,7 @@ VALUES
      'Hot, dry seasons coinciding with heavy populations of sweetpotato whiteflies (Bemisia tabaci)'),
 
     -- Rice (RICE_BLAST)
-    ('33333333-3333-3333-3333-333333333340', '11111111-1111-1111-1111-111111111115', '22222222-2222-2222-2222-222222222240',
+    ('33333333-3333-3333-3333-333333333340', '11111111-1111-1111-1111-111111111103', '22222222-2222-2222-2222-222222222205',
      'Diamond-shaped or spindle-shaped lesions with grayish-white centers and reddish-brown borders on rice blades, causing leaf death and panicle neck blast.',
      'Cloudy rainy days with high humidity (> 90%), prolonged leaf dew, and excessive nitrogen fertilization (20-28°C)')
 ON CONFLICT (plant_id, disease_id) DO NOTHING;
@@ -489,21 +489,21 @@ VALUES
     -- ------------------------------------------------------------------------
     -- 15. RICE_BLAST Treatments (3 protocols: CHEMICAL, BIOLOGICAL, CULTURAL)
     -- ------------------------------------------------------------------------
-    ('44444444-4444-4444-4444-444444444455', '22222222-2222-2222-2222-222222222240', '11111111-1111-1111-1111-111111111115', 'CHEMICAL',
+    ('44444444-4444-4444-4444-444444444455', '22222222-2222-2222-2222-222222222205', '11111111-1111-1111-1111-111111111103', 'CHEMICAL',
      'Tricyclazole 75% WP Systemic Blast Fungicide',
      'Spray at early tillering upon first spindle leaf lesions, and spray again at 5% panicle heading to protect against catastrophic panicle neck blast.',
      'Tricyclazole 75% WP (Beam 75WP equivalent)',
      '300 - 400 g/ha in 400L water (15-20g per 16L sprayer)', 21,
      'Apply second spray at 5-10% heading regardless of weather if field has leaf blast history.'),
 
-    ('44444444-4444-4444-4444-444444444456', '22222222-2222-2222-2222-222222222240', '11111111-1111-1111-1111-111111111115', 'BIOLOGICAL',
+    ('44444444-4444-4444-4444-444444444456', '22222222-2222-2222-2222-222222222205', '11111111-1111-1111-1111-111111111103', 'BIOLOGICAL',
      'Pseudomonas fluorescens & Bacillus subtilis Bio-formulation',
      'Soak pre-germinated paddy seeds for 12 hours before broadcasting. Apply foliar bio-spray at active tillering and boot leaf stages.',
      'Pseudomonas fluorescens strain Pf-1 (min 1x10^9 CFU/g) + Bacillus subtilis',
      'Seed soak: 10g/kg seed; Foliar: 1.0 kg/ha in 400L water', 0,
      'Maintain thin water layer in paddy during biofungicide application.'),
 
-    ('44444444-4444-4444-4444-444444444457', '22222222-2222-2222-2222-222222222240', '11111111-1111-1111-1111-111111111115', 'CULTURAL',
+    ('44444444-4444-4444-4444-444444444457', '22222222-2222-2222-2222-222222222205', '11111111-1111-1111-1111-111111111103', 'CULTURAL',
      'Controlled Nitrogen Fertilization & Water Depth Management',
      'Avoid excessive or late nitrogen top-dressing. Split nitrogen into 3-4 applications with adequate potassium. Maintain continuous 5-7cm water depth during heading to moderate field microclimate.',
      NULL,
