@@ -691,6 +691,202 @@ collection = {
                     }
                 }
             ]
+        },
+
+        # =====================================================================
+        # 6. EDGE CASES & BOUNDARY GUARDS
+        # =====================================================================
+        {
+            "name": "6. Edge Cases & Boundary Guards",
+            "item": [
+                {
+                    "name": "6.1 GET /api/v1/diagnoses - Empty Filter Matching No Records",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Response structure is valid empty page', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.totalElements).to.eql(0);",
+                                "    pm.expect(res.data.content).to.be.an('array').that.is.empty;",
+                                "    pm.expect(res.data.page).to.eql(0);",
+                                "    pm.expect(res.data.size).to.eql(1);",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Accept", "value": "application/json"}
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses?plantCode=string&diseaseCode=string&status=PENDING&fromDate=2026-11-13T04:33:38.784Z&toDate=2026-11-13T04:33:38.784Z&page=0&size=1",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "diagnoses"],
+                            "query": [
+                                {"key": "plantCode", "value": "string"},
+                                {"key": "diseaseCode", "value": "string"},
+                                {"key": "status", "value": "PENDING"},
+                                {"key": "fromDate", "value": "2026-11-13T04:33:38.784Z"},
+                                {"key": "toDate", "value": "2026-11-13T04:33:38.784Z"},
+                                {"key": "page", "value": "0"},
+                                {"key": "size", "value": "1"}
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "6.2 GET /api/v1/diagnoses - Invalid Sort Property Guard",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 400 Bad Request', function () { pm.response.to.have.status(400); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Error code is REQ_001 with sort property rejection message', function () {",
+                                "    pm.expect(res.success).to.be.false;",
+                                "    pm.expect(res.code).to.eql('REQ_001');",
+                                "    pm.expect(res.message).to.include('Invalid sort property');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Accept", "value": "application/json"}
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses?sort=string",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "diagnoses"],
+                            "query": [
+                                {"key": "sort", "value": "string"}
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "6.3 GET /api/v1/diagnoses/{id} - Malformed UUID Path Parameter",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 400 Bad Request', function () { pm.response.to.have.status(400); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Error code is REQ_001 with format rejection message', function () {",
+                                "    pm.expect(res.success).to.be.false;",
+                                "    pm.expect(res.code).to.eql('REQ_001');",
+                                "    pm.expect(res.message).to.include('Invalid parameter format');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Accept", "value": "application/json"}
+                        ],
+                        "url": {"raw": "{{baseUrl}}/api/v1/diagnoses/not-a-valid-uuid", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diagnoses", "not-a-valid-uuid"]}
+                    }
+                },
+                {
+                    "name": "6.4 POST /api/v1/diseases - RBAC Security Guard (Non-Admin Rejection)",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 403 Forbidden', function () { pm.response.to.have.status(403); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Error code is AUTH_003 with access denied', function () {",
+                                "    pm.expect(res.success).to.be.false;",
+                                "    pm.expect(res.code).to.eql('AUTH_003');",
+                                "    pm.expect(res.message).to.include('Access denied');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{accessToken}}"},
+                            {"key": "Content-Type", "value": "application/json"},
+                            {"key": "Accept", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"diseaseCode\": \"UNAUTHORIZED_DISEASE\",\n    \"vietnameseName\": \"Bệnh không hợp lệ\",\n    \"englishName\": \"Unauthorized Disease\",\n    \"severity\": \"HIGH\"\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/diseases", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diseases"]}
+                    }
+                },
+                {
+                    "name": "6.5 POST /api/v1/auth/register - Validation Constraints on Empty Payload",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 400 Bad Request', function () { pm.response.to.have.status(400); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Error code is REQ_001 with field-specific validation errors', function () {",
+                                "    pm.expect(res.success).to.be.false;",
+                                "    pm.expect(res.code).to.eql('REQ_001');",
+                                "    pm.expect(res.data).to.have.property('username');",
+                                "    pm.expect(res.data).to.have.property('email');",
+                                "    pm.expect(res.data).to.have.property('password');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Content-Type", "value": "application/json"},
+                            {"key": "Accept", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"]}
+                    }
+                },
+                {
+                    "name": "6.6 GET /api/v1/diseases/{id} - Non-existent Entity Returns 404",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Status code is 404 Not Found', function () { pm.response.to.have.status(404); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Error code is RES_001', function () {",
+                                "    pm.expect(res.success).to.be.false;",
+                                "    pm.expect(res.code).to.eql('RES_001');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {"key": "Accept", "value": "application/json"}
+                        ],
+                        "url": {"raw": "{{baseUrl}}/api/v1/diseases/00000000-0000-0000-0000-000000000000", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diseases", "00000000-0000-0000-0000-000000000000"]}
+                    }
+                }
+            ]
         }
     ]
 }
