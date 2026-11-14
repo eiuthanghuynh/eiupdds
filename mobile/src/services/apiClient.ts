@@ -3,10 +3,53 @@
  * Uses native fetch with AbortController timeout & Multipart FormData support.
  */
 
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
+
 import { ApiResponse } from '@/types/diagnosis';
 
 const DEFAULT_TIMEOUT_MS = 30000;
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+
+/**
+ * Dynamically resolves the API base URL.
+ * If EXPO_PUBLIC_API_URL contains 'localhost', this automatically resolves
+ * to the computer's current Wi-Fi IP address via Expo Constants hostUri,
+ * preventing connection breakage when switching Wi-Fi networks.
+ */
+export function resolveApiBaseUrl(): string {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+
+  // If running on web, localhost is directly accessible
+  if (Platform.OS === 'web') {
+    return envUrl;
+  }
+
+  // If already pointing to an explicit remote host, return as-is
+  if (!envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    return envUrl;
+  }
+
+  // On native device/emulator:
+  // Dynamically resolve the host IP that Metro bundler is running on
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    (Constants as any).manifest2?.extra?.expoClient?.hostUri ||
+    (Constants as any).manifest?.debuggerHost;
+
+  if (hostUri) {
+    const hostIp = hostUri.split(':')[0];
+    if (hostIp && hostIp !== 'localhost' && hostIp !== '127.0.0.1') {
+      return envUrl.replace(/localhost|127\.0\.0\.1/, hostIp);
+    }
+  }
+
+  // Fallback for Android Emulator loopback if hostUri is unavailable
+  if (Platform.OS === 'android') {
+    return envUrl.replace(/localhost|127\.0\.0\.1/, '10.0.2.2');
+  }
+
+  return envUrl;
+}
 
 export class ApiError extends Error {
   code: string;
@@ -30,8 +73,10 @@ async function requestWithTimeout<T>(
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
+  const baseUrl = resolveApiBaseUrl();
+
   try {
-    const fullUrl = url.startsWith('http') ? url : `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
     const response = await fetch(fullUrl, {
       ...options,
       signal: controller.signal,
@@ -42,7 +87,16 @@ async function requestWithTimeout<T>(
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
-      const errorMessage = data?.message || `Máy chủ phản hồi mã lỗi HTTP ${response.status}`;
+      let errorMessage = data?.message;
+      if (!errorMessage && data?.error) {
+        errorMessage = data.error;
+      }
+      if (!errorMessage && data?.errors && Array.isArray(data.errors)) {
+        errorMessage = data.errors.map((e: any) => e.defaultMessage || e).join(', ');
+      }
+      if (!errorMessage) {
+        errorMessage = `Máy chủ phản hồi mã lỗi HTTP ${response.status}${response.statusText ? ` (${response.statusText})` : ''}`;
+      }
       const errorCode = data?.code || `HTTP_${response.status}`;
       throw new ApiError(errorMessage, errorCode, response.status, data);
     }
@@ -52,13 +106,17 @@ async function requestWithTimeout<T>(
     clearTimeout(timeoutId);
 
     if (error.name === 'AbortError') {
-      throw new ApiError('Quá thời gian kết nối đến máy chủ (> 15 giây). Vui lòng kiểm tra lại mạng!', 'TIMEOUT', 408);
+      throw new ApiError(
+        `Quá thời gian chờ phản hồi từ máy chủ (> ${timeoutMs / 1000}s). Vui lòng kiểm tra lại kết nối mạng!`,
+        'TIMEOUT',
+        408
+      );
     }
     if (error instanceof ApiError) {
       throw error;
     }
     throw new ApiError(
-      error.message || 'Không thể kết nối đến máy chủ Backend PDDS. Vui lòng kiểm tra mạng hoặc máy chủ.',
+      `Không thể kết nối đến máy chủ (${baseUrl}): ${error.message || 'Lỗi mạng'}. Vui lòng kiểm tra Docker backend và kết nối mạng.`,
       'CONNECTION_FAILED',
       0
     );
@@ -67,7 +125,7 @@ async function requestWithTimeout<T>(
 
 export const ApiClient = {
   getBaseUrl(): string {
-    return BASE_URL;
+    return resolveApiBaseUrl();
   },
 
   async get<T>(endpoint: string, headers: Record<string, string> = {}): Promise<ApiResponse<T>> {
