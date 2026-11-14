@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import { Colors } from '@/constants/theme';
+import { AuthProvider } from '@/context/AuthContext';
 import { DiagnosisProvider } from '@/context/DiagnosisContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { AppThemeProvider, useAppTheme } from '@/context/ThemeContext';
@@ -81,9 +82,11 @@ export default function RootLayout() {
   return (
     <AppThemeProvider>
       <LanguageProvider>
-        <DiagnosisProvider>
-          <InnerLayout />
-        </DiagnosisProvider>
+        <AuthProvider>
+          <DiagnosisProvider>
+            <InnerLayout />
+          </DiagnosisProvider>
+        </AuthProvider>
       </LanguageProvider>
     </AppThemeProvider>
   );

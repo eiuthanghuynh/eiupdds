@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import {
-  AlertCircle,
   ArrowLeft,
   CheckCircle2,
   Eye,
@@ -22,6 +21,7 @@ import {
   ShieldCheck,
   User,
   UserPlus,
+  XCircle,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -29,12 +29,14 @@ import { TitleComponent } from '@/components/common/TitleComponent';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAppTheme } from '@/context/ThemeContext';
 
 export default function RegisterScreen() {
   const { t } = useLanguage();
   const { colors, isDark } = useAppTheme();
+  const { register } = useAuth();
 
   // Form states
   const [fullName, setFullName] = useState('');
@@ -50,70 +52,152 @@ export default function RegisterScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [termsError, setTermsError] = useState(false);
   const [focusedInput, setFocusedInput] = useState<
     'fullName' | 'email' | 'phone' | 'password' | 'confirmPassword' | null
   >(null);
+  const [touched, setTouched] = useState<{
+    fullName?: boolean;
+    email?: boolean;
+    phone?: boolean;
+    password?: boolean;
+    confirmPassword?: boolean;
+  }>({});
 
-  // Calculate password strength indicator
+  // 1. Password validation criteria (Yêu cầu: số, chữ thường, chữ hoa, tối thiểu 6 ký tự)
+  const hasMinLength = password.length >= 6;
+  const hasLower = /[a-z]/.test(password);
+  const hasUpper = /[A-Z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const isPasswordValid = hasMinLength && hasLower && hasUpper && hasNumber;
+
+  // Password strength calculation
   const getPasswordStrength = () => {
     if (!password) return { level: 0, label: '', color: 'transparent' };
-    if (password.length < 6) return { level: 1, label: 'Yếu (ít hơn 6 ký tự)', color: isDark ? '#EF5350' : '#DC2626' };
-    const hasNumber = /\d/.test(password);
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    if (password.length >= 8 && hasNumber && hasSpecial) {
-      return { level: 3, label: 'Mạnh (bảo mật tối ưu)', color: isDark ? '#66BB6A' : '#2E7D32' };
+    if (!hasMinLength) {
+      return { level: 1, label: t('pwdStrengthWeak'), color: isDark ? '#EF5350' : '#DC2626' };
     }
-    return { level: 2, label: 'Trung bình', color: isDark ? '#FBBF24' : '#D97706' };
+    if (!isPasswordValid) {
+      return { level: 2, label: t('pwdStrengthModerate'), color: isDark ? '#FBBF24' : '#D97706' };
+    }
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    if (password.length >= 8 && hasSpecial) {
+      return { level: 3, label: t('pwdStrengthStrong'), color: isDark ? '#66BB6A' : '#2E7D32' };
+    }
+    return { level: 3, label: t('pwdStrengthStandard'), color: isDark ? '#66BB6A' : '#2E7D32' };
   };
 
   const strength = getPasswordStrength();
+
+  // 2. Email format & empty validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isEmailEmpty = !email.trim();
+  const isEmailFormatValid = emailRegex.test(email.trim());
+  const emailError =
+    touched.email && (isEmailEmpty ? t('emailRequired') : !isEmailFormatValid ? t('emailInvalid') : null);
+
+  // 3. Vietnam phone format validation (10 digits starting with 03, 05, 07, 08, 09 or +84)
+  const cleanPhone = phone.trim().replace(/\s+/g, '');
+  const isPhoneEmpty = !cleanPhone;
+  const isPhoneVN = /^(0|\+?84)(3|5|7|8|9)[0-9]{8}$/.test(cleanPhone);
+  const phoneError =
+    touched.phone && (isPhoneEmpty ? t('phoneRequired') : !isPhoneVN ? t('phoneInvalid') : null);
+
+  // 4. Password inline error
+  const passwordError =
+    touched.password &&
+    (!password
+      ? t('passwordRequired')
+      : !isPasswordValid
+        ? t('passwordCriteria')
+        : null);
+
+  // 5. Confirm password match validation
+  const isConfirmMatch = password === confirmPassword;
+  const confirmError =
+    touched.confirmPassword && (!confirmPassword ? t('confirmPasswordRequired') : !isConfirmMatch ? t('confirmPasswordMismatch') : null);
+
+  // 6. Full name validation
+  const fullNameError = touched.fullName && !fullName.trim() ? t('fullNameRequired') : null;
+
+  // Phone input handler: strictly numeric only (prevent alphabet letters)
+  const handlePhoneChange = (val: string) => {
+    const numericOnly = val.replace(/[^0-9+]/g, '');
+    setPhone(numericOnly);
+    if (errorMessage) setErrorMessage(null);
+  };
 
   const handleRegister = async () => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    // 1. Mandatory fields validation
-    if (!fullName.trim() || !email.trim() || !phone.trim() || !password || !confirmPassword) {
-      setErrorMessage(t('pleaseFillAllFields'));
+    // Mark all fields touched to show inline validation if empty
+    setTouched({
+      fullName: true,
+      email: true,
+      phone: true,
+      password: true,
+      confirmPassword: true,
+    });
+
+    // 1. Mandatory fields check
+    if (!fullName.trim() || isEmailEmpty || isPhoneEmpty || !password || !confirmPassword) {
+      setErrorMessage(t('fillRequiredFields'));
       return;
     }
 
     // 2. Email format check
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      setErrorMessage('Định dạng email không hợp lệ. Vui lòng kiểm tra lại.');
+    if (!isEmailFormatValid) {
+      setErrorMessage(t('emailInvalidShort'));
       return;
     }
 
-    // 3. Password length check
-    if (password.length < 6) {
-      setErrorMessage('Mật khẩu phải chứa tối thiểu 6 ký tự.');
+    // 3. Vietnam phone format check
+    if (!isPhoneVN) {
+      setErrorMessage(t('phoneInvalidShort'));
       return;
     }
 
-    // 4. Password match check
-    if (password !== confirmPassword) {
+    // 4. Password requirement check (số, chữ thường, chữ hoa)
+    if (!isPasswordValid) {
+      setErrorMessage(t('passwordCriteriaShort'));
+      return;
+    }
+
+    // 5. Password match check
+    if (!isConfirmMatch) {
       setErrorMessage(t('passwordMismatch'));
       return;
     }
 
-    // 5. Terms check
+    // 6. Policy terms agreement check
     if (!agreedToTerms) {
-      setErrorMessage(t('mustAgreeTerms'));
+      setTermsError(true);
+      setErrorMessage(t('termsNotAgreed'));
       return;
     }
 
+    // Derive unique username from email for backend requirement
+    const emailPrefix = email.trim().split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 30);
+    const username = emailPrefix.length >= 3 ? emailPrefix : `user_${Date.now().toString().slice(-6)}`;
+
     try {
       setIsLoading(true);
-      // Simulate account registration API call
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await register({
+        username,
+        email: email.trim().toLowerCase(),
+        password,
+        fullName: fullName.trim(),
+        phoneNumber: cleanPhone,
+      });
 
-      setSuccessMessage(t('registerSuccess'));
+      // API returned 201 Created: Show prominent success notification
+      setSuccessMessage(t('regSuccess'));
       setTimeout(() => {
         router.replace('/login' as any);
-      }, 900);
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Đăng ký không thành công. Vui lòng thử lại sau.');
+      }, 1500);
+    } catch {
+      setErrorMessage(t('regFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +211,7 @@ export default function RegisterScreen() {
           <View style={styles.topNavRow}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Quay lại"
+              accessibilityLabel={t('back')}
               style={({ pressed }) => [
                 styles.backButton,
                 {
@@ -174,7 +258,7 @@ export default function RegisterScreen() {
                     borderColor: isDark ? '#EF5350' : '#DC2626',
                   },
                 ]}>
-                <AlertCircle size={20} color={isDark ? '#EF5350' : '#DC2626'} />
+                <XCircle size={20} color={isDark ? '#EF5350' : '#DC2626'} />
                 <ThemedText
                   style={[styles.alertText, { color: isDark ? '#EF5350' : '#DC2626' }]}>
                   {errorMessage}
@@ -212,7 +296,7 @@ export default function RegisterScreen() {
               {/* 1. Full Name */}
               <View style={styles.fieldGroup}>
                 <ThemedText style={[styles.fieldLabel, { color: colors.text }]}>
-                  {t('fullName')}
+                  {t('fullName')} <ThemedText style={[styles.requiredStar, { color: isDark ? '#EF5350' : '#DC2626' }]}>*</ThemedText>
                 </ThemedText>
                 <View
                   style={[
@@ -220,21 +304,21 @@ export default function RegisterScreen() {
                     {
                       backgroundColor: isDark ? '#111609' : '#F7F8F1',
                       borderColor:
-                        focusedInput === 'fullName'
-                          ? isDark
-                            ? '#CFFF74'
-                            : '#2F3A10'
-                          : colors.border,
+                        fullNameError
+                          ? isDark ? '#EF5350' : '#DC2626'
+                          : focusedInput === 'fullName'
+                            ? isDark ? '#CFFF74' : '#2F3A10'
+                            : colors.border,
                     },
                   ]}>
                   <User
                     size={20}
                     color={
-                      focusedInput === 'fullName'
-                        ? isDark
-                          ? '#CFFF74'
-                          : '#2F3A10'
-                        : colors.textSecondary
+                      fullNameError
+                        ? isDark ? '#EF5350' : '#DC2626'
+                        : focusedInput === 'fullName'
+                          ? isDark ? '#CFFF74' : '#2F3A10'
+                          : colors.textSecondary
                     }
                   />
                   <TextInput
@@ -247,16 +331,24 @@ export default function RegisterScreen() {
                       if (errorMessage) setErrorMessage(null);
                     }}
                     onFocus={() => setFocusedInput('fullName')}
-                    onBlur={() => setFocusedInput(null)}
+                    onBlur={() => {
+                      setFocusedInput(null);
+                      setTouched((prev) => ({ ...prev, fullName: true }));
+                    }}
                     editable={!isLoading}
                   />
                 </View>
+                {fullNameError && (
+                  <ThemedText style={[styles.fieldInlineError, { color: isDark ? '#EF5350' : '#DC2626' }]}>
+                    {fullNameError}
+                  </ThemedText>
+                )}
               </View>
 
               {/* 2. Email */}
               <View style={styles.fieldGroup}>
                 <ThemedText style={[styles.fieldLabel, { color: colors.text }]}>
-                  Email
+                  Email <ThemedText style={[styles.requiredStar, { color: isDark ? '#EF5350' : '#DC2626' }]}>*</ThemedText>
                 </ThemedText>
                 <View
                   style={[
@@ -264,21 +356,21 @@ export default function RegisterScreen() {
                     {
                       backgroundColor: isDark ? '#111609' : '#F7F8F1',
                       borderColor:
-                        focusedInput === 'email'
-                          ? isDark
-                            ? '#CFFF74'
-                            : '#2F3A10'
-                          : colors.border,
+                        emailError
+                          ? isDark ? '#EF5350' : '#DC2626'
+                          : focusedInput === 'email'
+                            ? isDark ? '#CFFF74' : '#2F3A10'
+                            : colors.border,
                     },
                   ]}>
                   <Mail
                     size={20}
                     color={
-                      focusedInput === 'email'
-                        ? isDark
-                          ? '#CFFF74'
-                          : '#2F3A10'
-                        : colors.textSecondary
+                      emailError
+                        ? isDark ? '#EF5350' : '#DC2626'
+                        : focusedInput === 'email'
+                          ? isDark ? '#CFFF74' : '#2F3A10'
+                          : colors.textSecondary
                     }
                   />
                   <TextInput
@@ -293,16 +385,24 @@ export default function RegisterScreen() {
                     autoCapitalize="none"
                     keyboardType="email-address"
                     onFocus={() => setFocusedInput('email')}
-                    onBlur={() => setFocusedInput(null)}
+                    onBlur={() => {
+                      setFocusedInput(null);
+                      setTouched((prev) => ({ ...prev, email: true }));
+                    }}
                     editable={!isLoading}
                   />
                 </View>
+                {emailError && (
+                  <ThemedText style={[styles.fieldInlineError, { color: isDark ? '#EF5350' : '#DC2626' }]}>
+                    {emailError}
+                  </ThemedText>
+                )}
               </View>
 
               {/* 3. Phone Number */}
               <View style={styles.fieldGroup}>
                 <ThemedText style={[styles.fieldLabel, { color: colors.text }]}>
-                  {t('phoneNumber')}
+                  {t('phoneNumber')} <ThemedText style={[styles.requiredStar, { color: isDark ? '#EF5350' : '#DC2626' }]}>*</ThemedText>
                 </ThemedText>
                 <View
                   style={[
@@ -310,21 +410,21 @@ export default function RegisterScreen() {
                     {
                       backgroundColor: isDark ? '#111609' : '#F7F8F1',
                       borderColor:
-                        focusedInput === 'phone'
-                          ? isDark
-                            ? '#CFFF74'
-                            : '#2F3A10'
-                          : colors.border,
+                        phoneError
+                          ? isDark ? '#EF5350' : '#DC2626'
+                          : focusedInput === 'phone'
+                            ? isDark ? '#CFFF74' : '#2F3A10'
+                            : colors.border,
                     },
                   ]}>
                   <Phone
                     size={20}
                     color={
-                      focusedInput === 'phone'
-                        ? isDark
-                          ? '#CFFF74'
-                          : '#2F3A10'
-                        : colors.textSecondary
+                      phoneError
+                        ? isDark ? '#EF5350' : '#DC2626'
+                        : focusedInput === 'phone'
+                          ? isDark ? '#CFFF74' : '#2F3A10'
+                          : colors.textSecondary
                     }
                   />
                   <TextInput
@@ -332,22 +432,27 @@ export default function RegisterScreen() {
                     placeholder={t('phoneNumberPlaceholder')}
                     placeholderTextColor={colors.textSecondary}
                     value={phone}
-                    onChangeText={(val) => {
-                      setPhone(val);
-                      if (errorMessage) setErrorMessage(null);
-                    }}
+                    onChangeText={handlePhoneChange}
                     keyboardType="phone-pad"
                     onFocus={() => setFocusedInput('phone')}
-                    onBlur={() => setFocusedInput(null)}
+                    onBlur={() => {
+                      setFocusedInput(null);
+                      setTouched((prev) => ({ ...prev, phone: true }));
+                    }}
                     editable={!isLoading}
                   />
                 </View>
+                {phoneError && (
+                  <ThemedText style={[styles.fieldInlineError, { color: isDark ? '#EF5350' : '#DC2626' }]}>
+                    {phoneError}
+                  </ThemedText>
+                )}
               </View>
 
-              {/* 4. Password with Strength Bar */}
+              {/* 4. Password with Real-time Criteria & Strength Bar */}
               <View style={styles.fieldGroup}>
                 <ThemedText style={[styles.fieldLabel, { color: colors.text }]}>
-                  {t('password')}
+                  {t('password')} <ThemedText style={[styles.requiredStar, { color: isDark ? '#EF5350' : '#DC2626' }]}>*</ThemedText>
                 </ThemedText>
                 <View
                   style={[
@@ -355,21 +460,21 @@ export default function RegisterScreen() {
                     {
                       backgroundColor: isDark ? '#111609' : '#F7F8F1',
                       borderColor:
-                        focusedInput === 'password'
-                          ? isDark
-                            ? '#CFFF74'
-                            : '#2F3A10'
-                          : colors.border,
+                        passwordError
+                          ? isDark ? '#EF5350' : '#DC2626'
+                          : focusedInput === 'password'
+                            ? isDark ? '#CFFF74' : '#2F3A10'
+                            : colors.border,
                     },
                   ]}>
                   <Lock
                     size={20}
                     color={
-                      focusedInput === 'password'
-                        ? isDark
-                          ? '#CFFF74'
-                          : '#2F3A10'
-                        : colors.textSecondary
+                      passwordError
+                        ? isDark ? '#EF5350' : '#DC2626'
+                        : focusedInput === 'password'
+                          ? isDark ? '#CFFF74' : '#2F3A10'
+                          : colors.textSecondary
                     }
                   />
                   <TextInput
@@ -383,7 +488,10 @@ export default function RegisterScreen() {
                     }}
                     secureTextEntry={!showPassword}
                     onFocus={() => setFocusedInput('password')}
-                    onBlur={() => setFocusedInput(null)}
+                    onBlur={() => {
+                      setFocusedInput(null);
+                      setTouched((prev) => ({ ...prev, password: true }));
+                    }}
                     editable={!isLoading}
                   />
                   <Pressable
@@ -399,10 +507,72 @@ export default function RegisterScreen() {
                   </Pressable>
                 </View>
 
-                {/* Password requirement hint */}
-                <ThemedText style={[styles.fieldRequirementText, { color: colors.textSecondary }]}>
-                  Tối thiểu 6 ký tự, gồm số và ký tự đặc biệt để bảo mật tốt hơn
-                </ThemedText>
+                {/* Real-time Password Criteria Checklist */}
+                <View style={styles.criteriaContainer}>
+                  <View style={styles.criterionItem}>
+                    <CheckCircle2
+                      size={14}
+                      color={
+                        hasMinLength
+                          ? isDark ? '#66BB6A' : '#15803D'
+                          : colors.textSecondary
+                      }
+                    />
+                    <ThemedText
+                      style={[
+                        styles.criterionText,
+                        {
+                          color: hasMinLength
+                            ? isDark ? '#66BB6A' : '#15803D'
+                            : colors.textSecondary,
+                        },
+                      ]}>
+                      {t('pwdCriterionMinLength')}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.criterionItem}>
+                    <CheckCircle2
+                      size={14}
+                      color={
+                        hasLower && hasUpper
+                          ? isDark ? '#66BB6A' : '#15803D'
+                          : colors.textSecondary
+                      }
+                    />
+                    <ThemedText
+                      style={[
+                        styles.criterionText,
+                        {
+                          color: hasLower && hasUpper
+                            ? isDark ? '#66BB6A' : '#15803D'
+                            : colors.textSecondary,
+                        },
+                      ]}>
+                      {t('pwdCriterionLowerUpper')}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.criterionItem}>
+                    <CheckCircle2
+                      size={14}
+                      color={
+                        hasNumber
+                          ? isDark ? '#66BB6A' : '#15803D'
+                          : colors.textSecondary
+                      }
+                    />
+                    <ThemedText
+                      style={[
+                        styles.criterionText,
+                        {
+                          color: hasNumber
+                            ? isDark ? '#66BB6A' : '#15803D'
+                            : colors.textSecondary,
+                        },
+                      ]}>
+                      {t('pwdCriterionNumber')}
+                    </ThemedText>
+                  </View>
+                </View>
 
                 {/* Password Strength Meter */}
                 {password.length > 0 && (
@@ -441,12 +611,18 @@ export default function RegisterScreen() {
                     </ThemedText>
                   </View>
                 )}
+
+                {passwordError && (
+                  <ThemedText style={[styles.fieldInlineError, { color: isDark ? '#EF5350' : '#DC2626' }]}>
+                    {passwordError}
+                  </ThemedText>
+                )}
               </View>
 
               {/* 5. Confirm Password */}
               <View style={styles.fieldGroup}>
                 <ThemedText style={[styles.fieldLabel, { color: colors.text }]}>
-                  {t('confirmPassword')}
+                  {t('confirmPassword')} <ThemedText style={[styles.requiredStar, { color: isDark ? '#EF5350' : '#DC2626' }]}>*</ThemedText>
                 </ThemedText>
                 <View
                   style={[
@@ -454,21 +630,21 @@ export default function RegisterScreen() {
                     {
                       backgroundColor: isDark ? '#111609' : '#F7F8F1',
                       borderColor:
-                        focusedInput === 'confirmPassword'
-                          ? isDark
-                            ? '#CFFF74'
-                            : '#2F3A10'
-                          : colors.border,
+                        confirmError
+                          ? isDark ? '#EF5350' : '#DC2626'
+                          : focusedInput === 'confirmPassword'
+                            ? isDark ? '#CFFF74' : '#2F3A10'
+                            : colors.border,
                     },
                   ]}>
                   <ShieldCheck
                     size={20}
                     color={
-                      focusedInput === 'confirmPassword'
-                        ? isDark
-                          ? '#CFFF74'
-                          : '#2F3A10'
-                        : colors.textSecondary
+                      confirmError
+                        ? isDark ? '#EF5350' : '#DC2626'
+                        : focusedInput === 'confirmPassword'
+                          ? isDark ? '#CFFF74' : '#2F3A10'
+                          : colors.textSecondary
                     }
                   />
                   <TextInput
@@ -482,7 +658,10 @@ export default function RegisterScreen() {
                     }}
                     secureTextEntry={!showConfirmPassword}
                     onFocus={() => setFocusedInput('confirmPassword')}
-                    onBlur={() => setFocusedInput(null)}
+                    onBlur={() => {
+                      setFocusedInput(null);
+                      setTouched((prev) => ({ ...prev, confirmPassword: true }));
+                    }}
                     editable={!isLoading}
                   />
                   <Pressable
@@ -497,37 +676,78 @@ export default function RegisterScreen() {
                     )}
                   </Pressable>
                 </View>
+                {confirmError && (
+                  <ThemedText style={[styles.fieldInlineError, { color: isDark ? '#EF5350' : '#DC2626' }]}>
+                    {confirmError}
+                  </ThemedText>
+                )}
               </View>
 
               {/* 6. Terms & Conditions Agreement */}
-              <Pressable
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: agreedToTerms }}
-                style={styles.termsAgreementRow}
-                onPress={() => setAgreedToTerms(!agreedToTerms)}>
-                <View
-                  style={[
-                    styles.checkboxBox,
-                    {
-                      backgroundColor: agreedToTerms
-                        ? isDark
+              <View
+                style={[
+                  styles.termsWrapper,
+                  termsError && {
+                    backgroundColor: isDark ? 'rgba(239, 83, 80, 0.12)' : '#FEF2F2',
+                    borderColor: isDark ? '#EF5350' : '#DC2626',
+                    borderWidth: 1,
+                  },
+                ]}>
+                <Pressable
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: agreedToTerms }}
+                  style={styles.termsAgreementRow}
+                  onPress={() => {
+                    const nextVal = !agreedToTerms;
+                    setAgreedToTerms(nextVal);
+                    if (nextVal) {
+                      setTermsError(false);
+                    }
+                    if (errorMessage) setErrorMessage(null);
+                  }}>
+                  <View
+                    style={[
+                      styles.checkboxBox,
+                      {
+                        backgroundColor: agreedToTerms
+                          ? isDark
+                            ? '#CFFF74'
+                            : '#2F3A10'
+                          : 'transparent',
+                        borderColor: termsError
+                          ? isDark
+                            ? '#EF5350'
+                            : '#DC2626'
+                          : isDark
                           ? '#CFFF74'
-                          : '#2F3A10'
-                        : 'transparent',
-                      borderColor: isDark ? '#CFFF74' : '#2F3A10',
-                    },
-                  ]}>
-                  {agreedToTerms && (
-                    <CheckCircle2
-                      size={14}
-                      color={isDark ? '#111609' : '#ffffff'}
-                    />
-                  )}
-                </View>
-                <ThemedText style={[styles.termsText, { color: colors.text }]}>
-                  {t('termsAgreement')}
-                </ThemedText>
-              </Pressable>
+                          : '#2F3A10',
+                      },
+                    ]}>
+                    {agreedToTerms && (
+                      <CheckCircle2
+                        size={14}
+                        color={isDark ? '#111609' : '#ffffff'}
+                      />
+                    )}
+                  </View>
+                  <ThemedText style={[styles.termsText, { color: colors.text }]}>
+                    {t('termsAgreement')} <ThemedText style={[styles.requiredStar, { color: isDark ? '#EF5350' : '#DC2626' }]}>*</ThemedText>
+                  </ThemedText>
+                </Pressable>
+
+                {termsError && (
+                  <View style={styles.termsWarningBox}>
+                    <XCircle size={14} color={isDark ? '#EF5350' : '#DC2626'} />
+                    <ThemedText
+                      style={[
+                        styles.termsInlineError,
+                        { color: isDark ? '#EF5350' : '#DC2626' },
+                      ]}>
+                      {t('termsNotAgreed')}
+                    </ThemedText>
+                  </View>
+                )}
+              </View>
 
               {/* Primary CTA Button: Lime Neon Background with Dark Moss Text */}
               <Pressable
@@ -663,6 +883,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
+  requiredStar: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  fieldInlineError: {
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+    marginTop: 2,
+    paddingHorizontal: 2,
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -711,11 +942,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+  criteriaContainer: {
+    gap: 6,
+    marginTop: 6,
+    paddingHorizontal: 2,
+  },
+  criterionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  criterionText: {
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 16,
+  },
+  termsWrapper: {
+    borderRadius: 12,
+    padding: Spacing.two,
+    gap: 6,
+  },
   termsAgreementRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacing.two,
-    marginTop: Spacing.one,
   },
   checkboxBox: {
     width: 22,
@@ -731,6 +981,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     lineHeight: 18,
+  },
+  termsWarningBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+    paddingHorizontal: 4,
+  },
+  termsInlineError: {
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+    flex: 1,
   },
   primaryButton: {
     flexDirection: 'row',

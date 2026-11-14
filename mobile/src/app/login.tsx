@@ -26,12 +26,14 @@ import { TitleComponent } from '@/components/common/TitleComponent';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAppTheme } from '@/context/ThemeContext';
 
 export default function LoginScreen() {
   const { t } = useLanguage();
   const { colors, isDark } = useAppTheme();
+  const { login } = useAuth();
 
   // Form states
   const [identifier, setIdentifier] = useState('');
@@ -57,14 +59,17 @@ export default function LoginScreen() {
     }
 
     if (password.length < 6) {
-      setErrorMessage('Mật khẩu phải có tối thiểu 6 ký tự.');
+      setErrorMessage(t('passwordCriteriaShort'));
       return;
     }
 
     try {
       setIsLoading(true);
-      // Simulate authentication request
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await login({
+        emailOrUsername: identifier.trim(),
+        password: password.trim(),
+        deviceInfo: Platform.OS === 'web' ? 'Web Client' : `${Platform.OS} Mobile Client`,
+      });
 
       setSuccessMessage(t('loginSuccess'));
       setTimeout(() => {
@@ -75,7 +80,9 @@ export default function LoginScreen() {
         }
       }, 700);
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại tài khoản.');
+      const serverMessage = err?.message || t('loginFailed');
+      const serverCode = err?.code ? ` [${err.code}]` : '';
+      setErrorMessage(`${serverMessage}${serverCode}`);
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +96,7 @@ export default function LoginScreen() {
           <View style={styles.topNavRow}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Quay lại"
+              accessibilityLabel={t('back')}
               style={({ pressed }) => [
                 styles.backButton,
                 {
@@ -307,7 +314,7 @@ export default function LoginScreen() {
                   hitSlop={8}
                   style={({ pressed }) => [styles.forgotButton, pressed && styles.pressed]}
                   onPress={() => {
-                    setErrorMessage('Tính năng khôi phục mật khẩu qua SMS/Email đang được kết nối.');
+                    setErrorMessage(t('forgotPasswordNotice'));
                   }}>
                   <ThemedText style={[styles.forgotLink, { color: isDark ? '#CFFF74' : '#2F3A10' }]}>
                     {t('forgotPassword')}
