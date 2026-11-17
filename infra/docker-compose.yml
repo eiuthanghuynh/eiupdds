@@ -75,6 +75,7 @@ services:
       - eiu-pdds-network
 
   backend:
+    image: infra-backend:latest
     build:
       context: ../server
       dockerfile: Dockerfile

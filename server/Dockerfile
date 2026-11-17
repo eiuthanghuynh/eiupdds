@@ -5,18 +5,17 @@ FROM eclipse-temurin:21-jdk-alpine AS builder
 
 WORKDIR /build
 
-# Install Maven and curl for dependable, fast container packaging
-RUN apk add --no-cache maven curl
+# Copy Maven Wrapper and POM first to cache runtime/compile dependencies in CI layers
+COPY .mvn/ ./.mvn/
+COPY mvnw pom.xml ./
+RUN chmod +x mvnw && ./mvnw dependency:resolve -DincludeScope=runtime -B
 
-# Copy POM and application source code
-COPY pom.xml ./
+# Copy application source code
 COPY src/ ./src/
 
-# Compile and package using BuildKit Maven cache
-# ponytail: avoid slow mvn dependency:go-offline pulling unused test/optional plugins
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn clean package -DskipTests -B && \
-    cp target/pdds-server-*.jar /build/app.jar
+# Package and extract Spring Boot layers for incremental runtime image caching
+RUN ./mvnw clean package -DskipTests -B && \
+    java -Djarmode=tools -jar target/pdds-server-*.jar extract --layers --launcher --destination /build/extracted
 
 # ==============================================================================
 # Stage 2: Hardened Runtime stage using Eclipse Temurin JRE 21 on Alpine Linux
@@ -32,8 +31,11 @@ RUN addgroup -g 1001 -S pdds && \
 
 WORKDIR /app
 
-# Copy executable jar from builder stage with proper ownership
-COPY --from=builder --chown=pdds:pdds /build/app.jar /app/app.jar
+# Copy extracted Spring Boot layers in order of change frequency
+COPY --from=builder --chown=pdds:pdds /build/extracted/dependencies/ ./
+COPY --from=builder --chown=pdds:pdds /build/extracted/spring-boot-loader/ ./
+COPY --from=builder --chown=pdds:pdds /build/extracted/snapshot-dependencies/ ./
+COPY --from=builder --chown=pdds:pdds /build/extracted/application/ ./
 
 # Switch to non-root user
 USER pdds:pdds
@@ -49,4 +51,4 @@ ENV SPRING_PROFILES_ACTIVE=docker \
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health/liveness || exit 1
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]

@@ -57,7 +57,12 @@ docker build -f server/Dockerfile.dev -t eiu-pdds-server:dev-smoke server/
 echo "Development Dockerfile builds successfully."
 
 echo "=== [4/5] Launching Production Docker Compose Stack ==="
-docker compose -f infra/docker-compose.yml up -d --build
+if [ "${SKIP_PROD_BUILD:-0}" = "1" ]; then
+    echo "Using pre-built backend image from CI cache (SKIP_PROD_BUILD=1)."
+    docker compose -f infra/docker-compose.yml up -d
+else
+    docker compose -f infra/docker-compose.yml up -d --build
+fi
 
 echo "=== [5/5] Polling Backend Container Health (Timeout: 120s) ==="
 MAX_ATTEMPTS=24
