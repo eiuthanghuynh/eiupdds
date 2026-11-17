@@ -7,18 +7,24 @@
 set -euo pipefail
 
 CLEANUP_CALLED=0
+CREATED_ENV=0
 cleanup() {
     if [ "$CLEANUP_CALLED" -eq 0 ]; then
         CLEANUP_CALLED=1
         echo "Tearing down Docker Compose services..."
         docker compose -f infra/docker-compose.yml down -v 2>/dev/null || true
+        if [ "$CREATED_ENV" -eq 1 ]; then
+            rm -f .env
+        fi
     fi
 }
 trap cleanup EXIT INT TERM
 
 echo "=== [1/5] Preparing Test Environment Variables ==="
-# Ensure .env exists with non-empty compliant credentials
-cat << 'EOF' > .env
+# ponytail: preserve existing local .env; CI runner starts clean without one
+if [ ! -f .env ]; then
+    CREATED_ENV=1
+    cat << 'EOF' > .env
 ROBOFLOW_API_KEY=ci_smoke_test_key_for_testing_purposes
 POSTGRES_DB=eiu_pdds_db
 POSTGRES_USER=postgres
@@ -37,6 +43,9 @@ JWT_ACCESS_EXPIRATION_MS=900000
 JWT_REFRESH_EXPIRATION_MS=604800000
 GOOGLE_CLIENT_ID=ci-google-client-id-for-smoke-test.apps.googleusercontent.com
 EOF
+else
+    echo "Existing .env detected; preserving local credentials."
+fi
 
 echo "=== [2/5] Validating Docker Compose Configuration Syntax ==="
 docker compose -f infra/docker-compose.yml config --quiet

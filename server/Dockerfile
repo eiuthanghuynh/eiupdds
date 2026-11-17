@@ -8,20 +8,15 @@ WORKDIR /build
 # Install Maven and curl for dependable, fast container packaging
 RUN apk add --no-cache maven curl
 
-# Copy POM first to leverage Docker layer caching
+# Copy POM and application source code
 COPY pom.xml ./
-
-# Pre-cache Maven dependencies
-RUN mvn dependency:go-offline -B || true
-
-# Copy application source code
 COPY src/ ./src/
 
-# Compile and package application (skip unit tests for container image packaging)
-RUN mvn clean package -DskipTests -B
-
-# Copy compiled jar to standard target location
-RUN cp target/pdds-server-*.jar /build/app.jar
+# Compile and package using BuildKit Maven cache
+# ponytail: avoid slow mvn dependency:go-offline pulling unused test/optional plugins
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn clean package -DskipTests -B && \
+    cp target/pdds-server-*.jar /build/app.jar
 
 # ==============================================================================
 # Stage 2: Hardened Runtime stage using Eclipse Temurin JRE 21 on Alpine Linux
