@@ -8,7 +8,14 @@ WORKDIR /build
 # Copy Maven Wrapper and POM first to cache runtime/compile dependencies in CI layers
 COPY .mvn/ ./.mvn/
 COPY mvnw pom.xml ./
-RUN chmod +x mvnw && ./mvnw dependency:resolve -DincludeScope=runtime -B
+RUN chmod +x mvnw && \
+    for attempt in 1 2 3; do \
+        ./mvnw dependency:resolve -DincludeScope=runtime -B && break || { \
+            if [ "$attempt" -eq 3 ]; then exit 1; fi; \
+            echo "Maven wrapper/dependency resolve attempt $attempt failed; retrying in 5s..."; \
+            sleep 5; \
+        }; \
+    done
 
 # Copy application source code
 COPY src/ ./src/

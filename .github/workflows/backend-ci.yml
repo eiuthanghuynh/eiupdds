@@ -85,17 +85,17 @@ jobs:
           java-version: '21'
           cache: 'maven'
 
-      - name: Ensure Maven wrapper execution permissions
-        run: chmod +x server/mvnw
+      - name: Verify pre-installed Maven and Java 21
+        run: mvn -version
 
       - name: Run unit and integration tests
         working-directory: server
-        run: ./mvnw clean test -B
+        run: mvn clean test -B
 
       - name: Validate Flyway database migrations
         working-directory: server
         run: >-
-          ./mvnw flyway:migrate -B
+          mvn flyway:migrate -B
           -Dflyway.url=jdbc:postgresql://localhost:5432/eiu_pdds_test
           -Dflyway.user=test_user
           -Dflyway.password=test_password
