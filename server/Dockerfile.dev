@@ -5,8 +5,13 @@ FROM eclipse-temurin:21-jdk-alpine
 
 WORKDIR /app
 
-# Install Maven and curl for health probes
-RUN apk add --no-cache maven curl
+# Install curl for health probes; Maven Wrapper uses the existing JDK 21 without extra JDK packages
+RUN apk add --no-cache curl
+
+# Bake Maven Wrapper into image (only src/ and pom.xml are bind-mounted at runtime)
+COPY .mvn/ ./.mvn/
+COPY mvnw ./
+RUN chmod +x mvnw
 
 # Expose HTTP port
 EXPOSE 8080
@@ -15,6 +20,6 @@ EXPOSE 8080
 ENV SPRING_PROFILES_ACTIVE=docker \
     SPRING_DEVTOOLS_RESTART_ENABLED=true
 
-# Launch with Maven clean spring-boot:run to ensure stale target artifacts are purged
-# Dependencies are cached persistently in the named volume /root/.m2 across runs
-CMD ["mvn", "clean", "spring-boot:run", "-Dspring-boot.run.jvmArguments=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"]
+# Launch with ./mvnw clean spring-boot:run to ensure stale target artifacts are purged
+# Dependencies and wrapper distribution persist in the named volume /root/.m2 across runs
+CMD ["./mvnw", "clean", "spring-boot:run", "-Dspring-boot.run.jvmArguments=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"]

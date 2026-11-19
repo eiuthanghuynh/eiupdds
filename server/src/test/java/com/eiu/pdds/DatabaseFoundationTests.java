@@ -92,12 +92,19 @@ class DatabaseFoundationTests {
         assertNotNull(savedUser.getUpdatedAt(), "updatedAt must be populated by auditing");
         assertEquals(0L, savedUser.getVersion(), "Initial version must be 0");
         assertFalse(savedUser.isDeleted(), "Entity should not be deleted initially");
+        assertTrue(
+                userRepository.findByDeletedAtIsNull().stream().anyMatch(u -> u.getId().equals(savedUser.getId())),
+                "Active user must appear in active query"
+        );
 
         // Test soft deletion
         savedUser.markDeleted();
         User softDeletedUser = userRepository.saveAndFlush(savedUser);
         assertTrue(softDeletedUser.isDeleted(), "Entity should be marked as deleted");
-        assertTrue(userRepository.findByDeletedAtIsNull().isEmpty(), "Deleted user excluded from active query");
+        assertTrue(
+                userRepository.findByDeletedAtIsNull().stream().noneMatch(u -> u.getId().equals(softDeletedUser.getId())),
+                "Deleted user must be excluded from active query"
+        );
     }
 
     @Test

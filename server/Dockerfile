@@ -5,23 +5,24 @@ FROM eclipse-temurin:21-jdk-alpine AS builder
 
 WORKDIR /build
 
-# Install Maven and curl for dependable, fast container packaging
-RUN apk add --no-cache maven curl
-
-# Copy POM first to leverage Docker layer caching
-COPY pom.xml ./
-
-# Pre-cache Maven dependencies
-RUN mvn dependency:go-offline -B || true
+# Copy Maven Wrapper and POM first to cache runtime/compile dependencies in CI layers
+COPY .mvn/ ./.mvn/
+COPY mvnw pom.xml ./
+RUN chmod +x mvnw && \
+    for attempt in 1 2 3; do \
+        ./mvnw dependency:resolve -DincludeScope=runtime -B && break || { \
+            if [ "$attempt" -eq 3 ]; then exit 1; fi; \
+            echo "Maven wrapper/dependency resolve attempt $attempt failed; retrying in 5s..."; \
+            sleep 5; \
+        }; \
+    done
 
 # Copy application source code
 COPY src/ ./src/
 
-# Compile and package application (skip unit tests for container image packaging)
-RUN mvn clean package -DskipTests -B
-
-# Copy compiled jar to standard target location
-RUN cp target/pdds-server-*.jar /build/app.jar
+# Package and extract Spring Boot layers for incremental runtime image caching
+RUN ./mvnw clean package -DskipTests -B && \
+    java -Djarmode=tools -jar target/pdds-server-*.jar extract --layers --launcher --destination /build/extracted
 
 # ==============================================================================
 # Stage 2: Hardened Runtime stage using Eclipse Temurin JRE 21 on Alpine Linux
@@ -37,8 +38,11 @@ RUN addgroup -g 1001 -S pdds && \
 
 WORKDIR /app
 
-# Copy executable jar from builder stage with proper ownership
-COPY --from=builder --chown=pdds:pdds /build/app.jar /app/app.jar
+# Copy extracted Spring Boot layers in order of change frequency
+COPY --from=builder --chown=pdds:pdds /build/extracted/dependencies/ ./
+COPY --from=builder --chown=pdds:pdds /build/extracted/spring-boot-loader/ ./
+COPY --from=builder --chown=pdds:pdds /build/extracted/snapshot-dependencies/ ./
+COPY --from=builder --chown=pdds:pdds /build/extracted/application/ ./
 
 # Switch to non-root user
 USER pdds:pdds
@@ -54,4 +58,4 @@ ENV SPRING_PROFILES_ACTIVE=docker \
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health/liveness || exit 1
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]

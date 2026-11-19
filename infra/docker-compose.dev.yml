@@ -10,7 +10,7 @@ services:
     container_name: eiu-pdds-backend
     restart: unless-stopped
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
+      SPRING_PROFILES_ACTIVE: docker
       SPRING_DEVTOOLS_RESTART_ENABLED: "true"
       SERVER_PORT: 8080
       POSTGRES_DB: ${POSTGRES_DB:-eiu_pdds_db}
@@ -36,14 +36,14 @@ services:
       # Live volume bind mounts: any changes in src/ or pom.xml reflect immediately
       - ../server/src:/app/src
       - ../server/pom.xml:/app/pom.xml
-      - ../.env:/app/.env:ro
       - maven_dev_cache:/root/.m2
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health/liveness || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 40s
+      # ponytail: allow cold Maven download on first run; passing probe promotes to healthy immediately
+      start_period: 210s
     networks:
       - eiu-pdds-network
 
