@@ -22,7 +22,8 @@ public enum ErrorCode {
     GOOGLE_AUTH_FAILED("AUTH_007", "Google ID token verification failed", HttpStatus.UNAUTHORIZED),
     USER_NOT_FOUND("AUTH_008", "User account not found", HttpStatus.NOT_FOUND),
     USER_INACTIVE("AUTH_009", "User account is suspended or inactive", HttpStatus.FORBIDDEN),
-    CANNOT_MODIFY_OWN_ACCOUNT("AUTH_010", "Administrators cannot modify their own active status or demote their own admin role", HttpStatus.BAD_REQUEST);
+    CANNOT_MODIFY_OWN_ACCOUNT("AUTH_010", "Administrators cannot modify their own active status or demote their own admin role", HttpStatus.BAD_REQUEST),
+    RATE_LIMIT_EXCEEDED("RATE_001", "Too many requests. Please try again later.", HttpStatus.TOO_MANY_REQUESTS);
 
     private final String code;
     private final String defaultMessage;
