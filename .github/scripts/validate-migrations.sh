@@ -46,22 +46,23 @@ echo "=== [3/3] Checking Immutability of Existing Migrations ==="
 BASE_BRANCH="${GITHUB_BASE_REF:-main}"
 
 # Determine comparison target ref if in Git repository
-if git rev-parse --verify "origin/$BASE_BRANCH" >/dev/null 2>&1; then
+if git rev-parse --verify -q "origin/$BASE_BRANCH" >/dev/null 2>/dev/null; then
     COMPARE_REF="origin/$BASE_BRANCH"
-elif git rev-parse --verify "$BASE_BRANCH" >/dev/null 2>&1; then
+elif git rev-parse --verify -q "$BASE_BRANCH" >/dev/null 2>/dev/null; then
     COMPARE_REF="$BASE_BRANCH"
 else
     COMPARE_REF=""
 fi
 
 if [ -n "$COMPARE_REF" ]; then
-    # Detect modifications (M) or deletions (D) to migration files that exist on the base branch
-    MODIFIED_FILES=$(git diff --name-only --diff-filter=MD "$COMPARE_REF"...HEAD -- "$MIGRATION_DIR" || true)
+    # Disable rename detection (--no-renames) so renamed/moved migrations appear as deletions (D)
+    # and cannot bypass immutability checks; fail loudly if git diff itself errors.
+    MODIFIED_FILES=$(git diff --no-renames --name-only --diff-filter=MDT "$COMPARE_REF"...HEAD -- "$MIGRATION_DIR")
     if [ -n "$MODIFIED_FILES" ]; then
         echo "ERROR: Migrations merged to $BASE_BRANCH are immutable!"
-        echo "The following existing migration files were modified or deleted in this branch:"
+        echo "The following existing migration files were modified, deleted, or renamed in this branch:"
         for f in $MODIFIED_FILES; do
-            echo "::error file=$f::Migration file $f was modified or deleted. Merged migrations are immutable."
+            echo "::error file=$f::Migration file $f was modified, deleted, or renamed. Merged migrations are immutable."
         done
         echo "Resolution: Revert changes to existing files and create a new versioned migration instead."
         exit 1
