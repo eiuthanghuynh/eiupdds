@@ -9,6 +9,7 @@ import com.eiu.pdds.user.dto.UserDetailDto;
 import com.eiu.pdds.user.dto.UserFilter;
 import com.eiu.pdds.user.dto.UserRoleUpdateRequest;
 import com.eiu.pdds.user.dto.UserStatusUpdateRequest;
+import com.eiu.pdds.user.entity.Role;
 import com.eiu.pdds.user.entity.User;
 import com.eiu.pdds.user.entity.UserIdentity;
 import com.eiu.pdds.user.repository.UserIdentityRepository;
@@ -86,8 +87,15 @@ public class UserServiceImpl implements UserService {
                 .filter(u -> u.getDeletedAt() == null)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+        Role previousRole = targetUser.getRole();
         targetUser.setRole(request.role());
         User savedUser = userRepository.save(targetUser);
+
+        if (previousRole != request.role()) {
+            log.info("Revoking active refresh sessions after role change for user: id={}, from={}, to={}",
+                    targetUserId, previousRole, request.role());
+            refreshTokenStore.revokeAllForUser(targetUserId);
+        }
 
         log.info("Updated role for user: id={}, role={}", targetUserId, request.role());
         return toUserDetailDto(savedUser);

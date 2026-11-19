@@ -1,6 +1,8 @@
 package com.eiu.pdds.auth.security;
 
 import com.eiu.pdds.user.entity.Role;
+import com.eiu.pdds.user.entity.User;
+import com.eiu.pdds.user.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,10 +20,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Filter intercepting incoming requests to authenticate Bearer JWT Access Tokens.
+ * Filter intercepting incoming requests to authenticate Bearer JWT Access Tokens
+ * and synchronize live user role and active status from persistence.
  */
 @Slf4j
 @Component
@@ -32,6 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -45,20 +50,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 Claims claims = jwtTokenProvider.extractClaims(token);
                 UUID userId = UUID.fromString(claims.getSubject());
-                String email = claims.get("email", String.class);
-                String username = claims.get("username", String.class);
-                Role role = Role.valueOf(claims.get("role", String.class));
 
-                UserPrincipal principal = new UserPrincipal(userId, email, username, role);
+                Optional<User> activeUser = userRepository.findById(userId)
+                        .filter(u -> u.getDeletedAt() == null && Boolean.TRUE.equals(u.getIsActive()));
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        principal,
-                        null,
-                        List.of(new SimpleGrantedAuthority(role.name()))
-                );
+                if (activeUser.isEmpty()) {
+                    log.debug("Rejected JWT for inactive, deleted, or missing user: id={}", userId);
+                    SecurityContextHolder.clearContext();
+                } else {
+                    User user = activeUser.get();
+                    Role liveRole = user.getRole();
+                    UserPrincipal principal = new UserPrincipal(
+                            user.getId(),
+                            user.getEmail(),
+                            user.getUsername(),
+                            liveRole
+                    );
 
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            principal,
+                            null,
+                            List.of(new SimpleGrantedAuthority(liveRole.name()))
+                    );
+
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             } catch (Exception e) {
                 log.warn("Failed to set security context from JWT token: {}", e.getMessage());
                 SecurityContextHolder.clearContext();

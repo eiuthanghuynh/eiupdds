@@ -274,6 +274,43 @@ class UserServiceTest {
         assertThat(targetUser.getRole()).isEqualTo(Role.ROLE_EXPERT);
 
         verify(userRepository).save(targetUser);
+        verify(refreshTokenStore).revokeAllForUser(targetUserId);
+    }
+
+    @Test
+    @DisplayName("updateUserRole - Should revoke refresh tokens when demoting an administrator")
+    void testUpdateUserRole_DemoteAdmin_RevokesRefreshTokens() {
+        targetUser.setRole(Role.ROLE_ADMIN);
+        UserRoleUpdateRequest request = new UserRoleUpdateRequest(Role.ROLE_USER);
+
+        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetUser));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userIdentityRepository.findByUserId(targetUserId)).thenReturn(List.of());
+        when(diagnosisRepository.countByUserIdAndDeletedAtIsNull(targetUserId)).thenReturn(0L);
+
+        UserDetailDto updated = userService.updateUserRole(targetUserId, request, adminId);
+
+        assertThat(updated.role()).isEqualTo(Role.ROLE_USER);
+        verify(userRepository).save(targetUser);
+        verify(refreshTokenStore).revokeAllForUser(targetUserId);
+    }
+
+    @Test
+    @DisplayName("updateUserRole - Should not revoke refresh tokens when target user already has requested role")
+    void testUpdateUserRole_SameRole_DoesNotRevokeTokens() {
+        targetUser.setRole(Role.ROLE_USER);
+        UserRoleUpdateRequest request = new UserRoleUpdateRequest(Role.ROLE_USER);
+
+        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetUser));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userIdentityRepository.findByUserId(targetUserId)).thenReturn(List.of());
+        when(diagnosisRepository.countByUserIdAndDeletedAtIsNull(targetUserId)).thenReturn(0L);
+
+        UserDetailDto updated = userService.updateUserRole(targetUserId, request, adminId);
+
+        assertThat(updated.role()).isEqualTo(Role.ROLE_USER);
+        verify(userRepository).save(targetUser);
+        verify(refreshTokenStore, never()).revokeAllForUser(any());
     }
 
     @Test

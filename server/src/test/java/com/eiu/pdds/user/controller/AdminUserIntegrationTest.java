@@ -240,9 +240,10 @@ class AdminUserIntegrationTest {
     // =========================================================================
 
     @Test
-    @DisplayName("PATCH /api/v1/admin/users/{id}/status - Admin deactivates user: updates isActive to false, rejects subsequent login & refresh")
+    @DisplayName("PATCH /api/v1/admin/users/{id}/status - Admin deactivates user: updates isActive to false, blocks existing access token, login & refresh")
     void testUpdateUserStatus_LockUser_SuccessAndBlocksSubsequentAuth() throws Exception {
-        // Pre-store an active refresh token session for targetManagedUser
+        // Pre-issue an active access token and refresh token session for targetManagedUser
+        String targetAccessToken = jwtTokenProvider.generateAccessToken(targetManagedUser);
         String targetRefreshToken = jwtTokenProvider.generateRefreshTokenId();
         refreshTokenStore.store(targetRefreshToken, targetManagedUser.getId(), "Test Device", Duration.ofDays(7));
 
@@ -261,7 +262,13 @@ class AdminUserIntegrationTest {
         User updatedInDb = userRepository.findById(targetManagedUser.getId()).orElseThrow();
         assertThat(updatedInDb.getIsActive()).isFalse();
 
-        // 2. Subsequent login attempt with correct credentials must fail with 403 USER_INACTIVE (AUTH_009)
+        // 2. Previously issued access token must be rejected immediately with 401 Unauthorized
+        mockMvc.perform(get("/api/v1/auth/me")
+                        .header("Authorization", "Bearer " + targetAccessToken))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", is("AUTH_001")));
+
+        // 3. Subsequent login attempt with correct credentials must fail with 403 USER_INACTIVE (AUTH_009)
         LoginRequest loginRequest = new LoginRequest("target_farmer", "TargetPass123", "Pixel 8");
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -269,15 +276,13 @@ class AdminUserIntegrationTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code", is("AUTH_009")));
 
-        // 3. Subsequent refresh attempt must be rejected (either 403 USER_INACTIVE if session exists, or 401 INVALID_REFRESH_TOKEN if revoked)
+        // 4. Subsequent refresh attempt must be rejected with 401 INVALID_REFRESH_TOKEN
         RefreshTokenRequest refreshReq = new RefreshTokenRequest(targetRefreshToken);
         mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(refreshReq)))
-                .andExpect(result -> {
-                    int statusCode = result.getResponse().getStatus();
-                    assertThat(statusCode).isIn(401, 403);
-                });
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", is("AUTH_005")));
     }
 
     @Test
@@ -316,6 +321,49 @@ class AdminUserIntegrationTest {
 
         User updatedInDb = userRepository.findById(targetManagedUser.getId()).orElseThrow();
         assertThat(updatedInDb.getRole()).isEqualTo(Role.ROLE_EXPERT);
+    }
+
+    @Test
+    @DisplayName("PATCH /api/v1/admin/users/{id}/role - Demoted admin immediately loses admin access with existing JWT and refresh tokens are revoked")
+    void testUpdateUserRole_DemoteAdmin_ImmediatelyBlocksExistingAdminTokenAndRevokesRefresh() throws Exception {
+        User otherAdmin = createOrGetUser("other_admin", "other_admin@eiu.edu.vn", "OtherAdmin123", Role.ROLE_ADMIN, true);
+        String oldAdminAccessToken = jwtTokenProvider.generateAccessToken(otherAdmin);
+        String oldAdminRefreshToken = jwtTokenProvider.generateRefreshTokenId();
+        refreshTokenStore.store(oldAdminRefreshToken, otherAdmin.getId(), "Admin Browser", Duration.ofDays(7));
+
+        // 1. Before demotion, oldAdminAccessToken can access admin endpoint
+        mockMvc.perform(get("/api/v1/admin/users")
+                        .header("Authorization", "Bearer " + oldAdminAccessToken))
+                .andExpect(status().isOk());
+
+        // 2. Super admin demotes otherAdmin to ROLE_USER
+        UserRoleUpdateRequest demoteRequest = new UserRoleUpdateRequest(Role.ROLE_USER);
+        mockMvc.perform(patch("/api/v1/admin/users/" + otherAdmin.getId() + "/role")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(demoteRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.role", is("ROLE_USER")));
+
+        // 3. Existing access token must IMMEDIATELY receive 403 Forbidden on admin endpoint
+        mockMvc.perform(get("/api/v1/admin/users")
+                        .header("Authorization", "Bearer " + oldAdminAccessToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code", is("AUTH_003")));
+
+        // 4. Existing access token still reflects updated ROLE_USER on /api/v1/auth/me
+        mockMvc.perform(get("/api/v1/auth/me")
+                        .header("Authorization", "Bearer " + oldAdminAccessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.role", is("ROLE_USER")));
+
+        // 5. Existing refresh token must have been revoked
+        RefreshTokenRequest refreshReq = new RefreshTokenRequest(oldAdminRefreshToken);
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(refreshReq)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", is("AUTH_005")));
     }
 
     @Test
