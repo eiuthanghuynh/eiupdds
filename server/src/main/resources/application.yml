@@ -94,3 +94,15 @@ security:
     google:
       client-ids: ${GOOGLE_CLIENT_IDS:${GOOGLE_CLIENT_ID:eiu-pdds-mobile.apps.googleusercontent.com}}
 
+# Distributed Rate Limiting Config
+pdds:
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    trusted-proxies: ${RATE_LIMIT_TRUSTED_PROXIES:}
+    diagnosis-guest-limit: ${RATE_LIMIT_DIAGNOSIS_GUEST:3}
+    diagnosis-guest-window-seconds: ${RATE_LIMIT_DIAGNOSIS_GUEST_WINDOW:3600}
+    diagnosis-user-limit: ${RATE_LIMIT_DIAGNOSIS_USER:10}
+    diagnosis-user-window-seconds: ${RATE_LIMIT_DIAGNOSIS_USER_WINDOW:60}
+    auth-ip-limit: ${RATE_LIMIT_AUTH_IP:10}
+    auth-ip-window-seconds: ${RATE_LIMIT_AUTH_IP_WINDOW:60}
+

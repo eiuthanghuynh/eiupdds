@@ -3,6 +3,8 @@ package com.eiu.pdds.common.config;
 import com.eiu.pdds.auth.security.CustomAccessDeniedHandler;
 import com.eiu.pdds.auth.security.JwtAuthenticationEntryPoint;
 import com.eiu.pdds.auth.security.JwtAuthenticationFilter;
+import com.eiu.pdds.common.ratelimit.RateLimitFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +28,7 @@ public class SecurityConfig {
 
     private final CorsConfigurationSource corsConfigurationSource;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
@@ -77,7 +80,15 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class)
                 .build();
+    }
+
+    @Bean
+    public FilterRegistrationBean<RateLimitFilter> rateLimitFilterRegistration(RateLimitFilter filter) {
+        FilterRegistrationBean<RateLimitFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 }
 

@@ -27,3 +27,7 @@ jwt:
 
 roboflow:
   api-key: test-mock-roboflow-key
+
+pdds:
+  rate-limit:
+    enabled: false
