@@ -1230,6 +1230,16 @@ collection = {
                                 "pm.test('Response includes diagnosisId, treatments, and rate limit headers', function () {",
                                 "    pm.expect(res.success).to.be.true;",
                                 "    pm.expect(diagId).to.be.a('string');",
+                                "    pm.expect(res.data.imageWidth).to.be.above(0);",
+                                "    pm.expect(res.data.imageHeight).to.be.above(0);",
+                                "    pm.expect(res.data.recommendedTreatments).to.be.an('array');",
+                                "    if (res.data.boundingBoxes && res.data.boundingBoxes.length > 0) {",
+                                "        var b = res.data.boundingBoxes[0];",
+                                "        pm.expect(b.xMinNormalized).to.be.within(0, 1);",
+                                "        pm.expect(b.yMinNormalized).to.be.within(0, 1);",
+                                "        pm.expect(b.widthNormalized).to.be.within(0, 1);",
+                                "        pm.expect(b.heightNormalized).to.be.within(0, 1);",
+                                "    }",
                                 "    pm.expect(res.data.latitude).to.eql(11.0528);",
                                 "    pm.expect(pm.response.headers.get('X-RateLimit-Limit')).to.eql('10');",
                                 "    pm.expect(pm.response.headers.get('X-RateLimit-Remaining')).to.eql('9');",
@@ -1593,12 +1603,12 @@ collection = {
                     }
                 },
                 {
-                    "name": "9.6 Invalid Sort Property Returns 400 REQ_001",
+                    "name": "9.6 GET /api/v1/admin/users - Invalid Sort Property Returns 400 REQ_001",
                     "event": [{
                         "listen": "test",
                         "script": {
                             "exec": [
-                                "pm.test('Invalid sort field returns 400 REQ_001 instead of 500', function () {",
+                                "pm.test('Invalid sort field on admin users returns 400 REQ_001', function () {",
                                 "    pm.response.to.have.status(400);",
                                 "    var res = pm.response.json();",
                                 "    pm.expect(res.success).to.be.false;",
@@ -1611,24 +1621,303 @@ collection = {
                     "request": {
                         "method": "GET",
                         "header": [
-                            {"key": "Authorization", "value": "Bearer {{accessToken}}"},
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
                             {"key": "Accept", "value": "application/json"}
                         ],
                         "url": {
-                            "raw": "{{baseUrl}}/api/v1/diagnoses?sort=nonExistentField,desc",
+                            "raw": "{{baseUrl}}/api/v1/admin/users?sort=nonExistentField,desc",
                             "host": ["{{baseUrl}}"],
-                            "path": ["api", "v1", "diagnoses"],
+                            "path": ["api", "v1", "admin", "users"],
                             "query": [{"key": "sort", "value": "nonExistentField,desc"}]
                         }
                     }
                 },
                 {
-                    "name": "9.7 Invalid UUID Path Parameter Returns 400 REQ_001",
+                    "name": "9.7 GET /api/v1/admin/users - Filter by Keyword, Role & Active Status",
                     "event": [{
                         "listen": "test",
                         "script": {
                             "exec": [
-                                "pm.test('Invalid UUID format returns 400 REQ_001', function () {",
+                                "pm.test('Filtered admin user query returns 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Filter isolates admin_eiu account accurately', function () {",
+                                "    pm.expect(res.data.totalElements).to.be.at.least(1);",
+                                "    pm.expect(res.data.content[0].username).to.eql('admin_eiu');",
+                                "    pm.expect(res.data.content[0].role).to.eql('ROLE_ADMIN');",
+                                "    pm.expect(res.data.content[0].isActive).to.be.true;",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{adminAccessToken}}"}],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/admin/users?keyword=admin_eiu&role=ROLE_ADMIN&isActive=true",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "admin", "users"],
+                            "query": [
+                                {"key": "keyword", "value": "admin_eiu"},
+                                {"key": "role", "value": "ROLE_ADMIN"},
+                                {"key": "isActive", "value": "true"}
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        # =====================================================================
+        # 10. PR #4 & #5 CATALOG FILTERS, CONSTRAINTS & HISTORY COVERAGE
+        # =====================================================================
+        {
+            "name": "10. Catalog Filters, Constraints & History Coverage",
+            "item": [
+                {
+                    "name": "10.1 GET /api/v1/diseases - Filter by Keyword, Plant & Unpaged Mode",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Filtered disease catalog returns 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Unpaged filtered result matches TOMATO blight entries', function () {",
+                                "    pm.expect(res.success).to.be.true;",
+                                "    pm.expect(res.data.content).to.be.an('array').and.not.be.empty;",
+                                "    var codes = res.data.content.map(function (d) { return d.diseaseCode; });",
+                                "    pm.expect(codes).to.include('TOMATO_EARLY_BLIGHT');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Accept", "value": "application/json"}],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diseases?keyword=blight&plantCode=TOMATO&unpaged=true",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "diseases"],
+                            "query": [
+                                {"key": "keyword", "value": "blight"},
+                                {"key": "plantCode", "value": "TOMATO"},
+                                {"key": "unpaged", "value": "true"}
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "10.2 GET /api/v1/diseases/{uuid} - Dual Lookup by UUID",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('UUID lookup returns 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.expect(res.data.diseaseCode).to.eql('TOMATO_EARLY_BLIGHT');"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Accept", "value": "application/json"}],
+                        "url": {"raw": "{{baseUrl}}/api/v1/diseases/{{sampleDiseaseId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diseases", "{{sampleDiseaseId}}"]}
+                    }
+                },
+                {
+                    "name": "10.3 GET /api/v1/plants/{plantCode} - Non-Existent Crop Returns 404 RES_001",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Missing plant code returns 404 RES_001', function () {",
+                                "    pm.response.to.have.status(404);",
+                                "    var res = pm.response.json();",
+                                "    pm.expect(res.success).to.be.false;",
+                                "    pm.expect(res.code).to.eql('RES_001');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Accept", "value": "application/json"}],
+                        "url": {"raw": "{{baseUrl}}/api/v1/plants/NON_EXISTENT_CROP", "host": ["{{baseUrl}}"], "path": ["api", "v1", "plants", "NON_EXISTENT_CROP"]}
+                    }
+                },
+                {
+                    "name": "10.4 POST /api/v1/diseases - Duplicate Disease Code Returns 409 RES_002",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Duplicate disease code returns 409 RES_002', function () {",
+                                "    pm.response.to.have.status(409);",
+                                "    var res = pm.response.json();",
+                                "    pm.expect(res.success).to.be.false;",
+                                "    pm.expect(res.code).to.eql('RES_002');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"diseaseCode\": \"TOMATO_EARLY_BLIGHT\",\n    \"commonName\": \"Duplicate Test Disease\",\n    \"severity\": \"LOW\"\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/diseases", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diseases"]}
+                    }
+                },
+                {
+                    "name": "10.5 GET /api/v1/diseases/{id}/treatments?treatmentType=CHEMICAL - Filter by Type",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Filtered treatments query returns 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('All returned treatments have type CHEMICAL', function () {",
+                                "    pm.expect(res.data).to.be.an('array');",
+                                "    res.data.forEach(function (t) { pm.expect(t.treatmentType).to.eql('CHEMICAL'); });",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Accept", "value": "application/json"}],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diseases/{{sampleDiseaseId}}/treatments?treatmentType=CHEMICAL",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "diseases", "{{sampleDiseaseId}}", "treatments"],
+                            "query": [{"key": "treatmentType", "value": "CHEMICAL"}]
+                        }
+                    }
+                },
+                {
+                    "name": "10.6 POST /api/v1/diseases/{id}/treatments - ROLE_USER Forbidden (403 AUTH_003)",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('ROLE_USER blocked from creating treatment (403 AUTH_003)', function () {",
+                                "    pm.response.to.have.status(403);",
+                                "    var res = pm.response.json();",
+                                "    pm.expect(res.code).to.eql('AUTH_003');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{accessToken}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"treatmentType\": \"BIOLOGICAL\",\n    \"title\": \"Unauthorized Treatment\",\n    \"instructions\": \"Blocked by RBAC\"\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/diseases/{{sampleDiseaseId}}/treatments", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diseases", "{{sampleDiseaseId}}", "treatments"]}
+                    }
+                },
+                {
+                    "name": "10.7 PUT /api/v1/treatments/{id} - Missing Treatment Returns 404 RES_001",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Updating non-existent treatment returns 404 RES_001', function () {",
+                                "    pm.response.to.have.status(404);",
+                                "    var res = pm.response.json();",
+                                "    pm.expect(res.code).to.eql('RES_001');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+                            {"key": "Content-Type", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"treatmentType\": \"PREVENTIVE\",\n    \"title\": \"Non Existent Treatment\",\n    \"instructions\": \"Should fail 404\"\n}"
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/treatments/00000000-0000-0000-0000-000000000000", "host": ["{{baseUrl}}"], "path": ["api", "v1", "treatments", "00000000-0000-0000-0000-000000000000"]}
+                    }
+                },
+                {
+                    "name": "10.8 GET /api/v1/diagnoses - Unauthenticated History Rejected (401 AUTH_001)",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Unauthenticated diagnosis history returns 401 AUTH_001', function () {",
+                                "    pm.response.to.have.status(401);",
+                                "    var res = pm.response.json();",
+                                "    pm.expect(res.code).to.eql('AUTH_001');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Accept", "value": "application/json"}],
+                        "url": {"raw": "{{baseUrl}}/api/v1/diagnoses", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diagnoses"]}
+                    }
+                },
+                {
+                    "name": "10.9 GET /api/v1/diagnoses - Positive History Filter Match (plantCode & status)",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Positive filtered diagnosis history returns 200 OK', function () { pm.response.to.have.status(200); });",
+                                "var res = pm.response.json();",
+                                "pm.test('Filtered page matches user COMPLETED TOMATO diagnosis', function () {",
+                                "    pm.expect(res.data.totalElements).to.be.at.least(1);",
+                                "    pm.expect(res.data.content[0].status).to.eql('COMPLETED');",
+                                "    pm.expect(res.data.content[0].plant.plantCode).to.eql('TOMATO');",
+                                "});"
+                            ],
+                            "type": "text/javascript"
+                        }
+                    }],
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses?plantCode=TOMATO&status=COMPLETED",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "diagnoses"],
+                            "query": [
+                                {"key": "plantCode", "value": "TOMATO"},
+                                {"key": "status", "value": "COMPLETED"}
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "10.10 POST /api/v1/diagnoses/analyze - Missing Image Multipart Rejected (400 REQ_001)",
+                    "event": [{
+                        "listen": "test",
+                        "script": {
+                            "exec": [
+                                "pm.test('Missing image field returns 400 REQ_001', function () {",
                                 "    pm.response.to.have.status(400);",
                                 "    var res = pm.response.json();",
                                 "    pm.expect(res.success).to.be.false;",
@@ -1639,40 +1928,27 @@ collection = {
                         }
                     }],
                     "request": {
-                        "method": "GET",
-                        "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}],
-                        "url": {"raw": "{{baseUrl}}/api/v1/diagnoses/not-a-valid-uuid", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diagnoses", "not-a-valid-uuid"]}
-                    }
-                },
-                {
-                    "name": "9.8 GET /api/v1/plants/TOMATO - Public Plant Detail Lookup",
-                    "event": [{
-                        "listen": "test",
-                        "script": {
-                            "exec": [
-                                "pm.test('Plant detail by code returns 200 OK', function () { pm.response.to.have.status(200); });",
-                                "var res = pm.response.json();",
-                                "pm.expect(res.data.plantCode).to.eql('TOMATO');"
-                            ],
-                            "type": "text/javascript"
-                        }
-                    }],
-                    "request": {
-                        "method": "GET",
-                        "header": [{"key": "Accept", "value": "application/json"}],
-                        "url": {"raw": "{{baseUrl}}/api/v1/plants/TOMATO", "host": ["{{baseUrl}}"], "path": ["api", "v1", "plants", "TOMATO"]}
+                        "method": "POST",
+                        "header": [{"key": "Authorization", "value": "Bearer {{adminAccessToken}}"}],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {"key": "plantCode", "value": "TOMATO", "type": "text"}
+                            ]
+                        },
+                        "url": {"raw": "{{baseUrl}}/api/v1/diagnoses/analyze", "host": ["{{baseUrl}}"], "path": ["api", "v1", "diagnoses", "analyze"]}
                     }
                 }
             ]
         },
         # =====================================================================
-        # 10. TOKEN REUSE REPLAY ATTACK (AUTH_006) & AUTH RATE LIMIT (429 RATE_001)
+        # 11. TOKEN REUSE REPLAY ATTACK (AUTH_006) & AUTH RATE LIMIT (429 RATE_001)
         # =====================================================================
         {
-            "name": "10. Token Reuse Detection & Auth Rate Limit",
+            "name": "11. Token Reuse Detection & Auth Rate Limit",
             "item": [
                 {
-                    "name": "10.1 POST /api/v1/auth/login - Fresh Session for Replay Test (Auth 8/10)",
+                    "name": "11.1 POST /api/v1/auth/login - Fresh Session for Replay Test (Auth 8/10)",
                     "event": [{
                         "listen": "test",
                         "script": {
@@ -1695,7 +1971,7 @@ collection = {
                     }
                 },
                 {
-                    "name": "10.2 POST /api/v1/auth/refresh - Consume & Rotate Refresh Token (Auth 9/10)",
+                    "name": "11.2 POST /api/v1/auth/refresh - Consume & Rotate Refresh Token (Auth 9/10)",
                     "event": [{
                         "listen": "test",
                         "script": {
@@ -1719,7 +1995,7 @@ collection = {
                     }
                 },
                 {
-                    "name": "10.3 POST /api/v1/auth/refresh - Replay Consumed Token Triggers AUTH_006 (Auth 10/10)",
+                    "name": "11.3 POST /api/v1/auth/refresh - Replay Consumed Token Triggers AUTH_006 (Auth 10/10)",
                     "event": [{
                         "listen": "test",
                         "script": {
@@ -1745,7 +2021,7 @@ collection = {
                     }
                 },
                 {
-                    "name": "10.4 POST /api/v1/auth/login - Brute-Force Exceeds 10/min Limit (429 RATE_001)",
+                    "name": "11.4 POST /api/v1/auth/login - Brute-Force Exceeds 10/min Limit (429 RATE_001)",
                     "event": [{
                         "listen": "test",
                         "script": {
@@ -1776,7 +2052,7 @@ collection = {
                     }
                 },
                 {
-                    "name": "10.5 GET /api/v1/auth/me - GET Exempt From Auth POST Rate Limit (200 OK)",
+                    "name": "11.5 GET /api/v1/auth/me - GET Exempt From Auth POST Rate Limit (200 OK)",
                     "event": [{
                         "listen": "test",
                         "script": {
