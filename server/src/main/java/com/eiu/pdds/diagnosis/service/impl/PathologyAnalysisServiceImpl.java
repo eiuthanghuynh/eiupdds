@@ -43,8 +43,8 @@ public class PathologyAnalysisServiceImpl implements PathologyAnalysisService {
     @Override
     public PathologyResolution resolvePathology(List<DetectedObject> detections, String plantCodeHint) {
         if (detections == null || detections.isEmpty()) {
-            Plant plant = resolvePlant(plantCodeHint, null);
-            return PathologyResolution.empty(plant);
+            log.warn("No plant leaf or disease detections returned by AI inference (plantCodeHint='{}')", plantCodeHint);
+            throw new BusinessException(ErrorCode.NO_DETECTION_FOUND);
         }
 
         // 1. Dominant Pathology Resolution (Max Confidence detection)

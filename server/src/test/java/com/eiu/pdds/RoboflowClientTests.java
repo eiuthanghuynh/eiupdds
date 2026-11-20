@@ -15,6 +15,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
@@ -158,5 +160,31 @@ class RoboflowClientTests {
 
         // Verifies mockServer was only called once (no retries attempted on 4xx)
         mockServer.verify();
+    }
+
+    @Test
+    @DisplayName("Should throw NO_DETECTION_FOUND (422) when Roboflow returns empty JSON shapes ({}, [], outputs:[], empty item)")
+    void testEmptyJsonResponsesThrowNoDetectionFound() {
+        List<String> emptyPayloads = List.of(
+                "{}",
+                "[]",
+                "{\"outputs\": []}",
+                "{\"outputs\": [{}]}"
+        );
+
+        byte[] fakeImageBytes = new byte[]{1, 2, 3, 4};
+        for (String payload : emptyPayloads) {
+            mockServer.reset();
+            mockServer.expect(requestTo(TARGET_URL))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess(payload, MediaType.APPLICATION_JSON));
+
+            assertThatThrownBy(() -> roboflowClient.inferPlantDisease(fakeImageBytes, 0.4))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
+                            .isEqualTo(ErrorCode.NO_DETECTION_FOUND));
+
+            mockServer.verify();
+        }
     }
 }

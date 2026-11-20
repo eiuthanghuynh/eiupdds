@@ -64,6 +64,10 @@ public class DiagnosisController {
                     description = "Unauthorized - Missing or invalid JWT bearer token"
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "422",
+                    description = "Unprocessable Entity (DIAGNOSIS_003) - No leaf or disease detected; prompt user to retake photo"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "429",
                     description = "Too Many Requests - Rate limit exceeded"
             )

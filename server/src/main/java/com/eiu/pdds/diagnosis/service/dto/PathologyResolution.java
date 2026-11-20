@@ -17,7 +17,4 @@ public record PathologyResolution(
         List<DiseaseSummaryDto> coOccurringDiseases,
         Plant plantEntity
 ) {
-    public static PathologyResolution empty(Plant plant) {
-        return new PathologyResolution(null, null, null, false, List.of(), plant);
-    }
 }

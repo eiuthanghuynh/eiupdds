@@ -210,4 +210,18 @@ class PathologyAnalysisServiceTest {
         verify(diseaseRepository, never()).findByDiseaseCode("POTATO_EARLY_BLIGHT");
         verify(diseaseRepository, never()).findByDiseaseCode("UNMAPPED_LEAF_SPOT");
     }
+
+    @Test
+    @DisplayName("Should throw NO_DETECTION_FOUND (422) when AI detections list is empty or null")
+    void testResolvePathology_EmptyDetections_ThrowsNoDetectionFound() {
+        assertThatThrownBy(() -> pathologyService.resolvePathology(List.of(), "TOMATO"))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.NO_DETECTION_FOUND));
+
+        assertThatThrownBy(() -> pathologyService.resolvePathology(null, "TOMATO"))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.NO_DETECTION_FOUND));
+    }
 }

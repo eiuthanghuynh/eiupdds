@@ -171,6 +171,9 @@ public class RoboflowClient {
                 log.warn("Roboflow connection timeout on attempt {}: {}", attempt + 1, timeoutEx.getMessage());
                 lastException = timeoutEx;
 
+            } catch (BusinessException be) {
+                throw be;
+
             } catch (Exception ex) {
                 log.error("Unexpected error during Roboflow workflow execution: ", ex);
                 throw new BusinessException(ErrorCode.ROBOFLOW_API_ERROR, "Unexpected error communicating with Roboflow: " + ex.getMessage());
@@ -229,7 +232,14 @@ public class RoboflowClient {
 
         try {
             JsonNode rootNode = objectMapper.readTree(responseBody);
+            if (isEmptyJsonNode(rootNode)) {
+                throw new BusinessException(ErrorCode.NO_DETECTION_FOUND);
+            }
+
             JsonNode itemsNode = rootNode.has("outputs") ? rootNode.get("outputs") : rootNode;
+            if (isEmptyJsonNode(itemsNode)) {
+                throw new BusinessException(ErrorCode.NO_DETECTION_FOUND);
+            }
 
             List<RoboflowWorkflowResponse.WorkflowItem> items = objectMapper.convertValue(
                     itemsNode,
@@ -237,7 +247,7 @@ public class RoboflowClient {
             );
 
             if (items == null || items.isEmpty() || items.get(0).modelOutput() == null) {
-                throw new BusinessException(ErrorCode.ROBOFLOW_API_ERROR, "Roboflow workflow output does not contain model predictions");
+                throw new BusinessException(ErrorCode.NO_DETECTION_FOUND);
             }
 
             return items.get(0).modelOutput();
@@ -248,5 +258,9 @@ public class RoboflowClient {
             log.error("Failed to parse Roboflow workflow response JSON: payload={}", responseBody, e);
             throw new BusinessException(ErrorCode.ROBOFLOW_API_ERROR, "Failed to parse Roboflow predictions: " + e.getMessage());
         }
+    }
+
+    private boolean isEmptyJsonNode(JsonNode node) {
+        return node == null || node.isNull() || ((node.isObject() || node.isArray()) && node.isEmpty());
     }
 }

@@ -158,12 +158,14 @@ class DiagnosisServiceTests {
     }
 
     @Test
-    @DisplayName("Should handle zero detections gracefully without throwing error")
-    void testZeroDetectionsGracefullyHandled() {
+    @DisplayName("Should throw NO_DETECTION_FOUND (422) and delete uploaded S3 image when Roboflow returns zero detections")
+    void testZeroDetectionsThrowsNoDetectionFoundAndCleansUpS3() {
         MockMultipartFile file = new MockMultipartFile("image", "blurry.jpg", "image/jpeg", VALID_JPEG_BYTES);
+        String uploadedUrl = "http://localhost:9000/eiu-pdds-plants/diagnoses/2026/10/blurry.jpg";
+        long initialCount = diagnosisRepository.count();
 
         when(storageService.uploadImage(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
-                .thenReturn("http://localhost:9000/eiu-pdds-plants/diagnoses/2026/10/blurry.jpg");
+                .thenReturn(uploadedUrl);
 
         RoboflowWorkflowResponse.ModelOutput mockOutput = new RoboflowWorkflowResponse.ModelOutput(
                 new RoboflowWorkflowResponse.ImageInfo(300, 300),
@@ -173,18 +175,16 @@ class DiagnosisServiceTests {
         when(roboflowClient.inferPlantDisease(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.nullable(Double.class)))
                 .thenReturn(mockOutput);
 
-        DiagnosisAnalyzeResponse response = diagnosisService.analyzeImage(file, "TOMATO", null, null, null);
+        assertThatThrownBy(() -> diagnosisService.analyzeImage(file, "TOMATO", null, null, null))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getErrorCode()).isEqualTo(ErrorCode.NO_DETECTION_FOUND);
+                    assertThat(be.getMessage()).containsIgnoringCase("clearer");
+                });
 
-        assertThat(response).isNotNull();
-        assertThat(response.dominantDisease()).isNull();
-        assertThat(response.dominantConfidence()).isNull();
-        assertThat(response.boundingBoxes()).isEmpty();
-        assertThat(response.recommendedTreatments()).isEmpty();
-
-        // Database Verification
-        Optional<Diagnosis> persistedOpt = diagnosisRepository.findById(response.diagnosisId());
-        assertThat(persistedOpt).isPresent();
-        assertThat(persistedOpt.get().getStatus().name()).isEqualTo("COMPLETED");
+        Mockito.verify(storageService).deleteImage(uploadedUrl);
+        assertThat(diagnosisRepository.count()).isEqualTo(initialCount);
     }
 
     @Test

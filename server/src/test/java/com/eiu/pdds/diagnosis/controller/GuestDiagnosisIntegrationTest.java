@@ -172,6 +172,43 @@ class GuestDiagnosisIntegrationTest {
         assertThat(persistedDiagnosis.getDeviceInfo()).isEqualTo("Guest Mobile Browser");
     }
 
+    @Test
+    @DisplayName("POST /api/v1/diagnoses/analyze - Empty Roboflow predictions returns 422 DIAGNOSIS_003, cleans up S3, and saves nothing")
+    void testAnalyze_EmptyDetections_Returns422AndCleansUpS3() throws Exception {
+        byte[] validJpegBytes = new byte[]{
+                (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0,
+                0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01
+        };
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "image",
+                "blank_leaf.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                validJpegBytes
+        );
+        String uploadedUrl = "https://s3.eiu.edu.vn/eiu-pdds-plants/blank_leaf.jpg";
+
+        when(storageService.uploadImage(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
+                .thenReturn(uploadedUrl);
+
+        RoboflowWorkflowResponse.ModelOutput emptyOutput = new RoboflowWorkflowResponse.ModelOutput(
+                new RoboflowWorkflowResponse.ImageInfo(200, 200),
+                List.of()
+        );
+        when(roboflowClient.inferPlantDisease(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.nullable(Double.class)))
+                .thenReturn(emptyOutput);
+
+        mockMvc.perform(multipart("/api/v1/diagnoses/analyze")
+                        .file(imageFile)
+                        .param("plantCode", "TOMATO"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.code", is("DIAGNOSIS_003")))
+                .andExpect(jsonPath("$.message", org.hamcrest.Matchers.containsString("clearer")));
+
+        Mockito.verify(storageService).deleteImage(uploadedUrl);
+        assertThat(diagnosisRepository.findAll()).isEmpty();
+    }
+
     // =========================================================================
     // 2. Protected Endpoints Reject Unauthenticated Guest Access
     // =========================================================================

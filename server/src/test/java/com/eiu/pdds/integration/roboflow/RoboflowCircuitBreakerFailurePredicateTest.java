@@ -38,6 +38,7 @@ class RoboflowCircuitBreakerFailurePredicateTest {
 
         assertThat(predicate.test(new BusinessException(ErrorCode.INVALID_REQUEST_PAYLOAD, "Empty image"))).isFalse();
         assertThat(predicate.test(new BusinessException(ErrorCode.INVALID_FILE_TYPE, "Bad image"))).isFalse();
+        assertThat(predicate.test(new BusinessException(ErrorCode.NO_DETECTION_FOUND, "Blurry image"))).isFalse();
         assertThat(predicate.test(callNotPermitted)).isFalse();
         assertThat(predicate.test(new IllegalArgumentException("Bad caller arg"))).isFalse();
         assertThat(predicate.test(null)).isFalse();
