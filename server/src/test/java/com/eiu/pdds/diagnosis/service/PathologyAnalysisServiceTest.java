@@ -1,5 +1,12 @@
 package com.eiu.pdds.diagnosis.service;
 
+import java.util.List;
+import java.util.Set;
+
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
 import com.eiu.pdds.common.exception.BusinessException;
 import com.eiu.pdds.common.exception.ErrorCode;
 import com.eiu.pdds.diagnosis.service.dto.PathologyResolution;
@@ -85,7 +92,7 @@ class PathologyAnalysisServiceTest {
                 .build();
 
         when(diseaseRepository.findByDiseaseCode("POTATO_LATE_BLIGHT")).thenReturn(Optional.of(lateBlight));
-        when(diseaseRepository.findByDiseaseCode("POTATO_EARLY_BLIGHT")).thenReturn(Optional.of(earlyBlight));
+        when(diseaseRepository.findByDiseaseCodeIn(Set.of("POTATO_EARLY_BLIGHT"))).thenReturn(List.of(earlyBlight));
         when(plantRepository.findByPlantCode("POTATO")).thenReturn(Optional.of(potatoPlant));
 
         PathologyResolution resolution = pathologyService.resolvePathology(List.of(dominant, secondary), "POTATO");
@@ -97,6 +104,8 @@ class PathologyAnalysisServiceTest {
 
         assertThat(resolution.coOccurringDiseases()).hasSize(1);
         assertThat(resolution.coOccurringDiseases().get(0).diseaseCode()).isEqualTo("POTATO_EARLY_BLIGHT");
+        verify(diseaseRepository).findByDiseaseCodeIn(Set.of("POTATO_EARLY_BLIGHT"));
+        verify(diseaseRepository, never()).findByDiseaseCode("POTATO_EARLY_BLIGHT");
     }
 
     @Test
@@ -142,5 +151,63 @@ class PathologyAnalysisServiceTest {
         assertThatThrownBy(() -> pathologyService.resolvePathology(List.of(unknownDisease), "CORN"))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode()).isEqualTo(ErrorCode.DISEASE_NOT_FOUND));
+    }
+
+    @Test
+    @DisplayName("Should resolve multiple secondary diseases in 1 batch query with fallback for unmapped code")
+    void testResolvePathology_MultipleSecondaryDiseases_SingleBatchQueryAndFallback() {
+        DetectedObject dominant = new DetectedObject(
+                UUID.randomUUID(), "Potato leaf late blight", "POTATO_LATE_BLIGHT", "POTATO",
+                "Potato late blight", false, 0.90, 100, 100, 50, 50
+        );
+        DetectedObject secondaryA1 = new DetectedObject(
+                UUID.randomUUID(), "Potato leaf early blight", "POTATO_EARLY_BLIGHT", "POTATO",
+                "Potato early blight", false, 0.70, 150, 150, 40, 40
+        );
+        DetectedObject secondaryA2 = new DetectedObject(
+                UUID.randomUUID(), "Potato leaf early blight", "POTATO_EARLY_BLIGHT", "POTATO",
+                "Potato early blight", false, 0.65, 180, 180, 35, 35
+        );
+        DetectedObject unmappedSecondary = new DetectedObject(
+                UUID.randomUUID(), "Unknown leaf spot", "UNMAPPED_LEAF_SPOT", "POTATO",
+                "Unknown leaf spot", false, 0.55, 220, 220, 30, 30
+        );
+
+        Disease lateBlight = Disease.builder()
+                .diseaseCode("POTATO_LATE_BLIGHT")
+                .commonName("Potato late blight")
+                .scientificName("Phytophthora infestans")
+                .severity(Severity.CRITICAL)
+                .build();
+        lateBlight.setId(UUID.randomUUID());
+
+        Disease earlyBlight = Disease.builder()
+                .diseaseCode("POTATO_EARLY_BLIGHT")
+                .commonName("Potato early blight")
+                .scientificName("Alternaria solani")
+                .severity(Severity.HIGH)
+                .build();
+        earlyBlight.setId(UUID.randomUUID());
+
+        when(diseaseRepository.findByDiseaseCode("POTATO_LATE_BLIGHT")).thenReturn(Optional.of(lateBlight));
+        when(diseaseRepository.findByDiseaseCodeIn(Set.of("POTATO_EARLY_BLIGHT", "UNMAPPED_LEAF_SPOT")))
+                .thenReturn(List.of(earlyBlight));
+
+        PathologyResolution resolution = pathologyService.resolvePathology(
+                List.of(dominant, secondaryA1, secondaryA2, unmappedSecondary),
+                "POTATO"
+        );
+
+        assertThat(resolution.coOccurringDiseases()).hasSize(2);
+        assertThat(resolution.coOccurringDiseases().get(0).diseaseCode()).isEqualTo("POTATO_EARLY_BLIGHT");
+        assertThat(resolution.coOccurringDiseases().get(0).id()).isEqualTo(earlyBlight.getId());
+        assertThat(resolution.coOccurringDiseases().get(1).diseaseCode()).isEqualTo("UNMAPPED_LEAF_SPOT");
+        assertThat(resolution.coOccurringDiseases().get(1).id()).isNull();
+        assertThat(resolution.coOccurringDiseases().get(1).scientificName()).isEqualTo("Co-occurring pathology");
+        assertThat(resolution.coOccurringDiseases().get(1).severity()).isEqualTo(Severity.MODERATE);
+
+        verify(diseaseRepository).findByDiseaseCodeIn(anyCollection());
+        verify(diseaseRepository, never()).findByDiseaseCode("POTATO_EARLY_BLIGHT");
+        verify(diseaseRepository, never()).findByDiseaseCode("UNMAPPED_LEAF_SPOT");
     }
 }

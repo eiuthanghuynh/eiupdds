@@ -1,5 +1,10 @@
 package com.eiu.pdds.diagnosis.repository;
 
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.Collection;
+
 import com.eiu.pdds.diagnosis.entity.Diagnosis;
 import com.eiu.pdds.diagnosis.entity.DiagnosisStatus;
 import org.springframework.data.domain.Page;
@@ -38,6 +43,9 @@ public interface DiagnosisRepository extends JpaRepository<Diagnosis, UUID>, Jpa
     long countByDominantDiseaseIdAndDeletedAtIsNull(UUID diseaseId);
 
     long countByUserIdAndDeletedAtIsNull(UUID userId);
+
+    @Query("SELECT d.user.id, COUNT(d) FROM Diagnosis d WHERE d.user.id IN :userIds AND d.deletedAt IS NULL GROUP BY d.user.id")
+    List<Object[]> countByUserIds(@Param("userIds") Collection<UUID> userIds);
 
     List<Diagnosis> findByDeletedAtIsNullOrderByCreatedAtDesc();
 }

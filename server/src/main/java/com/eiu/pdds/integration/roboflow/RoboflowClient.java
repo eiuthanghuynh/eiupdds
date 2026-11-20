@@ -1,5 +1,8 @@
 package com.eiu.pdds.integration.roboflow;
 
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+
 import com.eiu.pdds.common.exception.BusinessException;
 import com.eiu.pdds.common.exception.ErrorCode;
 import com.eiu.pdds.integration.roboflow.dto.RoboflowWorkflowResponse;
@@ -92,6 +95,7 @@ public class RoboflowClient {
      * @param confidenceThreshold minimum confidence threshold (falls back to default 0.4 if null)
      * @return parsed ModelOutput containing image dimensions and predictions
      */
+    @CircuitBreaker(name = "roboflowInference", fallbackMethod = "inferPlantDiseaseFallback")
     public RoboflowWorkflowResponse.ModelOutput inferPlantDisease(byte[] imageBytes, Double confidenceThreshold) {
         if (imageBytes == null || imageBytes.length == 0) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST_PAYLOAD, "Image byte content cannot be empty for inference");
@@ -187,6 +191,21 @@ public class RoboflowClient {
 
         throw new BusinessException(ErrorCode.ROBOFLOW_API_ERROR,
                 "Roboflow workflow failed after " + (maxRetries + 1) + " attempts. Last error: " + (lastException != null ? lastException.getMessage() : "Unknown"));
+    }
+
+    private RoboflowWorkflowResponse.ModelOutput inferPlantDiseaseFallback(
+            byte[] imageBytes,
+            Double confidenceThreshold,
+            Throwable throwable
+    ) {
+        if (throwable instanceof CallNotPermittedException) {
+            log.warn("Circuit breaker 'roboflowInference' is OPEN — failing fast with 503 AI_002");
+            throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE);
+        }
+        if (throwable instanceof BusinessException be) {
+            throw be;
+        }
+        throw new BusinessException(ErrorCode.ROBOFLOW_API_ERROR, "Roboflow inference failed: " + throwable.getMessage());
     }
 
     private long extractRetryAfterMs(HttpHeaders headers, int attempt) {

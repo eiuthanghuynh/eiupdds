@@ -1,5 +1,12 @@
 package com.eiu.pdds.user.service;
 
+import com.eiu.pdds.auth.security.UserAuthCache;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import com.eiu.pdds.auth.service.RefreshTokenStore;
 import com.eiu.pdds.common.api.PageResponse;
 import com.eiu.pdds.common.exception.BusinessException;
@@ -34,12 +41,36 @@ public class UserServiceImpl implements UserService {
     private final UserIdentityRepository userIdentityRepository;
     private final DiagnosisRepository diagnosisRepository;
     private final RefreshTokenStore refreshTokenStore;
+    private final UserAuthCache userAuthCache;
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<UserDetailDto> getUsers(UserFilter filter, Pageable pageable) {
         Page<User> userPage = userRepository.findAll(UserSpecifications.withFilter(filter), pageable);
-        Page<UserDetailDto> dtoPage = userPage.map(this::toUserDetailDto);
+        if (userPage.isEmpty()) {
+            return PageResponse.of(Page.empty(pageable));
+        }
+
+        List<UUID> userIds = userPage.getContent().stream()
+                .map(User::getId)
+                .toList();
+
+        Map<UUID, List<UserIdentity>> identitiesByUserId = userIdentityRepository.findByUserIdIn(userIds).stream()
+                .filter(identity -> identity.getUser() != null && identity.getUser().getId() != null)
+                .collect(Collectors.groupingBy(identity -> identity.getUser().getId()));
+
+        Map<UUID, Long> diagnosisCountsByUserId = diagnosisRepository.countByUserIds(userIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (UUID) row[0],
+                        row -> ((Number) row[1]).longValue(),
+                        Long::sum
+                ));
+
+        Page<UserDetailDto> dtoPage = userPage.map(user -> UserDetailDto.from(
+                user,
+                identitiesByUserId.getOrDefault(user.getId(), List.of()),
+                diagnosisCountsByUserId.getOrDefault(user.getId(), 0L)
+        ));
         return PageResponse.of(dtoPage);
     }
 
@@ -72,6 +103,7 @@ public class UserServiceImpl implements UserService {
             refreshTokenStore.revokeAllForUser(targetUserId);
         }
 
+        evictUserAuthCacheSafely(targetUserId);
         log.info("Updated account status for user: id={}, isActive={}", targetUserId, request.isActive());
         return toUserDetailDto(savedUser);
     }
@@ -97,8 +129,30 @@ public class UserServiceImpl implements UserService {
             refreshTokenStore.revokeAllForUser(targetUserId);
         }
 
+        evictUserAuthCacheSafely(targetUserId);
         log.info("Updated role for user: id={}, role={}", targetUserId, request.role());
         return toUserDetailDto(savedUser);
+    }
+
+    private void evictUserAuthCacheSafely(UUID userId) {
+        try {
+            userAuthCache.evict(userId);
+        } catch (Exception e) {
+            log.warn("Immediate user auth cache eviction failed for userId={}: {}", userId, e.getMessage());
+        }
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    try {
+                        userAuthCache.evict(userId);
+                    } catch (Exception e) {
+                        log.warn("Post-commit user auth cache eviction failed for userId={}: {}", userId, e.getMessage());
+                    }
+                }
+            });
+        }
     }
 
     private UserDetailDto toUserDetailDto(User user) {

@@ -1,5 +1,12 @@
 package com.eiu.pdds.diagnosis.service.impl;
 
+import java.util.LinkedHashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import com.eiu.pdds.common.exception.BusinessException;
 import com.eiu.pdds.common.exception.ErrorCode;
 import com.eiu.pdds.diagnosis.service.PathologyAnalysisService;
@@ -67,33 +74,15 @@ public class PathologyAnalysisServiceImpl implements PathologyAnalysisService {
                     .orElseThrow(() -> new BusinessException(ErrorCode.DISEASE_NOT_FOUND,
                             "Pathology not registered in catalog: " + dominantDiseaseCode));
 
-            dominantDiseaseDto = new DiseaseSummaryDto(
-                    dominantDiseaseEntity.getId(),
-                    dominantDiseaseEntity.getDiseaseCode(),
-                    dominantDiseaseEntity.getCommonName(),
-                    dominantDiseaseEntity.getScientificName(),
-                    dominantDiseaseEntity.getSeverity()
-            );
+            dominantDiseaseDto = toDiseaseSummaryDto(dominantDiseaseEntity);
         }
 
-        // 2. Co-occurring Pathologies (Distinct secondary pathologies)
-        List<DiseaseSummaryDto> coOccurringDiseases = detections.stream()
-                .filter(d -> d.diseaseCode() != null && !d.diseaseCode().equalsIgnoreCase(dominantDiseaseCode))
-                .map(d -> diseaseRepository.findByDiseaseCode(d.diseaseCode())
-                        .map(entity -> new DiseaseSummaryDto(
-                                entity.getId(),
-                                entity.getDiseaseCode(),
-                                entity.getCommonName(),
-                                entity.getScientificName(),
-                                entity.getSeverity()))
-                        .orElseGet(() -> new DiseaseSummaryDto(
-                                null,
-                                d.diseaseCode(),
-                                d.englishName() != null ? d.englishName() : d.label(),
-                                "Co-occurring pathology",
-                                Severity.MODERATE)))
-                .distinct()
+        // 2. Co-occurring Pathologies (Batch-loaded distinct secondary pathologies)
+        List<DetectedObject> secondaryDetections = detections.stream()
+                .filter(d -> d.diseaseCode() != null && !d.diseaseCode().isBlank()
+                        && !d.diseaseCode().equalsIgnoreCase(dominantDiseaseCode))
                 .toList();
+        List<DiseaseSummaryDto> coOccurringDiseases = resolveCoOccurringDiseases(secondaryDetections);
 
         // 3. Resolve Plant Crop Entity
         Plant plantEntity = resolvePlant(plantCodeHint, dominantPrediction.plantCode());
@@ -105,6 +94,52 @@ public class PathologyAnalysisServiceImpl implements PathologyAnalysisService {
                 isHealthy,
                 coOccurringDiseases,
                 plantEntity
+        );
+    }
+
+    private List<DiseaseSummaryDto> resolveCoOccurringDiseases(List<DetectedObject> secondaryDetections) {
+        if (secondaryDetections.isEmpty()) {
+            return List.of();
+        }
+
+        Set<String> secondaryCodes = secondaryDetections.stream()
+                .map(DetectedObject::diseaseCode)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        List<Disease> matchedDiseases = diseaseRepository.findByDiseaseCodeIn(secondaryCodes);
+        Map<String, Disease> diseasesByCode = (matchedDiseases == null ? List.<Disease>of() : matchedDiseases).stream()
+                .filter(disease -> disease.getDiseaseCode() != null)
+                .collect(Collectors.toMap(
+                        disease -> disease.getDiseaseCode().toUpperCase(Locale.ROOT),
+                        Function.identity(),
+                        (first, second) -> first
+                ));
+
+        return secondaryDetections.stream()
+                .map(d -> {
+                    Disease entity = diseasesByCode.get(d.diseaseCode().toUpperCase(Locale.ROOT));
+                    if (entity != null) {
+                        return toDiseaseSummaryDto(entity);
+                    }
+                    return new DiseaseSummaryDto(
+                            null,
+                            d.diseaseCode(),
+                            d.englishName() != null ? d.englishName() : d.label(),
+                            "Co-occurring pathology",
+                            Severity.MODERATE
+                    );
+                })
+                .distinct()
+                .toList();
+    }
+
+    private DiseaseSummaryDto toDiseaseSummaryDto(Disease entity) {
+        return new DiseaseSummaryDto(
+                entity.getId(),
+                entity.getDiseaseCode(),
+                entity.getCommonName(),
+                entity.getScientificName(),
+                entity.getSeverity()
         );
     }
 

@@ -1,7 +1,6 @@
 package com.eiu.pdds.auth.security;
 
 import com.eiu.pdds.user.entity.Role;
-import com.eiu.pdds.user.entity.User;
 import com.eiu.pdds.user.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -37,6 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final UserAuthCache userAuthCache;
 
     @Override
     protected void doFilterInternal(
@@ -51,30 +51,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Claims claims = jwtTokenProvider.extractClaims(token);
                 UUID userId = UUID.fromString(claims.getSubject());
 
-                Optional<User> activeUser = userRepository.findById(userId)
-                        .filter(u -> u.getDeletedAt() == null && Boolean.TRUE.equals(u.getIsActive()));
-
-                if (activeUser.isEmpty()) {
+                Optional<CachedUserAuthState> userState = resolveUserAuthState(userId);
+                if (userState.isEmpty() || !userState.get().isUsable()) {
                     log.debug("Rejected JWT for inactive, deleted, or missing user: id={}", userId);
                     SecurityContextHolder.clearContext();
                 } else {
-                    User user = activeUser.get();
-                    Role liveRole = user.getRole();
-                    UserPrincipal principal = new UserPrincipal(
-                            user.getId(),
-                            user.getEmail(),
-                            user.getUsername(),
-                            liveRole
-                    );
-
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            principal,
-                            null,
-                            List.of(new SimpleGrantedAuthority(liveRole.name()))
-                    );
-
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    authenticate(userState.get(), request);
                 }
             } catch (Exception e) {
                 log.warn("Failed to set security context from JWT token: {}", e.getMessage());
@@ -83,6 +65,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private Optional<CachedUserAuthState> resolveUserAuthState(UUID userId) {
+        Optional<CachedUserAuthState> cached = userAuthCache.get(userId);
+        if (cached.isPresent()) {
+            return cached;
+        }
+
+        Optional<CachedUserAuthState> fromDatabase = userRepository.findById(userId)
+                .map(CachedUserAuthState::from);
+        fromDatabase.ifPresent(userAuthCache::put);
+        return fromDatabase;
+    }
+
+    private void authenticate(CachedUserAuthState state, HttpServletRequest request) {
+        Role liveRole = state.role();
+        UserPrincipal principal = new UserPrincipal(
+                state.id(),
+                state.email(),
+                state.username(),
+                liveRole
+        );
+
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                List.of(new SimpleGrantedAuthority(liveRole.name()))
+        );
+
+        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     private String extractBearerToken(HttpServletRequest request) {
