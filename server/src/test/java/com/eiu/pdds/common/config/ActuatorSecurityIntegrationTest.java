@@ -32,4 +32,11 @@ class ActuatorSecurityIntegrationTest {
         mockMvc.perform(get("/actuator/metrics"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("GET /actuator/circuitbreakers - Should be protected and return 401 Unauthorized for unauthenticated callers")
+    void circuitbreakersEndpointShouldRequireAuthentication() throws Exception {
+        mockMvc.perform(get("/actuator/circuitbreakers"))
+                .andExpect(status().isUnauthorized());
+    }
 }

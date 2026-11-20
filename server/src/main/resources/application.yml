@@ -52,12 +52,15 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,circuitbreakers,metrics
   endpoint:
     health:
       show-details: when_authorized
       probes:
         enabled: true
+  health:
+    circuitbreakers:
+      enabled: true
 
 # Cloud & AI Integration Config
 roboflow:
@@ -94,8 +97,10 @@ security:
     google:
       client-ids: ${GOOGLE_CLIENT_IDS:${GOOGLE_CLIENT_ID:eiu-pdds-mobile.apps.googleusercontent.com}}
 
-# Distributed Rate Limiting Config
+# Distributed Rate Limiting & Auth Cache Config
 pdds:
+  auth:
+    user-cache-ttl-seconds: ${AUTH_USER_CACHE_TTL:180}
   rate-limit:
     enabled: ${RATE_LIMIT_ENABLED:true}
     trusted-proxies: ${RATE_LIMIT_TRUSTED_PROXIES:}
@@ -105,4 +110,19 @@ pdds:
     diagnosis-user-window-seconds: ${RATE_LIMIT_DIAGNOSIS_USER_WINDOW:60}
     auth-ip-limit: ${RATE_LIMIT_AUTH_IP:10}
     auth-ip-window-seconds: ${RATE_LIMIT_AUTH_IP_WINDOW:60}
+
+# Resilience4j Circuit Breaker Config
+resilience4j:
+  circuitbreaker:
+    instances:
+      roboflowInference:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordFailurePredicate: com.eiu.pdds.integration.roboflow.RoboflowCircuitBreakerFailurePredicate
 

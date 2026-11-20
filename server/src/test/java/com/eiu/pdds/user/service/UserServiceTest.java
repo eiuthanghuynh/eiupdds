@@ -1,5 +1,9 @@
 package com.eiu.pdds.user.service;
 
+import com.eiu.pdds.auth.security.UserAuthCache;
+
+import static org.mockito.Mockito.verifyNoInteractions;
+
 import com.eiu.pdds.auth.service.RefreshTokenStore;
 import com.eiu.pdds.common.api.PageResponse;
 import com.eiu.pdds.common.exception.BusinessException;
@@ -62,6 +66,9 @@ class UserServiceTest {
     @Mock
     private RefreshTokenStore refreshTokenStore;
 
+    @Mock
+    private UserAuthCache userAuthCache;
+
     @InjectMocks
     private UserServiceImpl userService;
 
@@ -112,8 +119,9 @@ class UserServiceTest {
                 .provider(AuthProvider.LOCAL)
                 .providerUserId("john@farm.vn")
                 .build();
-        when(userIdentityRepository.findByUserId(targetUserId)).thenReturn(List.of(identity));
-        when(diagnosisRepository.countByUserIdAndDeletedAtIsNull(targetUserId)).thenReturn(5L);
+        when(userIdentityRepository.findByUserIdIn(List.of(targetUserId))).thenReturn(List.of(identity));
+        when(diagnosisRepository.countByUserIds(List.of(targetUserId)))
+                .thenReturn(List.<Object[]>of(new Object[]{targetUserId, 5L}));
 
         PageResponse<UserDetailDto> result = userService.getUsers(filter, pageable);
 
@@ -131,6 +139,72 @@ class UserServiceTest {
         assertThat(dto.totalDiagnosesCount()).isEqualTo(5L);
 
         verify(userRepository).findAll(any(Specification.class), eq(pageable));
+        verify(userIdentityRepository).findByUserIdIn(List.of(targetUserId));
+        verify(diagnosisRepository).countByUserIds(List.of(targetUserId));
+        verify(userIdentityRepository, never()).findByUserId(any());
+        verify(diagnosisRepository, never()).countByUserIdAndDeletedAtIsNull(any());
+    }
+
+    @Test
+    @DisplayName("getUsers - Empty page returns immediately without firing batch IN() queries")
+    void testGetUsers_EmptyPage_SkipsBatchQueries() {
+        UserFilter filter = new UserFilter("missing", null, null);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(Page.empty(pageable));
+
+        PageResponse<UserDetailDto> result = userService.getUsers(filter, pageable);
+
+        assertThat(result.content()).isEmpty();
+        assertThat(result.totalElements()).isZero();
+        verifyNoInteractions(userIdentityRepository, diagnosisRepository);
+    }
+
+    @Test
+    @DisplayName("getUsers - Multi-user page groups identities and diagnosis counts in 2 batch queries")
+    void testGetUsers_MultiUserPage_BatchesQueriesWithoutNPlusOne() {
+        User secondUser = User.builder()
+                .username("expert_anna")
+                .email("anna@eiu.edu.vn")
+                .fullName("Anna Expert")
+                .role(Role.ROLE_EXPERT)
+                .isActive(true)
+                .build();
+        UUID secondUserId = UUID.randomUUID();
+        secondUser.setId(secondUserId);
+
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<User> userPage = new PageImpl<>(List.of(targetUser, secondUser), pageable, 2);
+        when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
+
+        UserIdentity localIdentity = UserIdentity.builder()
+                .user(targetUser)
+                .provider(AuthProvider.LOCAL)
+                .providerUserId("john@farm.vn")
+                .build();
+        UserIdentity googleIdentity = UserIdentity.builder()
+                .user(targetUser)
+                .provider(AuthProvider.GOOGLE)
+                .providerUserId("google-sub-john")
+                .build();
+
+        when(userIdentityRepository.findByUserIdIn(List.of(targetUserId, secondUserId)))
+                .thenReturn(List.of(localIdentity, googleIdentity));
+        when(diagnosisRepository.countByUserIds(List.of(targetUserId, secondUserId)))
+                .thenReturn(List.<Object[]>of(new Object[]{targetUserId, 7L}));
+
+        PageResponse<UserDetailDto> result = userService.getUsers(null, pageable);
+
+        assertThat(result.content()).hasSize(2);
+        UserDetailDto firstDto = result.content().get(0);
+        assertThat(firstDto.linkedProviders()).containsExactlyInAnyOrder("LOCAL", "GOOGLE");
+        assertThat(firstDto.totalDiagnosesCount()).isEqualTo(7L);
+
+        UserDetailDto secondDto = result.content().get(1);
+        assertThat(secondDto.linkedProviders()).isEmpty();
+        assertThat(secondDto.totalDiagnosesCount()).isZero();
+
+        verify(userIdentityRepository).findByUserIdIn(List.of(targetUserId, secondUserId));
+        verify(diagnosisRepository).countByUserIds(List.of(targetUserId, secondUserId));
     }
 
     // =========================================================================
@@ -201,6 +275,7 @@ class UserServiceTest {
 
         verify(userRepository).save(targetUser);
         verify(refreshTokenStore).revokeAllForUser(targetUserId);
+        verify(userAuthCache).evict(targetUserId);
     }
 
     @Test
@@ -220,6 +295,7 @@ class UserServiceTest {
         assertThat(targetUser.getIsActive()).isTrue();
 
         verify(userRepository).save(targetUser);
+        verify(userAuthCache).evict(targetUserId);
     }
 
     @Test
@@ -236,6 +312,7 @@ class UserServiceTest {
 
         verify(userRepository, never()).save(any());
         verify(refreshTokenStore, never()).revokeAllForUser(any());
+        verifyNoInteractions(userAuthCache);
     }
 
     @Test
@@ -275,6 +352,7 @@ class UserServiceTest {
 
         verify(userRepository).save(targetUser);
         verify(refreshTokenStore).revokeAllForUser(targetUserId);
+        verify(userAuthCache).evict(targetUserId);
     }
 
     @Test
@@ -293,6 +371,7 @@ class UserServiceTest {
         assertThat(updated.role()).isEqualTo(Role.ROLE_USER);
         verify(userRepository).save(targetUser);
         verify(refreshTokenStore).revokeAllForUser(targetUserId);
+        verify(userAuthCache).evict(targetUserId);
     }
 
     @Test
@@ -311,6 +390,7 @@ class UserServiceTest {
         assertThat(updated.role()).isEqualTo(Role.ROLE_USER);
         verify(userRepository).save(targetUser);
         verify(refreshTokenStore, never()).revokeAllForUser(any());
+        verify(userAuthCache).evict(targetUserId);
     }
 
     @Test
@@ -326,6 +406,7 @@ class UserServiceTest {
                 });
 
         verify(userRepository, never()).save(any());
+        verifyNoInteractions(userAuthCache);
     }
 
     @Test
@@ -341,5 +422,6 @@ class UserServiceTest {
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository, never()).save(any());
+        verifyNoInteractions(userAuthCache);
     }
 }

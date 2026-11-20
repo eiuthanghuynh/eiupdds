@@ -3,7 +3,6 @@ package com.eiu.pdds.diagnosis.service;
 import com.eiu.pdds.diagnosis.entity.BoundingBox;
 import com.eiu.pdds.dto.diagnosis.BoundingBoxDto;
 import com.eiu.pdds.integration.ai.dto.DetectedObject;
-import com.eiu.pdds.integration.roboflow.RoboflowClassMapper;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -44,15 +43,14 @@ public class CoordinateTransformer {
         String diseaseCode = null;
         if (box.getDisease() != null) {
             diseaseCode = box.getDisease().getDiseaseCode();
-        } else if (box.getLabel() != null) {
-            diseaseCode = RoboflowClassMapper.fromRawClassName(box.getLabel())
-                    .map(RoboflowClassMapper.ClassMetadata::diseaseCode)
-                    .orElseGet(() -> {
-                        if (box.getDiagnosis() != null && box.getDiagnosis().getPlant() != null) {
-                            return box.getDiagnosis().getPlant().getPlantCode() + "_HEALTHY";
-                        }
-                        return null;
-                    });
+        } else if (box.getDiagnosis() != null && box.getDiagnosis().getPlant() != null) {
+            String plantCode = box.getDiagnosis().getPlant().getPlantCode();
+            if (plantCode != null && !plantCode.isBlank()) {
+                diseaseCode = plantCode + "_HEALTHY";
+            }
+        }
+        if (diseaseCode == null && box.getDisease() == null && box.getLabel() != null && !box.getLabel().isBlank()) {
+            diseaseCode = "HEALTHY_LEAF";
         }
 
         return buildBoundingBoxDto(

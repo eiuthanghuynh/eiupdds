@@ -224,4 +224,93 @@ class DiagnosisQueryServiceImplTest {
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode()).isEqualTo(ErrorCode.DIAGNOSIS_NOT_FOUND));
     }
+
+    @Test
+    @DisplayName("getUserDiagnosisDetail - Resolves healthy foliage purely from domain plant and box label without integration mapper")
+    void testGetUserDiagnosisDetail_HealthyLeafWithPlant_ResolvesDomainHealthyDto() {
+        UUID diagnosisId = UUID.randomUUID();
+        BoundingBox healthyBox = BoundingBox.builder()
+                .disease(null)
+                .label("Potato leaf")
+                .confidence(0.95)
+                .x(120.0)
+                .y(140.0)
+                .width(80.0)
+                .height(90.0)
+                .build();
+        healthyBox.setId(UUID.randomUUID());
+
+        Diagnosis diagnosis = Diagnosis.builder()
+                .user(testUser)
+                .plant(testPlant)
+                .dominantDisease(null)
+                .dominantConfidence(0.95)
+                .originalImageUrl("https://s3/healthy.jpg")
+                .imageWidth(400)
+                .imageHeight(400)
+                .inferenceTimeMs(95)
+                .status(DiagnosisStatus.COMPLETED)
+                .build();
+        diagnosis.setId(diagnosisId);
+        diagnosis.addBoundingBox(healthyBox);
+
+        when(diagnosisRepository.findByIdAndUserIdAndDeletedAtIsNull(diagnosisId, userId))
+                .thenReturn(Optional.of(diagnosis));
+        when(coordinateTransformer.toBoundingBoxDtosFromEntities(any(), eq(400), eq(400)))
+                .thenReturn(List.of());
+        when(treatmentRecommendationService.getHealthyCareTreatments("POTATO"))
+                .thenReturn(List.of());
+
+        DiagnosisAnalyzeResponse response = queryService.getUserDiagnosisDetail(userId, diagnosisId);
+
+        assertThat(response.dominantDisease()).isNotNull();
+        assertThat(response.dominantDisease().id()).isNull();
+        assertThat(response.dominantDisease().diseaseCode()).isEqualTo("POTATO_HEALTHY");
+        assertThat(response.dominantDisease().commonName()).isEqualTo("Potato leaf");
+        assertThat(response.dominantDisease().scientificName()).isEqualTo("Healthy foliage (No pathology detected)");
+        assertThat(response.dominantDisease().severity()).isEqualTo(Severity.LOW);
+        verify(treatmentRecommendationService).getHealthyCareTreatments("POTATO");
+    }
+
+    @Test
+    @DisplayName("getUserDiagnosisDetail - Falls back to HEALTHY_LEAF and Healthy Foliage when plant and label are absent")
+    void testGetUserDiagnosisDetail_HealthyLeafWithoutPlantOrLabel_FallsBackToDomainDefaults() {
+        UUID diagnosisId = UUID.randomUUID();
+        BoundingBox healthyBox = BoundingBox.builder()
+                .disease(null)
+                .label("   ")
+                .confidence(0.90)
+                .x(100.0)
+                .y(100.0)
+                .width(50.0)
+                .height(50.0)
+                .build();
+        healthyBox.setId(UUID.randomUUID());
+
+        Diagnosis diagnosis = Diagnosis.builder()
+                .user(testUser)
+                .plant(null)
+                .dominantDisease(null)
+                .dominantConfidence(0.90)
+                .originalImageUrl("https://s3/healthy-unknown.jpg")
+                .imageWidth(400)
+                .imageHeight(400)
+                .inferenceTimeMs(80)
+                .status(DiagnosisStatus.COMPLETED)
+                .build();
+        diagnosis.setId(diagnosisId);
+        diagnosis.addBoundingBox(healthyBox);
+
+        when(diagnosisRepository.findByIdAndUserIdAndDeletedAtIsNull(diagnosisId, userId))
+                .thenReturn(Optional.of(diagnosis));
+        when(coordinateTransformer.toBoundingBoxDtosFromEntities(any(), eq(400), eq(400)))
+                .thenReturn(List.of());
+
+        DiagnosisAnalyzeResponse response = queryService.getUserDiagnosisDetail(userId, diagnosisId);
+
+        assertThat(response.dominantDisease()).isNotNull();
+        assertThat(response.dominantDisease().diseaseCode()).isEqualTo("HEALTHY_LEAF");
+        assertThat(response.dominantDisease().commonName()).isEqualTo("Healthy Foliage");
+        assertThat(response.dominantDisease().severity()).isEqualTo(Severity.LOW);
+    }
 }

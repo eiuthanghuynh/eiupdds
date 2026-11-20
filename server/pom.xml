@@ -26,6 +26,7 @@
         <aws.sdk.version>2.25.16</aws.sdk.version>
         <jjwt.version>0.12.6</jjwt.version>
         <google.api.client.version>2.7.0</google.api.client.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
     </properties>
 
     <dependencyManagement>
@@ -67,6 +68,17 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- Resilience4j Circuit Breaker & AOP -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+            <version>${resilience4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
         <!-- JSON Web Token (JJWT) for Enterprise Stateless Auth -->

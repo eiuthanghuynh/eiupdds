@@ -19,7 +19,6 @@ import com.eiu.pdds.dto.diagnosis.DiagnosisSummaryDto;
 import com.eiu.pdds.dto.disease.DiseaseSummaryDto;
 import com.eiu.pdds.dto.plant.PlantDto;
 import com.eiu.pdds.dto.treatment.TreatmentDto;
-import com.eiu.pdds.integration.roboflow.RoboflowClassMapper;
 import com.eiu.pdds.plant.entity.Plant;
 import com.eiu.pdds.treatment.service.TreatmentRecommendationService;
 import lombok.RequiredArgsConstructor;
@@ -147,21 +146,18 @@ public class DiagnosisQueryServiceImpl implements DiagnosisQueryService {
             return null;
         }
 
-        String diseaseCode = null;
-        String commonName = null;
+        Plant plant = diagnosis.getPlant();
+        String diseaseCode = (plant != null && plant.getPlantCode() != null && !plant.getPlantCode().isBlank())
+                ? plant.getPlantCode() + "_HEALTHY"
+                : "HEALTHY_LEAF";
 
-        if (dominantBox.getLabel() != null) {
-            Optional<RoboflowClassMapper.ClassMetadata> meta = RoboflowClassMapper.fromRawClassName(dominantBox.getLabel());
-            if (meta.isPresent()) {
-                diseaseCode = meta.get().diseaseCode();
-                commonName = meta.get().englishName();
-            }
-        }
-
-        if (diseaseCode == null) {
-            String plantCode = diagnosis.getPlant() != null ? diagnosis.getPlant().getPlantCode() : "CROP";
-            diseaseCode = plantCode + "_HEALTHY";
-            commonName = diagnosis.getPlant() != null ? diagnosis.getPlant().getCommonName() + " healthy leaf" : "Healthy Foliage";
+        String commonName;
+        if (dominantBox.getLabel() != null && !dominantBox.getLabel().isBlank()) {
+            commonName = dominantBox.getLabel();
+        } else if (plant != null && plant.getCommonName() != null && !plant.getCommonName().isBlank()) {
+            commonName = plant.getCommonName() + " healthy leaf";
+        } else {
+            commonName = "Healthy Foliage";
         }
 
         return new DiseaseSummaryDto(

@@ -9,6 +9,9 @@ import com.eiu.pdds.dto.diagnosis.DiagnosisAnalyzeResponse;
 import com.eiu.pdds.integration.roboflow.RoboflowClient;
 import com.eiu.pdds.integration.roboflow.dto.RoboflowWorkflowResponse;
 import com.eiu.pdds.storage.service.StorageService;
+import com.eiu.pdds.user.entity.Role;
+import com.eiu.pdds.user.entity.User;
+import com.eiu.pdds.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +46,9 @@ class DiagnosisServiceTests {
     @Autowired
     private com.eiu.pdds.diagnosis.service.DiagnosisIdempotencyService idempotencyService;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @MockBean
     private RoboflowClient roboflowClient;
 
@@ -52,7 +58,9 @@ class DiagnosisServiceTests {
     @BeforeEach
     void setUp() {
         Mockito.reset(storageService, roboflowClient);
-        idempotencyService.evict(com.eiu.pdds.common.util.FileSecurityValidator.calculateSha256(VALID_JPEG_BYTES));
+        if (idempotencyService instanceof com.eiu.pdds.diagnosis.service.impl.InMemoryDiagnosisIdempotencyService inMemory) {
+            inMemory.clear();
+        }
     }
 
     private static final byte[] VALID_JPEG_BYTES = new byte[]{
@@ -215,8 +223,17 @@ class DiagnosisServiceTests {
     }
 
     @Test
-    @DisplayName("Should replay cached diagnosis response and avoid calling Roboflow API when same image is uploaded twice")
+    @DisplayName("Should replay cached diagnosis response for authenticated user and avoid calling Roboflow API twice")
     void testIdempotentDuplicateUpload_SavesQuota() {
+        User farmer = userRepository.findByUsername("idem_test_farmer")
+                .orElseGet(() -> userRepository.save(User.builder()
+                        .username("idem_test_farmer")
+                        .email("idem_test_farmer@eiu.edu.vn")
+                        .passwordHash("hash")
+                        .role(Role.ROLE_USER)
+                        .isActive(true)
+                        .build()));
+
         MockMultipartFile file1 = new MockMultipartFile("image", "potato.jpg", "image/jpeg", VALID_JPEG_BYTES);
         MockMultipartFile file2 = new MockMultipartFile("image", "potato-retry.jpg", "image/jpeg", VALID_JPEG_BYTES);
 
@@ -233,17 +250,43 @@ class DiagnosisServiceTests {
         when(roboflowClient.inferPlantDisease(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.nullable(Double.class)))
                 .thenReturn(mockOutput);
 
-        // First call
-        DiagnosisAnalyzeResponse firstResponse = diagnosisService.analyzeImage(file1, "POTATO", null, null, null);
+        // First call (authenticated user)
+        DiagnosisAnalyzeResponse firstResponse = diagnosisService.analyzeImage(file1, "POTATO", null, null, null, farmer.getId());
         assertThat(firstResponse).isNotNull();
 
-        // Second call with same image bytes
-        DiagnosisAnalyzeResponse secondResponse = diagnosisService.analyzeImage(file2, "POTATO", null, null, null);
+        // Second call with same image bytes and same authenticated user
+        DiagnosisAnalyzeResponse secondResponse = diagnosisService.analyzeImage(file2, "POTATO", null, null, null, farmer.getId());
         assertThat(secondResponse).isNotNull();
         assertThat(secondResponse.diagnosisId()).isEqualTo(firstResponse.diagnosisId());
 
         // Verify Roboflow was only called ONCE, saving API quota!
         Mockito.verify(roboflowClient, Mockito.times(1)).inferPlantDisease(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.nullable(Double.class));
+    }
+
+    @Test
+    @DisplayName("Strict Guest isolation: Guest (userId=null) sending identical image twice executes fresh diagnosis each time")
+    void testGuestDuplicateUpload_DoesNotReplayCache() {
+        MockMultipartFile file1 = new MockMultipartFile("image", "guest1.jpg", "image/jpeg", VALID_JPEG_BYTES);
+        MockMultipartFile file2 = new MockMultipartFile("image", "guest2.jpg", "image/jpeg", VALID_JPEG_BYTES);
+
+        when(storageService.uploadImage(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
+                .thenReturn("http://localhost:9000/eiu-pdds-plants/diagnoses/guest-sample.jpg");
+
+        RoboflowWorkflowResponse.ModelOutput mockOutput = new RoboflowWorkflowResponse.ModelOutput(
+                new RoboflowWorkflowResponse.ImageInfo(399, 501),
+                List.of(
+                        new RoboflowWorkflowResponse.Prediction(322.0, 426.0, 154.0, 150.0, 0.7994, 13, "Potato leaf late blight", "det-1", "image")
+                )
+        );
+
+        when(roboflowClient.inferPlantDisease(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.nullable(Double.class)))
+                .thenReturn(mockOutput);
+
+        DiagnosisAnalyzeResponse firstResponse = diagnosisService.analyzeImage(file1, "POTATO", null, null, null);
+        DiagnosisAnalyzeResponse secondResponse = diagnosisService.analyzeImage(file2, "POTATO", null, null, null);
+
+        assertThat(firstResponse.diagnosisId()).isNotEqualTo(secondResponse.diagnosisId());
+        Mockito.verify(roboflowClient, Mockito.times(2)).inferPlantDisease(ArgumentMatchers.<byte[]>any(), ArgumentMatchers.nullable(Double.class));
     }
 
     @Test

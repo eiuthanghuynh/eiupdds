@@ -1,5 +1,7 @@
 package com.eiu.pdds.user.repository;
 
+import java.util.Collection;
+
 import com.eiu.pdds.user.entity.AuthProvider;
 import com.eiu.pdds.user.entity.UserIdentity;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +19,8 @@ public interface UserIdentityRepository extends JpaRepository<UserIdentity, UUID
     List<UserIdentity> findByEmail(String email);
 
     List<UserIdentity> findByUserId(UUID userId);
+
+    List<UserIdentity> findByUserIdIn(Collection<UUID> userIds);
 
     boolean existsByProviderAndProviderUserId(AuthProvider provider, String providerUserId);
 }

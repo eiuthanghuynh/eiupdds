@@ -8,6 +8,7 @@ public enum ErrorCode {
     FILE_TOO_LARGE("FILE_001", "Uploaded file exceeds maximum allowed limit (15MB)", HttpStatus.PAYLOAD_TOO_LARGE),
     INVALID_FILE_TYPE("FILE_002", "Only JPEG, PNG, and WebP image formats are supported", HttpStatus.BAD_REQUEST),
     ROBOFLOW_API_ERROR("AI_001", "Roboflow inference API returned an error or timed out", HttpStatus.BAD_GATEWAY),
+    AI_SERVICE_UNAVAILABLE("AI_002", "AI diagnosis service is temporarily unavailable. Please retry shortly.", HttpStatus.SERVICE_UNAVAILABLE),
     DISEASE_NOT_FOUND("DISEASE_001", "Disease record not found", HttpStatus.NOT_FOUND),
     PLANT_NOT_FOUND("PLANT_001", "Plant crop record not found", HttpStatus.NOT_FOUND),
     RESOURCE_NOT_FOUND("RES_001", "Requested resource not found", HttpStatus.NOT_FOUND),
