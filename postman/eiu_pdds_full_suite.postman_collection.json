@@ -2530,6 +2530,62 @@
                             ]
                         }
                     }
+                },
+                {
+                    "name": "8.9 Empty AI Detections Returns 422 DIAGNOSIS_003 With Retake Prompt",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Blank/undetected leaf returns 422 DIAGNOSIS_003 prompting user to retake photo', function () {",
+                                    "    pm.response.to.have.status(422);",
+                                    "    var res = pm.response.json();",
+                                    "    pm.expect(res.success).to.be.false;",
+                                    "    pm.expect(res.code).to.eql('DIAGNOSIS_003');",
+                                    "    pm.expect(res.message.toLowerCase()).to.include('clearer');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "image",
+                                    "type": "file",
+                                    "src": "postman/blank_leaf.jpg"
+                                },
+                                {
+                                    "key": "plantCode",
+                                    "value": "TOMATO",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses/analyze",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "diagnoses",
+                                "analyze"
+                            ]
+                        }
+                    }
                 }
             ]
         },
