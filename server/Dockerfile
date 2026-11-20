@@ -1,19 +1,18 @@
 # ==============================================================================
-# Stage 1: Build stage using Eclipse Temurin JDK 21 on Alpine Linux
+# Stage 1: Build stage using official Maven 3.9.9 + Eclipse Temurin JDK 21 Alpine
 # ==============================================================================
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS builder
 
 WORKDIR /build
 
-# Copy Maven Wrapper and POM first to cache runtime/compile dependencies in CI layers
-COPY .mvn/ ./.mvn/
-COPY mvnw pom.xml ./
-RUN chmod +x mvnw && \
-    for attempt in 1 2 3; do \
-        ./mvnw dependency:resolve -DincludeScope=runtime -B && break || { \
-            if [ "$attempt" -eq 3 ]; then exit 1; fi; \
-            echo "Maven wrapper/dependency resolve attempt $attempt failed; retrying in 5s..."; \
-            sleep 5; \
+# Copy POM first to cache runtime dependencies in CI layers without downloading Maven binary
+COPY pom.xml ./
+RUN for attempt in 1 2 3 4; do \
+        mvn dependency:resolve -DincludeScope=runtime -B && break || { \
+            if [ "$attempt" -eq 4 ]; then exit 1; fi; \
+            backoff=$((attempt * 10)); \
+            echo "Maven dependency resolve attempt $attempt failed; retrying in ${backoff}s..."; \
+            sleep "$backoff"; \
         }; \
     done
 
@@ -21,7 +20,14 @@ RUN chmod +x mvnw && \
 COPY src/ ./src/
 
 # Package and extract Spring Boot layers for incremental runtime image caching
-RUN ./mvnw clean package -DskipTests -B && \
+RUN for attempt in 1 2 3; do \
+        mvn clean package -DskipTests -B && break || { \
+            if [ "$attempt" -eq 3 ]; then exit 1; fi; \
+            backoff=$((attempt * 10)); \
+            echo "Maven package attempt $attempt failed; retrying in ${backoff}s..."; \
+            sleep "$backoff"; \
+        }; \
+    done && \
     java -Djarmode=tools -jar target/pdds-server-*.jar extract --layers --launcher --destination /build/extracted
 
 # ==============================================================================
