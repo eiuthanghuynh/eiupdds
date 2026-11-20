@@ -68,6 +68,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/plants/**", "/api/v1/diseases/**", "/api/v1/treatments/**").permitAll()
 
                         // 5. Admin & Expert Management RBAC
+                        .requestMatchers("/api/v1/admin/feedbacks/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EXPERT")
                         .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/diseases/**", "/api/v1/treatments/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EXPERT")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/diseases/**", "/api/v1/treatments/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_EXPERT")

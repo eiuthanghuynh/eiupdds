@@ -1,6 +1,7 @@
 package com.eiu.pdds.diagnosis.repository;
 
 import com.eiu.pdds.diagnosis.entity.BoundingBox;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +15,9 @@ import java.util.UUID;
 public interface BoundingBoxRepository extends JpaRepository<BoundingBox, UUID> {
 
     List<BoundingBox> findByDiagnosisId(UUID diagnosisId);
+
+    @EntityGraph(attributePaths = {"disease"})
+    List<BoundingBox> findByDiagnosisIdIn(Collection<UUID> diagnosisIds);
 
     List<BoundingBox> findByDiseaseId(UUID diseaseId);
 
