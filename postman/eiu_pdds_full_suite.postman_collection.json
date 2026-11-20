@@ -77,6 +77,11 @@
             "type": "string"
         },
         {
+            "key": "createdFeedbackId",
+            "value": "",
+            "type": "string"
+        },
+        {
             "key": "reuseTestRefreshToken",
             "value": "",
             "type": "string"
@@ -3285,10 +3290,987 @@
             ]
         },
         {
-            "name": "11. Token Reuse Detection & Auth Rate Limit",
+            "name": "11. Feedback & Active Learning (N1)",
             "item": [
                 {
-                    "name": "11.1 POST /api/v1/auth/login - Fresh Session for Replay Test (Auth 8/10)",
+                    "name": "11.1 GET /api/v1/diagnoses/{{userDiagId2}}/feedback - Missing Feedback Returns 404 FEEDBACK_001",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Missing feedback returns 404 FEEDBACK_001', function () {",
+                                    "    pm.response.to.have.status(404);",
+                                    "    var res = pm.response.json();",
+                                    "    pm.expect(res.success).to.be.false;",
+                                    "    pm.expect(res.code).to.eql('FEEDBACK_001');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses/{{userDiagId2}}/feedback",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "diagnoses",
+                                "{{userDiagId2}}",
+                                "feedback"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.2 POST /api/v1/diagnoses/{{userDiagId2}}/feedback - Unauthenticated Rejected (401 AUTH_001)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Unauthenticated feedback submission returns 401 AUTH_001', function () {",
+                                    "    pm.response.to.have.status(401);",
+                                    "    var res = pm.response.json();",
+                                    "    pm.expect(res.success).to.be.false;",
+                                    "    pm.expect(res.code).to.eql('AUTH_001');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"isAccurate\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses/{{userDiagId2}}/feedback",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "diagnoses",
+                                "{{userDiagId2}}",
+                                "feedback"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.3 POST /api/v1/diagnoses/{{userDiagId2}}/feedback - IDOR Non-Owner Rejected (404 DIAGNOSIS_001)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Non-owner cannot submit feedback on another user diagnosis (404 DIAGNOSIS_001)', function () {",
+                                    "    pm.response.to.have.status(404);",
+                                    "    var res = pm.response.json();",
+                                    "    pm.expect(res.success).to.be.false;",
+                                    "    pm.expect(res.code).to.eql('DIAGNOSIS_001');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{adminAccessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"isAccurate\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses/{{userDiagId2}}/feedback",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "diagnoses",
+                                "{{userDiagId2}}",
+                                "feedback"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.4 POST /api/v1/diagnoses/{{userDiagId2}}/feedback - Accurate With Suggested Disease Rejected (400 REQ_001)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Accurate feedback with suggestedDiseaseCode returns 400 REQ_001', function () {",
+                                    "    pm.response.to.have.status(400);",
+                                    "    var res = pm.response.json();",
+                                    "    pm.expect(res.success).to.be.false;",
+                                    "    pm.expect(res.code).to.eql('REQ_001');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"isAccurate\": true,\n    \"suggestedDiseaseCode\": \"TOMATO_LATE_BLIGHT\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses/{{userDiagId2}}/feedback",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "diagnoses",
+                                "{{userDiagId2}}",
+                                "feedback"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.5 POST /api/v1/diagnoses/{{userDiagId2}}/feedback - Unknown Suggested Disease Returns 404 DISEASE_001",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Unknown suggested disease code returns 404 DISEASE_001', function () {",
+                                    "    pm.response.to.have.status(404);",
+                                    "    var res = pm.response.json();",
+                                    "    pm.expect(res.success).to.be.false;",
+                                    "    pm.expect(res.code).to.eql('DISEASE_001');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"isAccurate\": false,\n    \"suggestedDiseaseCode\": \"NON_EXISTENT_DISEASE\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses/{{userDiagId2}}/feedback",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "diagnoses",
+                                "{{userDiagId2}}",
+                                "feedback"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.6 POST /api/v1/diagnoses/{{userDiagId2}}/feedback - Submit Initial Feedback (201 Created)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Initial feedback submission returns 201 Created', function () { pm.response.to.have.status(201); });",
+                                    "var res = pm.response.json();",
+                                    "pm.test('Feedback payload matches submitted correction and starts unverified', function () {",
+                                    "    pm.expect(res.success).to.be.true;",
+                                    "    pm.expect(res.data.id).to.be.a('string');",
+                                    "    pm.expect(res.data.suggestedDiseaseCode).to.eql('TOMATO_LATE_BLIGHT');",
+                                    "    pm.expect(res.data.expertVerified).to.be.false;",
+                                    "    pm.collectionVariables.set('createdFeedbackId', res.data.id);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"isAccurate\": false,\n    \"suggestedDiseaseCode\": \"TOMATO_LATE_BLIGHT\",\n    \"userComment\": \"Initial observation\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses/{{userDiagId2}}/feedback",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "diagnoses",
+                                "{{userDiagId2}}",
+                                "feedback"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.7 POST /api/v1/diagnoses/{{userDiagId2}}/feedback - Upsert Unverified Feedback (200 OK)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Updating unverified feedback returns 200 OK', function () { pm.response.to.have.status(200); });",
+                                    "var res = pm.response.json();",
+                                    "pm.test('Upsert updates comment on existing feedback ID', function () {",
+                                    "    pm.expect(res.success).to.be.true;",
+                                    "    pm.expect(res.data.id).to.eql(pm.collectionVariables.get('createdFeedbackId'));",
+                                    "    pm.expect(res.data.userComment).to.eql('Updated observation after close inspection');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"isAccurate\": false,\n    \"suggestedDiseaseCode\": \"TOMATO_LATE_BLIGHT\",\n    \"userComment\": \"Updated observation after close inspection\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses/{{userDiagId2}}/feedback",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "diagnoses",
+                                "{{userDiagId2}}",
+                                "feedback"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.8 GET /api/v1/diagnoses/{{userDiagId2}}/feedback - Retrieve Owner Feedback (200 OK)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Owner feedback retrieval returns 200 OK', function () { pm.response.to.have.status(200); });",
+                                    "var res = pm.response.json();",
+                                    "pm.test('Retrieved feedback reflects latest unverified update', function () {",
+                                    "    pm.expect(res.success).to.be.true;",
+                                    "    pm.expect(res.data.id).to.eql(pm.collectionVariables.get('createdFeedbackId'));",
+                                    "    pm.expect(res.data.expertVerified).to.be.false;",
+                                    "    pm.expect(res.data.userComment).to.eql('Updated observation after close inspection');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses/{{userDiagId2}}/feedback",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "diagnoses",
+                                "{{userDiagId2}}",
+                                "feedback"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.9 GET /api/v1/admin/feedbacks - ROLE_USER Forbidden (403 AUTH_003)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('ROLE_USER blocked from feedback moderation queue (403 AUTH_003)', function () {",
+                                    "    pm.response.to.have.status(403);",
+                                    "    var res = pm.response.json();",
+                                    "    pm.expect(res.success).to.be.false;",
+                                    "    pm.expect(res.code).to.eql('AUTH_003');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/admin/feedbacks",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "admin",
+                                "feedbacks"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.10 GET /api/v1/admin/feedbacks - Filter Pending Tomato Queue (200 OK)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Filtered admin feedback queue returns 200 OK', function () { pm.response.to.have.status(200); });",
+                                    "var res = pm.response.json();",
+                                    "pm.test('Pending TOMATO queue includes createdFeedbackId', function () {",
+                                    "    pm.expect(res.success).to.be.true;",
+                                    "    pm.expect(res.data.content).to.be.an('array');",
+                                    "    var ids = res.data.content.map(function (f) { return f.id; });",
+                                    "    pm.expect(ids).to.include(pm.collectionVariables.get('createdFeedbackId'));",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{adminAccessToken}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/admin/feedbacks?expertVerified=false&plantCode=TOMATO",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "admin",
+                                "feedbacks"
+                            ],
+                            "query": [
+                                {
+                                    "key": "expertVerified",
+                                    "value": "false"
+                                },
+                                {
+                                    "key": "plantCode",
+                                    "value": "TOMATO"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.11 GET /api/v1/admin/feedbacks - Invalid Date Range Rejected (400 REQ_001)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Invalid date range returns 400 REQ_001', function () {",
+                                    "    pm.response.to.have.status(400);",
+                                    "    var res = pm.response.json();",
+                                    "    pm.expect(res.success).to.be.false;",
+                                    "    pm.expect(res.code).to.eql('REQ_001');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{adminAccessToken}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/admin/feedbacks?fromDate=2026-12-31T00:00:00Z&toDate=2026-01-01T00:00:00Z",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "admin",
+                                "feedbacks"
+                            ],
+                            "query": [
+                                {
+                                    "key": "fromDate",
+                                    "value": "2026-12-31T00:00:00Z"
+                                },
+                                {
+                                    "key": "toDate",
+                                    "value": "2026-01-01T00:00:00Z"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.12 PATCH /api/v1/admin/feedbacks/{{createdFeedbackId}}/verify - Expert Verification & Override (200 OK)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Feedback verification returns 200 OK', function () { pm.response.to.have.status(200); });",
+                                    "var res = pm.response.json();",
+                                    "pm.test('Verified feedback updates disease label, verifier username, and expertVerified flag', function () {",
+                                    "    pm.expect(res.success).to.be.true;",
+                                    "    pm.expect(res.data.expertVerified).to.be.true;",
+                                    "    pm.expect(res.data.suggestedDiseaseCode).to.eql('TOMATO_EARLY_BLIGHT');",
+                                    "    pm.expect(res.data.verifiedByUsername).to.eql('admin_eiu');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{adminAccessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"isAccurate\": false,\n    \"suggestedDiseaseCode\": \"TOMATO_EARLY_BLIGHT\",\n    \"expertNotes\": \"=SUM(1,1), verified early blight\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/admin/feedbacks/{{createdFeedbackId}}/verify",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "admin",
+                                "feedbacks",
+                                "{{createdFeedbackId}}",
+                                "verify"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.13 POST /api/v1/diagnoses/{{userDiagId2}}/feedback - Verified Feedback Immutable (409 RES_002)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Modifying verified feedback is blocked with 409 RES_002', function () {",
+                                    "    pm.response.to.have.status(409);",
+                                    "    var res = pm.response.json();",
+                                    "    pm.expect(res.success).to.be.false;",
+                                    "    pm.expect(res.code).to.eql('RES_002');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"isAccurate\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/diagnoses/{{userDiagId2}}/feedback",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "diagnoses",
+                                "{{userDiagId2}}",
+                                "feedback"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.14 GET /api/v1/admin/feedbacks/export?format=json - Export Active-Learning JSON (200 OK)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('JSON export returns 200 OK with attachment header', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    pm.expect(pm.response.headers.get('Content-Disposition')).to.include('active-learning-dataset.json');",
+                                    "});",
+                                    "var rows = pm.response.json();",
+                                    "pm.test('JSON export contains verified feedback row with string boundingBoxesJson', function () {",
+                                    "    pm.expect(rows).to.be.an('array');",
+                                    "    var targetId = pm.collectionVariables.get('createdFeedbackId');",
+                                    "    var matched = rows.find(function (r) { return r.feedbackId === targetId; });",
+                                    "    pm.expect(matched).to.be.an('object');",
+                                    "    pm.expect(matched.verifiedDiseaseCode).to.eql('TOMATO_EARLY_BLIGHT');",
+                                    "    pm.expect(matched.boundingBoxesJson).to.be.a('string');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{adminAccessToken}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/admin/feedbacks/export?format=json",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "admin",
+                                "feedbacks",
+                                "export"
+                            ],
+                            "query": [
+                                {
+                                    "key": "format",
+                                    "value": "json"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.15 GET /api/v1/admin/feedbacks/export?format=csv - Export RFC-4180 CSV With Formula Neutralization",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('CSV export returns 200 OK with CSV headers', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv');",
+                                    "    pm.expect(pm.response.headers.get('Content-Disposition')).to.include('active-learning-dataset.csv');",
+                                    "});",
+                                    "var csvText = pm.response.text();",
+                                    "pm.test('CSV export includes header, createdFeedbackId, and formula-neutralized expertNotes', function () {",
+                                    "    pm.expect(csvText).to.include('feedbackId,diagnosisId,');",
+                                    "    pm.expect(csvText).to.include(pm.collectionVariables.get('createdFeedbackId'));",
+                                    "    pm.expect(csvText).to.include('\"\\'=SUM(1,1)');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{adminAccessToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/admin/feedbacks/export?format=csv",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "admin",
+                                "feedbacks",
+                                "export"
+                            ],
+                            "query": [
+                                {
+                                    "key": "format",
+                                    "value": "csv"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.16 GET /api/v1/admin/feedbacks/export?format=xml - Unsupported Format Rejected (400 REQ_001)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Unsupported export format returns 400 REQ_001', function () {",
+                                    "    pm.response.to.have.status(400);",
+                                    "    var res = pm.response.json();",
+                                    "    pm.expect(res.success).to.be.false;",
+                                    "    pm.expect(res.code).to.eql('REQ_001');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{adminAccessToken}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/admin/feedbacks/export?format=xml",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "admin",
+                                "feedbacks",
+                                "export"
+                            ],
+                            "query": [
+                                {
+                                    "key": "format",
+                                    "value": "xml"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.17a PATCH /api/v1/admin/users/{{currentUserId}}/role - Promote User to ROLE_EXPERT",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Admin promotes user to ROLE_EXPERT (200 OK)', function () { pm.response.to.have.status(200); });",
+                                    "var res = pm.response.json();",
+                                    "pm.expect(res.success).to.be.true;",
+                                    "pm.expect(res.data.role).to.eql('ROLE_EXPERT');"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{adminAccessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"role\": \"ROLE_EXPERT\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/admin/users/{{currentUserId}}/role",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "admin",
+                                "users",
+                                "{{currentUserId}}",
+                                "role"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.17b GET /api/v1/admin/feedbacks - ROLE_EXPERT Authorized Without Re-Login (200 OK)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Promoted ROLE_EXPERT reads feedback queue with cached JWT (200 OK)', function () { pm.response.to.have.status(200); });",
+                                    "var res = pm.response.json();",
+                                    "pm.expect(res.success).to.be.true;",
+                                    "pm.expect(res.data.content).to.be.an('array');"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/admin/feedbacks",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "admin",
+                                "feedbacks"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "11.17c PATCH /api/v1/admin/users/{{currentUserId}}/role - Restore User to ROLE_USER",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Admin restores user to ROLE_USER (200 OK)', function () { pm.response.to.have.status(200); });",
+                                    "var res = pm.response.json();",
+                                    "pm.expect(res.success).to.be.true;",
+                                    "pm.expect(res.data.role).to.eql('ROLE_USER');"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{adminAccessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"role\": \"ROLE_USER\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/admin/users/{{currentUserId}}/role",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "admin",
+                                "users",
+                                "{{currentUserId}}",
+                                "role"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "12. Token Reuse Detection & Auth Rate Limit",
+            "item": [
+                {
+                    "name": "12.1 POST /api/v1/auth/login - Fresh Session for Replay Test (Auth 8/10)",
                     "event": [
                         {
                             "listen": "test",
@@ -3329,7 +4311,7 @@
                     }
                 },
                 {
-                    "name": "11.2 POST /api/v1/auth/refresh - Consume & Rotate Refresh Token (Auth 9/10)",
+                    "name": "12.2 POST /api/v1/auth/refresh - Consume & Rotate Refresh Token (Auth 9/10)",
                     "event": [
                         {
                             "listen": "test",
@@ -3371,7 +4353,7 @@
                     }
                 },
                 {
-                    "name": "11.3 POST /api/v1/auth/refresh - Replay Consumed Token Triggers AUTH_006 (Auth 10/10)",
+                    "name": "12.3 POST /api/v1/auth/refresh - Replay Consumed Token Triggers AUTH_006 (Auth 10/10)",
                     "event": [
                         {
                             "listen": "test",
@@ -3415,7 +4397,7 @@
                     }
                 },
                 {
-                    "name": "11.4 POST /api/v1/auth/login - Brute-Force Exceeds 10/min Limit (429 RATE_001)",
+                    "name": "12.4 POST /api/v1/auth/login - Brute-Force Exceeds 10/min Limit (429 RATE_001)",
                     "event": [
                         {
                             "listen": "test",
@@ -3464,7 +4446,7 @@
                     }
                 },
                 {
-                    "name": "11.5 GET /api/v1/auth/me - GET Exempt From Auth POST Rate Limit (200 OK)",
+                    "name": "12.5 GET /api/v1/auth/me - GET Exempt From Auth POST Rate Limit (200 OK)",
                     "event": [
                         {
                             "listen": "test",
