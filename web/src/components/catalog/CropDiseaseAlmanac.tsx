@@ -146,7 +146,7 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
             </div>
           ) : diseases.length === 0 ? (
             <div className="py-8 text-base" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
-              {t.almanacEmpty}
+              {selectedPlantCode && !keyword.trim() ? t.almanacHealthyOnlyCrop : t.almanacEmpty}
             </div>
           ) : (
             diseases.map((disease) => {

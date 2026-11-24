@@ -68,4 +68,23 @@ describe('PrescriptionSpread & DiagnosticWorkbench', () => {
     await user.click(screen.getByRole('button', { name: /lúa đạo ôn/i }));
     expect(screen.getAllByText(/đạo ôn lúa/i).length).toBeGreaterThan(0);
   });
+
+  it('omits capture attribute on file input for gallery picking and hides stale prescription on upload error', async () => {
+    const user = userEvent.setup({ applyAccept: false });
+    const { container } = render(
+      <Providers>
+        <DiagnosticWorkbench />
+      </Providers>
+    );
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput).not.toBeNull();
+    expect(fileInput).not.toHaveAttribute('capture');
+
+    const invalidPdf = new File(['%PDF'], 'bad.pdf', { type: 'application/pdf' });
+    await user.upload(fileInput, invalidPdf);
+
+    expect(
+      screen.queryByRole('heading', { name: /hướng xử lý & thời gian cách ly/i })
+    ).not.toBeInTheDocument();
+  });
 });

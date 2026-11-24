@@ -44,5 +44,8 @@ describe('SeedhouseHeader & Bilingual Agronomic Dictionary', () => {
     );
     await user.click(screen.getByRole('button', { name: /ứng dụng/i }));
     expect(screen.getByText(/lưu nhật ký đồng ruộng/i)).toBeInTheDocument();
+
+    const nav = screen.getByRole('navigation', { name: /điều hướng trang chủ/i });
+    expect(nav.className).not.toMatch(/\bhidden\b/);
   });
 });

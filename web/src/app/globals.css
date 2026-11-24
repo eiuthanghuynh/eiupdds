@@ -85,6 +85,17 @@ input::placeholder,
   opacity: 1;
 }
 
+.ant-select-single .ant-select-selector .ant-select-selection-wrap {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+}
+
+.ant-select-single .ant-select-selector .ant-select-selection-search {
+  position: absolute;
+  inset: 0;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }

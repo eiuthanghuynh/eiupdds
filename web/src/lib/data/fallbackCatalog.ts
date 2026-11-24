@@ -1,4 +1,5 @@
 import type { DiseaseDetailDto, DiseaseSummaryDto, PlantDto, TreatmentDto } from '@/types/pdds';
+import { VI_DISEASE_NAMES, VI_PLANT_NAMES } from '@/lib/i18n/dictionary';
 
 export interface FallbackDiseaseRecord extends DiseaseDetailDto {
   plantCodes: string[];
@@ -562,9 +563,11 @@ export function filterFallbackDiseases(params?: {
       return false;
     }
     if (kw) {
-      const hay = `${d.diseaseCode} ${d.commonName} ${d.scientificName ?? ''} ${d.viSymptoms} ${
-        d.plantCodes.join(' ')
-      }`.toLowerCase();
+      const viDisease = VI_DISEASE_NAMES[d.diseaseCode] ?? '';
+      const viPlants = d.plantCodes.map((code) => VI_PLANT_NAMES[code] ?? '').join(' ');
+      const hay = `${d.diseaseCode} ${d.commonName} ${d.scientificName ?? ''} ${viDisease} ${viPlants} ${d.viSymptoms} ${d.plantCodes.join(
+        ' '
+      )}`.toLowerCase();
       if (!hay.includes(kw)) {
         return false;
       }

@@ -52,9 +52,58 @@ export function LeafSpecimenStage({
   const severityText = localizeSeverity(severity);
 
   const apiErr = error instanceof PddsApiError ? error : null;
+  const is400 = apiErr?.status === 400;
   const is422 = apiErr?.status === 422 || apiErr?.code === 'DIAGNOSIS_003';
   const is429 = apiErr?.status === 429 || apiErr?.code === 'RATE_001';
   const retryMinutes = Math.max(1, Math.ceil((apiErr?.retryAfterSeconds ?? 1800) / 60));
+  const showActiveResult = !isLoading && !error;
+
+  const placedPillBands: Array<{ x1: number; x2: number; y1: number; y2: number }> = [];
+  const pillLayouts = (diagnosis.boundingBoxes ?? []).map((box, idx, allBoxes) => {
+    const anchorRight = box.xMinNormalized > 0.45;
+    const rightPct = Math.round(
+      Math.max(2, Math.min(42, (1 - (box.xMinNormalized + box.widthNormalized)) * 100))
+    );
+    const leftPct = Math.round(Math.max(2, Math.min(42, box.xMinNormalized * 100)));
+    const maxWidthPct = anchorRight ? 98 - rightPct : 98 - leftPct;
+
+    const pillSpanW = 0.42;
+    const pillX1 = anchorRight ? Math.max(0, 1 - rightPct / 100 - pillSpanW) : leftPct / 100;
+    const pillX2 = anchorRight ? 1 - rightPct / 100 : Math.min(1, leftPct / 100 + pillSpanW);
+
+    const aboveY1 = box.yMinNormalized - 0.09;
+    const aboveY2 = box.yMinNormalized;
+
+    const collidesAboveWithBox = allBoxes.some((other, otherIdx) => {
+      if (otherIdx === idx) return false;
+      const ox1 = other.xMinNormalized - 0.02;
+      const ox2 = other.xMinNormalized + other.widthNormalized + 0.02;
+      const oy1 = other.yMinNormalized - 0.02;
+      const oy2 = other.yMinNormalized + other.heightNormalized + 0.02;
+      return pillX1 <= ox2 && pillX2 >= ox1 && aboveY1 <= oy2 && aboveY2 >= oy1;
+    });
+
+    const collidesAboveWithPill = placedPillBands.some(
+      (b) => pillX1 <= b.x2 && pillX2 >= b.x1 && aboveY1 <= b.y2 && aboveY2 >= b.y1
+    );
+
+    const placeAbove = box.yMinNormalized >= 0.12 && !collidesAboveWithBox && !collidesAboveWithPill;
+    const finalY1 = placeAbove ? aboveY1 : box.yMinNormalized + box.heightNormalized;
+    const finalY2 = placeAbove ? aboveY2 : box.yMinNormalized + box.heightNormalized + 0.09;
+    placedPillBands.push({ x1: pillX1, x2: pillX2, y1: finalY1, y2: finalY2 });
+
+    return {
+      box,
+      anchorRight,
+      rightPct,
+      leftPct,
+      maxWidthPct,
+      placement: placeAbove ? ('above' as const) : ('below' as const),
+      topPct: placeAbove
+        ? box.yMinNormalized * 100
+        : (box.yMinNormalized + box.heightNormalized) * 100,
+    };
+  });
 
   return (
     <div
@@ -71,44 +120,63 @@ export function LeafSpecimenStage({
             className="font-display text-xl sm:text-2xl font-bold leading-snug m-0"
             style={{ color: SEEDHOUSE_COLORS.creamWarm }}
           >
-            {diseaseTitle}
+            {isLoading
+              ? t.stageNeutralLoadingHeading
+              : error
+                ? t.stageNeutralErrorHeading
+                : diseaseTitle}
           </h2>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm tabular-nums" style={{ color: '#E5DEC9' }}>
-            {plantTitle && <span className="font-semibold">{plantTitle}</span>}
-            {plantTitle && <span aria-hidden="true">·</span>}
-            <span>{t.confidenceLabel(confidencePct, boxCount)}</span>
-            {isSample && (
-              <>
-                <span aria-hidden="true">·</span>
-                <span
-                  className="underline decoration-dotted font-semibold"
-                  style={{ color: SEEDHOUSE_COLORS.mustard }}
-                >
-                  {t.sampleReferenceBadge}
-                </span>
-              </>
-            )}
-          </div>
+          {showActiveResult && (
+            <div
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm tabular-nums"
+              style={{ color: '#E5DEC9' }}
+            >
+              {plantTitle && <span className="font-semibold">{plantTitle}</span>}
+              {plantTitle && <span aria-hidden="true">·</span>}
+              <span>{t.confidenceLabel(confidencePct, boxCount)}</span>
+              {isSample && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span
+                    className="underline decoration-dotted font-semibold"
+                    style={{ color: SEEDHOUSE_COLORS.mustard }}
+                  >
+                    {t.sampleReferenceBadge}
+                  </span>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Tactile Woodcut Verification Stamp */}
-        <div
-          key={diagnosis.diagnosisId}
-          className="animate-ink-stamp px-3.5 py-2 border border-dashed flex items-center gap-2 text-xs font-bold tracking-[0.12em] uppercase shrink-0"
-          style={
-            isHealthy
-              ? { borderColor: '#B8E0A8', color: '#E4F7DC', backgroundColor: '#2A3818' }
-              : severity === 'CRITICAL' || severity === 'HIGH'
-                ? { borderColor: SEEDHOUSE_COLORS.mustard, color: SEEDHOUSE_COLORS.mustard, backgroundColor: '#2B2114' }
-                : { borderColor: '#E5DEC9', color: SEEDHOUSE_COLORS.creamWarm, backgroundColor: '#30381C' }
-          }
-        >
-          <StampCheckIcon
-            size={16}
-            stroke={isHealthy ? '#E4F7DC' : SEEDHOUSE_COLORS.mustard}
-          />
-          <span>{severityText}</span>
-        </div>
+        {/* Tactile Woodcut Verification Stamp (only when valid result is shown) */}
+        {showActiveResult && (
+          <div
+            key={diagnosis.diagnosisId}
+            className="animate-ink-stamp px-3.5 py-2 border border-dashed flex items-center gap-2 text-xs font-bold tracking-[0.12em] uppercase shrink-0"
+            style={
+              isHealthy
+                ? { borderColor: '#B8E0A8', color: '#E4F7DC', backgroundColor: '#2A3818' }
+                : severity === 'CRITICAL' || severity === 'HIGH'
+                  ? {
+                      borderColor: SEEDHOUSE_COLORS.mustard,
+                      color: SEEDHOUSE_COLORS.mustard,
+                      backgroundColor: '#2B2114',
+                    }
+                  : {
+                      borderColor: '#E5DEC9',
+                      color: SEEDHOUSE_COLORS.creamWarm,
+                      backgroundColor: '#30381C',
+                    }
+            }
+          >
+            <StampCheckIcon
+              size={16}
+              stroke={isHealthy ? '#E4F7DC' : SEEDHOUSE_COLORS.mustard}
+            />
+            <span>{severityText}</span>
+          </div>
+        )}
       </div>
 
       {/* Main Optical Mat: Loading / Error Recovery / Aspect-Ratio-Locked Leaf Canvas */}
@@ -138,15 +206,24 @@ export function LeafSpecimenStage({
           role="alert"
         >
           <div className="space-y-2.5">
-            <h3 className="font-display text-lg sm:text-xl font-bold m-0" style={{ color: SEEDHOUSE_COLORS.mustard }}>
-              {is422 ? t.error422Title : is429 ? t.error429Title : error.message || t.error422Title}
+            <h3
+              className="font-display text-lg sm:text-xl font-bold m-0"
+              style={{ color: SEEDHOUSE_COLORS.mustard }}
+            >
+              {is422
+                ? t.error422Title
+                : is429
+                  ? t.error429Title
+                  : is400
+                    ? t.error400Title
+                    : error.message || t.error422Title}
             </h3>
             <p className="text-sm sm:text-base leading-relaxed m-0" style={{ color: '#EDE4D1' }}>
               {is422
                 ? t.error422Body
                 : is429
                   ? t.error429Body(retryMinutes)
-                  : apiErr?.status === 400
+                  : is400 && apiErr
                     ? apiErr.message
                     : t.errorGenericBody}
             </p>
@@ -234,43 +311,39 @@ export function LeafSpecimenStage({
                   })}
                 </svg>
 
-                {diagnosis.boundingBoxes.map((box) => {
-                  const anchorRight = box.xMinNormalized > 0.45;
-                  const rightPct = Math.round(
-                    Math.max(2, Math.min(42, (1 - (box.xMinNormalized + box.widthNormalized)) * 100))
-                  );
-                  const leftPct = Math.round(Math.max(2, Math.min(42, box.xMinNormalized * 100)));
-                  const maxWidthPct = anchorRight ? 98 - rightPct : 98 - leftPct;
-                  const topRaw = box.yMinNormalized * 100;
-                  const placeAbove = topRaw >= 13;
-                  const topPct = placeAbove
-                    ? Math.max(1.5, topRaw - 10)
-                    : Math.min(85, (box.yMinNormalized + box.heightNormalized) * 100 + 2);
-                  const boxPct = Math.round((box.confidence ?? 0.85) * 100);
-                  const rawTitle = box.diseaseCode
-                    ? localizeDiseaseName(box.diseaseCode, box.label)
-                    : box.label;
-                  const compactTitle = rawTitle.replace(/\s*\([^)]*\)/g, '').trim();
+                {pillLayouts.map(
+                  ({ box, anchorRight, rightPct, leftPct, maxWidthPct, placement, topPct }) => {
+                    const boxPct = Math.round((box.confidence ?? 0.85) * 100);
+                    const rawTitle = box.diseaseCode
+                      ? localizeDiseaseName(box.diseaseCode, box.label)
+                      : box.label;
+                    const compactTitle = rawTitle.replace(/\s*\([^)]*\)/g, '').trim();
 
-                  return (
-                    <span
-                      key={`${box.id}-tag`}
-                      data-testid="bbox-label-pill"
-                      className="absolute px-2 py-0.5 text-xs font-bold leading-snug inline-flex items-center border tabular-nums overflow-hidden"
-                      style={{
-                        ...(anchorRight ? { right: `${rightPct}%` } : { left: `${leftPct}%` }),
-                        top: `${topPct}%`,
-                        maxWidth: `${maxWidthPct}%`,
-                        backgroundColor: '#241C14',
-                        borderColor: SEEDHOUSE_COLORS.mustard,
-                        color: SEEDHOUSE_COLORS.creamWarm,
-                      }}
-                    >
-                      <span className="truncate">{compactTitle}</span>
-                      <span className="shrink-0 ml-1">· {boxPct}%</span>
-                    </span>
-                  );
-                })}
+                    return (
+                      <span
+                        key={`${box.id}-tag`}
+                        data-testid="bbox-label-pill"
+                        data-placement={placement}
+                        className="absolute px-2 py-0.5 text-xs font-bold leading-snug inline-flex items-center border tabular-nums overflow-hidden"
+                        style={{
+                          ...(anchorRight ? { right: `${rightPct}%` } : { left: `${leftPct}%` }),
+                          top: `${topPct}%`,
+                          transform:
+                            placement === 'above'
+                              ? 'translateY(calc(-100% - 4px))'
+                              : 'translateY(4px)',
+                          maxWidth: `${maxWidthPct}%`,
+                          backgroundColor: '#241C14',
+                          borderColor: SEEDHOUSE_COLORS.mustard,
+                          color: SEEDHOUSE_COLORS.creamWarm,
+                        }}
+                      >
+                        <span className="truncate">{compactTitle}</span>
+                        <span className="shrink-0 ml-1">· {boxPct}%</span>
+                      </span>
+                    );
+                  }
+                )}
               </div>
             )}
           </div>
@@ -283,7 +356,7 @@ export function LeafSpecimenStage({
         style={{ borderColor: SEEDHOUSE_COLORS.oliveRule }}
       >
         <span style={{ color: '#E2D8C1' }}>
-          {diagnosis.dominantDisease?.scientificName ? (
+          {showActiveResult && diagnosis.dominantDisease?.scientificName ? (
             <em>{diagnosis.dominantDisease.scientificName}</em>
           ) : (
             <span>EIU PDDS Computer Vision</span>

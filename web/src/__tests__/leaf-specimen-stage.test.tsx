@@ -29,11 +29,14 @@ describe('LeafSpecimenStage', () => {
     const frame = screen.getByTestId('specimen-aspect-frame');
     expect(frame).toHaveStyle({ aspectRatio: '1080 / 1920' });
     expect(screen.getByTestId('bbox-overlay-group')).toBeVisible();
-    const firstTag = screen.getAllByTestId('bbox-label-pill')[0];
+    const pills = screen.getAllByTestId('bbox-label-pill');
+    const firstTag = pills[0];
     const rightPct = Number.parseFloat(firstTag.style.right || '0');
     const leftPct = Number.parseFloat(firstTag.style.left || '0');
     const maxW = Number.parseFloat(firstTag.style.maxWidth || '100');
     expect((rightPct || leftPct) + maxW).toBeLessThanOrEqual(99);
+    expect(pills[0]).toHaveAttribute('data-placement', 'above');
+    expect(pills[1]).toHaveAttribute('data-placement', 'below');
 
     await user.click(screen.getByRole('button', { name: /khung đốm bệnh/i }));
     expect(screen.queryByTestId('bbox-overlay-group')).not.toBeInTheDocument();
@@ -55,6 +58,8 @@ describe('LeafSpecimenStage', () => {
       </Providers>
     );
     expect(screen.getByText(/chưa nhìn rõ lá cây hoặc vết bệnh/i)).toBeInTheDocument();
+    expect(screen.queryByText(/nguy hiểm khẩn cấp/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/bệnh mốc sương khoai tây/i)).not.toBeInTheDocument();
 
     rerender(
       <Providers>

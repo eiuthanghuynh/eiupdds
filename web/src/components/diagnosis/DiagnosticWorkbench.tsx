@@ -96,12 +96,16 @@ export function DiagnosticWorkbench(): React.JSX.Element {
       });
       setQuota(nextQuota);
     } catch (err) {
-      if (err instanceof PddsApiError && err.status === 429) {
-        setQuota((prev) => ({
-          ...prev,
-          remaining: 0,
-          retryAfterSeconds: err.retryAfterSeconds,
-        }));
+      if (err instanceof PddsApiError) {
+        if (err.quota) {
+          setQuota(err.quota);
+        } else if (err.status === 429) {
+          setQuota((prev) => ({
+            ...prev,
+            remaining: 0,
+            retryAfterSeconds: err.retryAfterSeconds,
+          }));
+        }
       }
       setClientError(err as Error);
     }
@@ -171,7 +175,6 @@ export function DiagnosticWorkbench(): React.JSX.Element {
                 ref={fileInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                capture="environment"
                 className="sr-only"
                 onChange={(e) => {
                   const picked = e.target.files?.[0];
@@ -185,12 +188,15 @@ export function DiagnosticWorkbench(): React.JSX.Element {
               <div
                 onDragOver={(e) => {
                   e.preventDefault();
-                  setIsDragOver(true);
+                  if (!analyzeMutation.isPending) {
+                    setIsDragOver(true);
+                  }
                 }}
                 onDragLeave={() => setIsDragOver(false)}
                 onDrop={(e) => {
                   e.preventDefault();
                   setIsDragOver(false);
+                  if (analyzeMutation.isPending) return;
                   const dropped = e.dataTransfer.files?.[0];
                   if (dropped) {
                     void handleFileUpload(dropped);
@@ -275,8 +281,10 @@ export function DiagnosticWorkbench(): React.JSX.Element {
         </div>
       </section>
 
-      {/* Full-Width Unboxed 3-Column Hairline Prescription Spread */}
-      <PrescriptionSpread diagnosis={activeDiagnosis} />
+      {/* Full-Width Unboxed 3-Column Hairline Prescription Spread (only when valid result is active) */}
+      {!activeError && !analyzeMutation.isPending && (
+        <PrescriptionSpread diagnosis={activeDiagnosis} />
+      )}
     </div>
   );
 }

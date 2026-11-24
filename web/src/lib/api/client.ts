@@ -13,6 +13,7 @@ import {
   filterFallbackDiseases,
   findFallbackDiseaseRecord,
 } from '@/lib/data/fallbackCatalog';
+import { VI_DISEASE_NAMES, VI_PLANT_NAMES } from '@/lib/i18n/dictionary';
 
 const DEFAULT_API_BASE = 'http://localhost:8080';
 const MAX_LEAF_IMAGE_BYTES = 15 * 1024 * 1024;
@@ -27,13 +28,21 @@ export class PddsApiError extends Error {
   public readonly status: number;
   public readonly code: string;
   public readonly retryAfterSeconds?: number;
+  public readonly quota?: GuestQuotaInfo;
 
-  constructor(status: number, code: string, message: string, retryAfterSeconds?: number) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    retryAfterSeconds?: number,
+    quota?: GuestQuotaInfo
+  ) {
     super(message);
     this.name = 'PddsApiError';
     this.status = status;
     this.code = code;
     this.retryAfterSeconds = retryAfterSeconds;
+    this.quota = quota;
   }
 }
 
@@ -99,7 +108,15 @@ export async function analyzeLeafGuest(
           ? 'DIAGNOSIS_003'
           : 'API_ERROR');
     const message = body?.message ?? `HTTP ${response.status}`;
-    throw new PddsApiError(response.status, code, message, retryAfterSeconds);
+    const errorQuota: GuestQuotaInfo | undefined =
+      remaining !== undefined || response.status === 429
+        ? {
+            limit,
+            remaining: remaining ?? 0,
+            retryAfterSeconds,
+          }
+        : undefined;
+    throw new PddsApiError(response.status, code, message, retryAfterSeconds, errorQuota);
   }
 
   return {
@@ -146,9 +163,6 @@ export async function fetchDiseases(params?: {
     if (params?.plantCode) {
       search.set('plantCode', params.plantCode);
     }
-    if (params?.keyword?.trim()) {
-      search.set('keyword', params.keyword.trim());
-    }
     const response = await fetch(`${getApiBaseUrl()}/api/v1/diseases?${search.toString()}`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
@@ -158,7 +172,20 @@ export async function fetchDiseases(params?: {
     }
     const body = (await response.json()) as ApiResponse<PageResponse<DiseaseSummaryDto>>;
     if (body?.data?.content) {
-      return { diseases: body.data.content, isOfflineFallback: false };
+      const kw = params?.keyword?.trim().toLowerCase();
+      const filtered = kw
+        ? body.data.content.filter((d) => {
+            const fallbackRecord = findFallbackDiseaseRecord(d.diseaseCode);
+            const viDisease = VI_DISEASE_NAMES[d.diseaseCode] ?? '';
+            const plantCodes = fallbackRecord?.plantCodes ?? (params?.plantCode ? [params.plantCode] : []);
+            const viPlants = plantCodes.map((code) => VI_PLANT_NAMES[code] ?? '').join(' ');
+            const hay = `${d.diseaseCode} ${d.commonName} ${d.scientificName ?? ''} ${viDisease} ${viPlants} ${
+              fallbackRecord?.viSymptoms ?? ''
+            } ${plantCodes.join(' ')}`.toLowerCase();
+            return hay.includes(kw);
+          })
+        : body.data.content;
+      return { diseases: filtered, isOfflineFallback: false };
     }
     return { diseases: filterFallbackDiseases(params), isOfflineFallback: true };
   } catch {

@@ -41,7 +41,8 @@ export function SeedhouseHeader(): React.JSX.Element {
 
           <nav
             aria-label="Điều hướng trang chủ"
-            className="hidden lg:flex items-center gap-6 text-xs font-semibold tracking-[0.1em] uppercase whitespace-nowrap"
+            className="order-3 lg:order-none w-full lg:w-auto pt-2.5 lg:pt-0 border-t lg:border-t-0 flex flex-wrap items-center gap-x-5 gap-y-2 lg:gap-6 text-xs font-semibold tracking-[0.1em] uppercase"
+            style={{ borderColor: '#697349' }}
           >
             <a
               href="#ban-kham"

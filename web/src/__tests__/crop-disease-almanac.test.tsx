@@ -31,4 +31,24 @@ describe('CropDiseaseAlmanac & Inline Fold-Open Sheet', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect((await screen.findAllByText(/magnaporthe oryzae/i)).length).toBeGreaterThan(0);
   });
+
+  it('matches Vietnamese placeholder keywords ("mốc sương", "đạo ôn", "cà chua") and explains healthy-only crops ("Đào")', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
+    const user = userEvent.setup();
+    render(
+      <Providers>
+        <CropDiseaseAlmanac />
+      </Providers>
+    );
+
+    const searchBox = await screen.findByPlaceholderText(/mốc sương/i);
+    await user.type(searchBox, 'mốc sương');
+    expect(await screen.findByRole('button', { name: /mốc sương khoai tây/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /mốc sương cà chua/i })).toBeInTheDocument();
+
+    await user.clear(searchBox);
+    await user.click(screen.getByRole('button', { name: /^Đào$/i }));
+    expect(await screen.findByText(/nhận diện lá khỏe mạnh/i)).toBeInTheDocument();
+    expect(screen.queryByText(/không tìm thấy bệnh nào khớp với từ khóa/i)).not.toBeInTheDocument();
+  });
 });

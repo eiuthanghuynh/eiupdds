@@ -26,8 +26,11 @@ export interface UiCopy {
   toggleBoxesHide: string;
   toggleBoxesShow: string;
   confidenceLabel: (pct: number, count: number) => string;
+  stageNeutralLoadingHeading: string;
+  stageNeutralErrorHeading: string;
   loadingStageTitle: string;
   loadingStageBody: string;
+  error400Title: string;
   error422Title: string;
   error422Body: string;
   error429Title: string;
@@ -58,6 +61,7 @@ export interface UiCopy {
   almanacSearchPlaceholder: string;
   almanacOfflineNote: string;
   almanacEmpty: string;
+  almanacHealthyOnlyCrop: string;
   sheetSymptomsHeading: string;
   sheetConditionsHeading: string;
   sheetTreatmentsHeading: string;
@@ -88,15 +92,18 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     cropHintLabel: 'Loại cây đang trồng (không bắt buộc):',
     cropHintAll: 'Tự động nhận diện từ lá',
     uploadCta: 'Chụp / Tải Ảnh Lá Lên',
-    uploadDropHint: 'Hoặc kéo thả ảnh lá cây vào đây (JPEG, PNG, WebP · tối đa 15MB)',
+    uploadDropHint: 'Hoặc kéo thả ảnh lá cây vào đây (JPEG, PNG, WebP — tối đa\u00A015MB)',
     quotaLabel: (remaining, limit) => `Còn ${remaining}/${limit} lượt quét ảnh thật miễn phí trong giờ này`,
     sampleGroupLabel: 'Chưa có sẵn ảnh? Bấm xem thử lá mẫu:',
     sampleReferenceBadge: 'Mẫu đối chứng có sẵn',
     toggleBoxesHide: 'Tắt khung đốm bệnh',
     toggleBoxesShow: 'Bật khung đốm bệnh',
     confidenceLabel: (pct, count) => `Độ chắc chắn ${pct}% · Khoanh ${count} vùng trên lá`,
+    stageNeutralLoadingHeading: 'Bàn Soi Mẫu Lá Đang Phân Tích',
+    stageNeutralErrorHeading: 'Cần Kiểm Tra Lại Ảnh Lá Tải Lên',
     loadingStageTitle: 'Đang soi mặt lá & đối chiếu phác đồ nông học...',
     loadingStageBody: 'Bà con chờ khoảng 2–4 giây để máy khoanh vùng đốm bệnh và tra ngày cách ly.',
+    error400Title: 'Tệp ảnh tải lên chưa đúng định dạng hoặc quá lớn',
     error422Title: 'Chưa nhìn rõ lá cây hoặc vết bệnh trong ảnh',
     error422Body:
       'Bà con hãy đặt chiếc lá lên nền phẳng hoặc giữ tay thật vững, đưa camera lại gần mặt lá dưới chỗ đủ ánh sáng tự nhiên rồi chụp lại nhé.',
@@ -135,6 +142,8 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     almanacSearchPlaceholder: 'Tìm tên bệnh hoặc tên cây (ví dụ: mốc sương, đạo ôn, cà chua)...',
     almanacOfflineNote: 'Đang hiển thị bản dữ liệu chuẩn lưu sẵn (máy chủ API nội bộ đang tạm nghỉ).',
     almanacEmpty: 'Không tìm thấy bệnh nào khớp với từ khóa đang lọc.',
+    almanacHealthyOnlyCrop:
+      'Cây trồng này hiện hỗ trợ nhận diện lá khỏe mạnh; chưa có bệnh hại riêng trong danh mục 15\u00A0bệnh.',
     sheetSymptomsHeading: 'Dấu hiệu nhận biết trên lá & thân',
     sheetConditionsHeading: 'Điều kiện thời tiết dễ bùng bệnh',
     sheetTreatmentsHeading: 'Phác đồ xử lý tham khảo',
@@ -166,15 +175,18 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     cropHintLabel: 'Crop being grown (optional):',
     cropHintAll: 'Auto-detect from leaf photo',
     uploadCta: 'Capture / Upload Leaf Photo',
-    uploadDropHint: 'Or drag and drop a leaf image here (JPEG, PNG, WebP · max 15MB)',
+    uploadDropHint: 'Or drag and drop a leaf image here (JPEG, PNG, WebP — max\u00A015MB)',
     quotaLabel: (remaining, limit) => `${remaining}/${limit} free live guest scans remaining this hour`,
     sampleGroupLabel: 'No leaf photo handy? Try a reference specimen:',
     sampleReferenceBadge: 'Sample reference',
     toggleBoxesHide: 'Hide lesion boxes',
     toggleBoxesShow: 'Show lesion boxes',
     confidenceLabel: (pct, count) => `${pct}% confidence · ${count} region(s) bounded`,
+    stageNeutralLoadingHeading: 'Analyzing Uploaded Leaf Specimen',
+    stageNeutralErrorHeading: 'Uploaded Leaf Photo Needs Attention',
     loadingStageTitle: 'Inspecting leaf surface & matching agronomic protocols...',
     loadingStageBody: 'Please wait 2–4 seconds while lesion coordinates and pre-harvest intervals are prepared.',
+    error400Title: 'Unsupported file format or file exceeds size limit',
     error422Title: 'No clear leaf or disease lesion detected in this photo',
     error422Body:
       'Place the leaf against a steady surface in natural daylight, move the camera closer to the affected blade, and try another photo.',
@@ -213,6 +225,8 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     almanacSearchPlaceholder: 'Search disease or crop name (e.g., late blight, blast, tomato)...',
     almanacOfflineNote: 'Showing bundled reference catalog snapshot (local API server is currently offline).',
     almanacEmpty: 'No diseases match the current crop and keyword filter.',
+    almanacHealthyOnlyCrop:
+      'This crop currently supports healthy-leaf verification; no separate pathology entry is listed among the 15 catalog\u00A0diseases.',
     sheetSymptomsHeading: 'Foliar & Stem Symptoms',
     sheetConditionsHeading: 'Favorable Weather & Risk Conditions',
     sheetTreatmentsHeading: 'Curated Agronomic Treatments',

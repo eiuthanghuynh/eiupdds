@@ -27,14 +27,19 @@ describe('PddsApiClient & Resilience Guards', () => {
     } satisfies Partial<PddsApiError>);
   });
 
-  it('surfaces DIAGNOSIS_003 on 422 empty detection', async () => {
+  it('surfaces DIAGNOSIS_003 and preserves X-RateLimit-Remaining quota on 422 empty detection', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       new Response(JSON.stringify({ success: false, code: 'DIAGNOSIS_003', message: 'No leaf detected' }), {
         status: 422,
+        headers: { 'X-RateLimit-Limit': '3', 'X-RateLimit-Remaining': '2' },
       })
     );
     const valid = new File(['img'], 'blur.png', { type: 'image/png' });
-    await expect(analyzeLeafGuest(valid)).rejects.toMatchObject({ status: 422, code: 'DIAGNOSIS_003' });
+    await expect(analyzeLeafGuest(valid)).rejects.toMatchObject({
+      status: 422,
+      code: 'DIAGNOSIS_003',
+      quota: { limit: 3, remaining: 2 },
+    });
   });
 
   it('falls back to bundled 9-crop snapshot when backend is unreachable', async () => {
