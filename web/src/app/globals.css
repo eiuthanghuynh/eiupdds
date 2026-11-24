@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-kraft: #e6dac4;
+  --bg-parchment: #efe7d6;
+  --bg-sheet: #faf5eb;
+  --bg-olive: #434c28;
+  --bg-stage: #3d4624;
+  --bg-mat: #2f371b;
+  --accent-terracotta: #8c3419;
+  --accent-terracotta-hover: #732912;
+  --accent-mustard: #f5cf7a;
+  --status-critical: #8f1d1e;
+  --status-moderate: #78350f;
+  --border-hairline: #b8a88a;
+  --ink-primary: #241c14;
+  --ink-muted: #4a3d2e;
+  --ink-cream: #f6efe0;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--bg-kraft);
+  color: var(--ink-primary);
+  caret-color: var(--accent-terracotta);
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-kraft);
+  color: var(--ink-primary);
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  text-underline-offset: 5px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Browser surfaces — Village Seedhouse craft floor */
+::selection {
+  background-color: #434c28;
+  color: #faf3e6;
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e6dac4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #8c7b61;
+  border: 2px solid #e6dac4;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6d5e48;
+}
+
+:focus-visible {
+  outline: 2px solid #8c3419;
+  outline-offset: 3px;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Subtle vertical ribbed kraft texture */
+.bg-kraft-ribbed {
+  background-color: var(--bg-kraft);
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(164, 146, 117, 0.14) 0px,
+    rgba(164, 146, 117, 0.14) 1px,
+    transparent 1px,
+    transparent 8px
+  );
+}
+
+/* Tactile stitched terracotta plaque */
+.plaque-terracotta {
+  background-color: var(--accent-terracotta);
+  color: #fffdf9;
+  outline: 1px dashed rgba(250, 243, 230, 0.65);
+  outline-offset: -5px;
+  transition: background-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.plaque-terracotta:hover {
+  background-color: var(--accent-terracotta-hover);
+}
+
+.plaque-terracotta:active {
+  transform: translateY(1px);
+}
+
+/* Woodcut ink-stamp press reveal — single authored motion */
+@keyframes seedhouseStampPress {
+  0% {
+    transform: scale(1.12) rotate(-2deg);
+    filter: blur(1px);
+  }
+  70% {
+    transform: scale(0.98) rotate(0deg);
+    filter: blur(0px);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: blur(0px);
+  }
+}
+
+.animate-ink-stamp {
+  animation: seedhouseStampPress 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-ink-stamp {
+    animation: none;
+  }
+  .plaque-terracotta {
+    transition: none;
+  }
+}
