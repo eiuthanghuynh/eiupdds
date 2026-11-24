@@ -28,8 +28,8 @@ export function SeedhouseFooter({
                 EIU PDDS
               </span>
             </div>
-            <p className="text-sm leading-relaxed m-0 max-w-xl" style={{ color: '#EAE0CC' }}>
-              {t.footerSummary}
+            <p className="text-sm leading-relaxed m-0 max-w-lg" style={{ color: '#EAE0CC' }}>
+              {t.footerSummary}&nbsp;
             </p>
           </div>
 
@@ -40,7 +40,7 @@ export function SeedhouseFooter({
             <p className="text-sm leading-relaxed m-0" style={{ color: '#EAE0CC' }}>
               {t.footerSafetyNote}
             </p>
-            <p className="text-xs tracking-[0.06em] m-0 pt-2" style={{ color: '#D8CCB4' }}>
+            <p className="text-xs m-0 pt-2 max-w-md" style={{ color: '#D8CCB4' }}>
               {t.footerCopyright}
             </p>
           </div>

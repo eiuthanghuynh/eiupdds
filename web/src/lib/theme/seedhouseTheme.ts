@@ -35,6 +35,7 @@ export const seedhouseAntdTheme: ThemeConfig = {
     colorBgElevated: SEEDHOUSE_COLORS.sheet,
     colorTextBase: SEEDHOUSE_COLORS.ink,
     colorTextSecondary: SEEDHOUSE_COLORS.inkMuted,
+    colorTextPlaceholder: '#5C4D3C',
     colorBorder: SEEDHOUSE_COLORS.hairline,
     colorBorderSecondary: '#CFC1A8',
     borderRadius: 2,

@@ -26,6 +26,7 @@ export function useDiseasesQuery(filter?: { plantCode?: string; keyword?: string
   return useQuery({
     queryKey: ['pdds', 'diseases', filter?.plantCode ?? 'ALL', filter?.keyword ?? ''],
     queryFn: () => fetchDiseases(filter),
+    placeholderData: (prev) => prev,
   });
 }
 

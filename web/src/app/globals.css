@@ -67,20 +67,31 @@ body {
   outline-offset: 3px;
 }
 
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
+
+p,
+li {
+  text-wrap: pretty;
+}
+
+input::placeholder,
+.ant-input::placeholder {
+  color: #5c4d3c !important;
+  opacity: 1;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Subtle vertical ribbed kraft texture */
+/* Matte kraft paper surface */
 .bg-kraft-ribbed {
   background-color: var(--bg-kraft);
-  background-image: repeating-linear-gradient(
-    90deg,
-    rgba(164, 146, 117, 0.14) 0px,
-    rgba(164, 146, 117, 0.14) 1px,
-    transparent 1px,
-    transparent 8px
-  );
 }
 
 /* Tactile stitched terracotta plaque */

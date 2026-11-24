@@ -121,13 +121,13 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
       'Thiết kế tối giản thao tác để bất kỳ người trồng cây nào cũng kiểm tra được ngay ngoài hiên nhà hay bờ ruộng.',
     howStep1Title: 'Chụp Rõ Một Mặt Lá Đang Nghi Bệnh',
     howStep1Body:
-      'Chọn chiếc lá có vết đốm đặc trưng nhất, hướng ra chỗ sáng tự nhiên để thấy rõ màu vết bệnh và gân lá.',
-    howStep2Title: 'Đối Chiếu Khung Khoanh Vùng Bằng Mắt',
+      'Chọn chiếc lá có vết đốm đặc trưng nhất, hướng ra chỗ sáng tự nhiên để thấy rõ màu vết bệnh và gân\u00A0lá.',
+    howStep2Title: 'Đối Chiếu Khung Vết Bệnh Bằng\u00A0Mắt',
     howStep2Body:
-      'Bật hoặc tắt khung vàng trên ảnh để tự mắt kiểm tra xem máy có khoanh đúng vết cháy lá thật hay không.',
-    howStep3Title: 'Ưu Tiên Hướng Sinh Học & Đúng Ngày Cách Ly',
+      'Bật hoặc tắt khung vàng trên ảnh để tự mắt kiểm tra xem máy có khoanh đúng vết cháy lá thật hay\u00A0không.',
+    howStep3Title: 'Ưu Tiên Sinh Học & Đúng Ngày Cách\u00A0Ly',
     howStep3Body:
-      'Luôn xem biện pháp cắt tỉa và nấm đối kháng trước; khi buộc phải dùng thuốc đặc trị, tuân thủ tuyệt đối số ngày ngưng thuốc.',
+      'Luôn xem biện pháp cắt tỉa và nấm đối kháng trước; khi buộc phải dùng thuốc đặc trị, tuân thủ tuyệt đối số ngày ngưng\u00A0thuốc.',
     almanacHeading: 'Sổ Tay 9 Cây Trồng & 15 Bệnh Thường Gặp',
     almanacLead:
       'Bấm chọn loại cây bà con đang trồng, sau đó bấm vào tên bệnh để lật mở tờ hướng dẫn triệu chứng và cách phòng trị ngay tại chỗ.',
@@ -139,10 +139,11 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     sheetConditionsHeading: 'Điều kiện thời tiết dễ bùng bệnh',
     sheetTreatmentsHeading: 'Phác đồ xử lý tham khảo',
     footerSummary:
-      'EIU Plant Disease Detection System (EIU PDDS) — Dự án Kỹ thuật Phần mềm ứng dụng Thị giác Máy tính hỗ trợ nhận diện bệnh lá cây và tra cứu phác đồ nông học an toàn.',
+      'EIU Plant Disease Detection System (EIU PDDS) — Dự án Kỹ thuật Phần mềm ứng dụng Thị giác Máy tính hỗ trợ nhận diện bệnh lá cây và tra cứu phác đồ nông học an\u00A0toàn.',
     footerSafetyNote:
-      'Lưu ý nông học: Kết quả nhận diện qua hình ảnh là tài liệu tham khảo nhanh tại vườn. Với diện tích canh tác lớn hoặc bệnh lây lan bất thường, bà con nên tham khảo thêm cán bộ bảo vệ thực vật địa phương.',
-    footerCopyright: '© 2026 EIU Plant Disease Detection System (EIU PDDS) · Eastern International University.',
+      'Lưu ý nông học: Kết quả nhận diện qua hình ảnh là tài liệu tham khảo nhanh tại vườn. Với diện tích canh tác lớn hoặc bệnh lây lan bất thường, bà con nên tham khảo thêm cán bộ bảo vệ thực vật địa\u00A0phương.',
+    footerCopyright:
+      '© 2026 EIU Plant Disease Detection System (EIU PDDS) · Eastern International\u00A0University.',
   },
   en: {
     brandSubtitle: 'EIU Plant Disease Detection System',

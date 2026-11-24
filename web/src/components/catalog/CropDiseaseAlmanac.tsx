@@ -140,7 +140,11 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
           className="border-t border-b divide-y"
           style={{ borderColor: SEEDHOUSE_COLORS.hairline }}
         >
-          {diseases.length === 0 ? (
+          {diseasesQuery.isLoading && diseases.length === 0 ? (
+            <div className="py-8 text-base" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
+              ...
+            </div>
+          ) : diseases.length === 0 ? (
             <div className="py-8 text-base" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
               {t.almanacEmpty}
             </div>

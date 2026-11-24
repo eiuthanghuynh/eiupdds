@@ -29,6 +29,11 @@ describe('LeafSpecimenStage', () => {
     const frame = screen.getByTestId('specimen-aspect-frame');
     expect(frame).toHaveStyle({ aspectRatio: '1080 / 1920' });
     expect(screen.getByTestId('bbox-overlay-group')).toBeVisible();
+    const firstTag = screen.getAllByTestId('bbox-label-pill')[0];
+    const rightPct = Number.parseFloat(firstTag.style.right || '0');
+    const leftPct = Number.parseFloat(firstTag.style.left || '0');
+    const maxW = Number.parseFloat(firstTag.style.maxWidth || '100');
+    expect((rightPct || leftPct) + maxW).toBeLessThanOrEqual(99);
 
     await user.click(screen.getByRole('button', { name: /khung đốm bệnh/i }));
     expect(screen.queryByTestId('bbox-overlay-group')).not.toBeInTheDocument();

@@ -130,7 +130,7 @@ export const SAMPLE_SPECIMENS: SampleSpecimen[] = [
           instructions:
             'Cắt bỏ ngay các lá gốc bị thối sũng nước đem tiêu hủy xa ruộng. Phun chế phẩm nấm đối kháng Trichoderma harzianum hoặc Bacillus subtilis vào buổi sáng sớm khi lá vừa ráo sương.',
           activeIngredients: 'Trichoderma harzianum / Bacillus subtilis',
-          dosageRecommendation: '30–40g chế phẩm pha cho bình 16 lít nước, phun ướt đều tán lá.',
+          dosageRecommendation: '30–40g chế phẩm pha cho bình 16 lít nước, phun ướt đều mặt\u00A0lá.',
           safetyIntervalDays: 0,
           warning: 'Không pha chung chế phẩm sinh học với thuốc trừ nấm gốc đồng hoặc hóa học.',
         },

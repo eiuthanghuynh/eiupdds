@@ -202,66 +202,76 @@ export function LeafSpecimenStage({
               className="block w-full h-full object-fill select-none"
             />
             {showBoxes && boxCount > 0 && (
-              <svg
-                viewBox="0 0 1000 1000"
-                preserveAspectRatio="none"
+              <div
+                data-testid="bbox-overlay-group"
                 className="absolute inset-0 w-full h-full pointer-events-none"
-                style={{ color: SEEDHOUSE_COLORS.creamWarm }}
               >
-                <g data-testid="bbox-overlay-group">
+                <svg
+                  viewBox="0 0 1000 1000"
+                  preserveAspectRatio="none"
+                  className="absolute inset-0 w-full h-full"
+                >
                   {diagnosis.boundingBoxes.map((box) => {
                     const x = Math.max(0, Math.min(980, box.xMinNormalized * 1000));
                     const y = Math.max(0, Math.min(980, box.yMinNormalized * 1000));
                     const w = Math.max(20, Math.min(1000 - x, box.widthNormalized * 1000));
                     const h = Math.max(20, Math.min(1000 - y, box.heightNormalized * 1000));
-                    const boxPct = Math.round((box.confidence ?? 0.85) * 100);
-                    const tagTitle = box.diseaseCode
-                      ? localizeDiseaseName(box.diseaseCode, box.label)
-                      : box.label;
-                    const shortTag =
-                      tagTitle.length > 26 ? `${tagTitle.slice(0, 25)}…` : tagTitle;
-                    const labelText = `${shortTag} · ${boxPct}%`;
-                    const pillW = Math.min(520, Math.max(220, labelText.length * 14));
-                    const pillX = Math.min(1000 - pillW - 6, Math.max(6, x));
-                    const pillY = y >= 58 ? y - 50 : Math.min(945, y + h + 8);
 
                     return (
-                      <g key={box.id}>
-                        <rect
-                          x={x}
-                          y={y}
-                          width={w}
-                          height={h}
-                          fill="rgba(245, 207, 122, 0.12)"
-                          stroke={SEEDHOUSE_COLORS.mustard}
-                          strokeWidth="4.5"
-                          strokeDasharray="14 7"
-                          vectorEffect="non-scaling-stroke"
-                        />
-                        <rect
-                          x={pillX}
-                          y={pillY}
-                          width={pillW}
-                          height={42}
-                          fill="#241C14"
-                          stroke={SEEDHOUSE_COLORS.mustard}
-                          strokeWidth="2"
-                        />
-                        <text
-                          x={pillX + pillW / 2}
-                          y={pillY + 27}
-                          textAnchor="middle"
-                          fill={SEEDHOUSE_COLORS.creamWarm}
-                          fontSize="22"
-                          fontWeight="700"
-                        >
-                          {labelText}
-                        </text>
-                      </g>
+                      <rect
+                        key={box.id}
+                        x={x}
+                        y={y}
+                        width={w}
+                        height={h}
+                        fill="rgba(245, 207, 122, 0.12)"
+                        stroke={SEEDHOUSE_COLORS.mustard}
+                        strokeWidth="2.5"
+                        strokeDasharray="8 4"
+                        vectorEffect="non-scaling-stroke"
+                      />
                     );
                   })}
-                </g>
-              </svg>
+                </svg>
+
+                {diagnosis.boundingBoxes.map((box) => {
+                  const anchorRight = box.xMinNormalized > 0.45;
+                  const rightPct = Math.round(
+                    Math.max(2, Math.min(42, (1 - (box.xMinNormalized + box.widthNormalized)) * 100))
+                  );
+                  const leftPct = Math.round(Math.max(2, Math.min(42, box.xMinNormalized * 100)));
+                  const maxWidthPct = anchorRight ? 98 - rightPct : 98 - leftPct;
+                  const topRaw = box.yMinNormalized * 100;
+                  const placeAbove = topRaw >= 13;
+                  const topPct = placeAbove
+                    ? Math.max(1.5, topRaw - 10)
+                    : Math.min(85, (box.yMinNormalized + box.heightNormalized) * 100 + 2);
+                  const boxPct = Math.round((box.confidence ?? 0.85) * 100);
+                  const rawTitle = box.diseaseCode
+                    ? localizeDiseaseName(box.diseaseCode, box.label)
+                    : box.label;
+                  const compactTitle = rawTitle.replace(/\s*\([^)]*\)/g, '').trim();
+
+                  return (
+                    <span
+                      key={`${box.id}-tag`}
+                      data-testid="bbox-label-pill"
+                      className="absolute px-2 py-0.5 text-xs font-bold leading-snug inline-flex items-center border tabular-nums overflow-hidden"
+                      style={{
+                        ...(anchorRight ? { right: `${rightPct}%` } : { left: `${leftPct}%` }),
+                        top: `${topPct}%`,
+                        maxWidth: `${maxWidthPct}%`,
+                        backgroundColor: '#241C14',
+                        borderColor: SEEDHOUSE_COLORS.mustard,
+                        color: SEEDHOUSE_COLORS.creamWarm,
+                      }}
+                    >
+                      <span className="truncate">{compactTitle}</span>
+                      <span className="shrink-0 ml-1">· {boxPct}%</span>
+                    </span>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>
