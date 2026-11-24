@@ -17,7 +17,7 @@ export function PrescriptionSpread({
 }: {
   diagnosis: DiagnosisAnalyzeResponse;
 }): React.JSX.Element {
-  const { locale, t, localizeDiseaseName, localizeTreatmentType } = useLanguage();
+  const { t, localizeDiseaseName, localizeTreatmentType } = useLanguage();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const sortedTreatments = useMemo<TreatmentDto[]>(() => {
@@ -189,7 +189,7 @@ export function PrescriptionSpread({
                   {waitDays > 0 ? String(waitDays).padStart(2, '0') : '0'}
                 </span>
                 <span className="text-xs font-bold uppercase mt-1">
-                  {locale === 'vi' ? 'Ngày' : 'Days'}
+                  {t.harvestDayUnit}
                 </span>
               </div>
             </div>

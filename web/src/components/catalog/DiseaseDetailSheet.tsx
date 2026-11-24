@@ -11,7 +11,7 @@ export function DiseaseDetailSheet({
 }: {
   diseaseCode: string;
 }): React.JSX.Element {
-  const { locale, t, localizeTreatmentType } = useLanguage();
+  const { t, localizeTreatmentType, localizeDiseaseDetail } = useLanguage();
   const detailQuery = useDiseaseDetailQuery(diseaseCode);
   const localRef = findFallbackDiseaseRecord(diseaseCode);
 
@@ -25,30 +25,18 @@ export function DiseaseDetailSheet({
           color: SEEDHOUSE_COLORS.inkMuted,
         }}
       >
-        {locale === 'vi' ? 'Đang mở tờ hướng dẫn chi tiết...' : 'Loading pathology sheet...'}
+        {t.sheetLoading}
       </div>
     );
   }
 
   const detail = detailQuery.data;
   const scientificName = detail?.scientificName ?? localRef?.scientificName ?? '';
-
-  const symptomsText =
-    locale === 'vi'
-      ? localRef?.viSymptoms ?? detail?.symptoms ?? ''
-      : detail?.symptoms ?? localRef?.symptoms ?? '';
-
-  const conditionsText =
-    locale === 'vi'
-      ? localRef?.viDescription ?? detail?.description ?? ''
-      : detail?.description ?? localRef?.description ?? '';
-
-  const treatments =
-    locale === 'vi' && localRef?.viTreatments?.length
-      ? localRef.viTreatments
-      : detail?.treatments?.length
-        ? detail.treatments
-        : localRef?.treatments ?? [];
+  const {
+    symptoms: symptomsText,
+    description: conditionsText,
+    treatments,
+  } = localizeDiseaseDetail(diseaseCode, detail, localRef);
 
   return (
     <div
@@ -61,7 +49,7 @@ export function DiseaseDetailSheet({
     >
       {scientificName && (
         <div className="text-sm" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
-          {locale === 'vi' ? 'Tên khoa học:' : 'Scientific name:'}{' '}
+          {t.scientificNameLabel}{' '}
           <em className="font-semibold" style={{ color: SEEDHOUSE_COLORS.ink }}>
             {scientificName}
           </em>

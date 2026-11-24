@@ -30,7 +30,7 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
 
   return (
     <section
-      id="so-tay"
+      id="almanac"
       className="w-full px-5 sm:px-8 lg:px-12 py-12"
       style={{
         backgroundColor: SEEDHOUSE_COLORS.parchment,

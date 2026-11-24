@@ -21,7 +21,7 @@ export function SeedhouseHeader(): React.JSX.Element {
       >
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <a
-            href="#ban-kham"
+            href="#workbench"
             className="flex items-center gap-3.5 no-underline group"
             style={{ color: SEEDHOUSE_COLORS.cream }}
           >
@@ -40,26 +40,26 @@ export function SeedhouseHeader(): React.JSX.Element {
           </a>
 
           <nav
-            aria-label="Điều hướng trang chủ"
+            aria-label={t.navAriaLabel}
             className="order-3 lg:order-none w-full lg:w-auto pt-2.5 lg:pt-0 border-t lg:border-t-0 flex flex-wrap items-center gap-x-5 gap-y-2 lg:gap-6 text-xs font-semibold tracking-[0.1em] uppercase"
             style={{ borderColor: '#697349' }}
           >
             <a
-              href="#ban-kham"
+              href="#workbench"
               className="hover:underline"
               style={{ color: SEEDHOUSE_COLORS.cream }}
             >
               {t.navWorkbench}
             </a>
             <a
-              href="#quy-trinh"
+              href="#how-it-works"
               className="hover:underline"
               style={{ color: SEEDHOUSE_COLORS.cream }}
             >
               {t.navHowItWorks}
             </a>
             <a
-              href="#so-tay"
+              href="#almanac"
               className="hover:underline"
               style={{ color: SEEDHOUSE_COLORS.cream }}
             >

@@ -14,6 +14,7 @@ import {
   findFallbackDiseaseRecord,
 } from '@/lib/data/fallbackCatalog';
 import { VI_DISEASE_NAMES, VI_PLANT_NAMES } from '@/lib/i18n/dictionary';
+import { getDiseaseLocalizationSearchText } from '@/lib/i18n/viCatalog';
 
 const DEFAULT_API_BASE = 'http://localhost:8080';
 const MAX_LEAF_IMAGE_BYTES = 15 * 1024 * 1024;
@@ -51,14 +52,14 @@ export function validateLeafFile(file: File): void {
     throw new PddsApiError(
       400,
       'INVALID_FILE_TYPE',
-      'Chỉ hỗ trợ định dạng ảnh JPEG, PNG hoặc WebP (Supported formats: JPEG, PNG, WebP).'
+      'Unsupported image format. Supported formats: JPEG, PNG, WebP.'
     );
   }
   if (file.size > MAX_LEAF_IMAGE_BYTES) {
     throw new PddsApiError(
       400,
       'FILE_TOO_LARGE',
-      'Dung lượng ảnh vượt quá giới hạn 15MB (Maximum allowed size is 15MB).'
+      'Image file exceeds the 15MB maximum allowed size.'
     );
   }
 }
@@ -176,13 +177,14 @@ export async function fetchDiseases(params?: {
       const filtered = kw
         ? body.data.content.filter((d) => {
             const fallbackRecord = findFallbackDiseaseRecord(d.diseaseCode);
-            const viDisease = VI_DISEASE_NAMES[d.diseaseCode] ?? '';
+            const localizedDisease = VI_DISEASE_NAMES[d.diseaseCode] ?? '';
             const plantCodes = fallbackRecord?.plantCodes ?? (params?.plantCode ? [params.plantCode] : []);
-            const viPlants = plantCodes.map((code) => VI_PLANT_NAMES[code] ?? '').join(' ');
-            const hay = `${d.diseaseCode} ${d.commonName} ${d.scientificName ?? ''} ${viDisease} ${viPlants} ${
-              fallbackRecord?.viSymptoms ?? ''
-            } ${plantCodes.join(' ')}`.toLowerCase();
-            return hay.includes(kw);
+            const localizedPlants = plantCodes.map((code) => VI_PLANT_NAMES[code] ?? '').join(' ');
+            const localizedSymptoms = getDiseaseLocalizationSearchText(d.diseaseCode);
+            const haystack = `${d.diseaseCode} ${d.commonName} ${d.scientificName ?? ''} ${localizedDisease} ${localizedPlants} ${localizedSymptoms} ${plantCodes.join(
+              ' '
+            )}`.toLowerCase();
+            return haystack.includes(kw);
           })
         : body.data.content;
       return { diseases: filtered, isOfflineFallback: false };

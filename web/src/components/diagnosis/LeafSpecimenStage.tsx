@@ -27,7 +27,8 @@ export function LeafSpecimenStage({
   onRetryUpload,
   onSelectSample,
 }: LeafSpecimenStageProps): React.JSX.Element {
-  const { locale, t, localizeDiseaseName, localizePlantName, localizeSeverity } = useLanguage();
+  const { t, localizeDiseaseName, localizePlantName, localizeSeverity, localizeSampleLabel } =
+    useLanguage();
   const [showBoxes, setShowBoxes] = useState(true);
 
   const imgW = diagnosis.imageWidth && diagnosis.imageWidth > 0 ? diagnosis.imageWidth : 800;
@@ -38,9 +39,7 @@ export function LeafSpecimenStage({
   const isHealthy = diseaseCode.endsWith('_HEALTHY');
   const diseaseTitle = diagnosis.dominantDisease
     ? localizeDiseaseName(diagnosis.dominantDisease.diseaseCode, diagnosis.dominantDisease.commonName)
-    : locale === 'vi'
-      ? 'Lá cây khỏe mạnh'
-      : 'Healthy leaf';
+    : t.healthyLeafTitle;
 
   const plantTitle = diagnosis.plant
     ? localizePlantName(diagnosis.plant.plantCode, diagnosis.plant.commonName)
@@ -224,7 +223,11 @@ export function LeafSpecimenStage({
                 : is429
                   ? t.error429Body(retryMinutes)
                   : is400 && apiErr
-                    ? apiErr.message
+                    ? apiErr.code === 'INVALID_FILE_TYPE'
+                      ? t.errorInvalidFileType
+                      : apiErr.code === 'FILE_TOO_LARGE'
+                        ? t.errorFileTooLarge
+                        : apiErr.message
                     : t.errorGenericBody}
             </p>
           </div>
@@ -253,7 +256,7 @@ export function LeafSpecimenStage({
                     color: SEEDHOUSE_COLORS.creamWarm,
                   }}
                 >
-                  {locale === 'vi' ? item.shortLabelVi : item.shortLabelEn}
+                  {localizeSampleLabel(item)}
                 </button>
               ))}
             </div>

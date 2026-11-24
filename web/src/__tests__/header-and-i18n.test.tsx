@@ -47,5 +47,14 @@ describe('SeedhouseHeader & Bilingual Agronomic Dictionary', () => {
 
     const nav = screen.getByRole('navigation', { name: /điều hướng trang chủ/i });
     expect(nav.className).not.toMatch(/\bhidden\b/);
+    expect(screen.getByRole('link', { name: /soi lá bệnh/i })).toHaveAttribute('href', '#workbench');
+    expect(screen.getByRole('link', { name: /cách hoạt động/i })).toHaveAttribute(
+      'href',
+      '#how-it-works'
+    );
+    expect(screen.getByRole('link', { name: /9 cây & 15 bệnh/i })).toHaveAttribute(
+      'href',
+      '#almanac'
+    );
   });
 });

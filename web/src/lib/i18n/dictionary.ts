@@ -2,6 +2,7 @@ export type Locale = 'vi' | 'en';
 
 export interface UiCopy {
   brandSubtitle: string;
+  navAriaLabel: string;
   navWorkbench: string;
   navHowItWorks: string;
   navAlmanac: string;
@@ -28,9 +29,12 @@ export interface UiCopy {
   confidenceLabel: (pct: number, count: number) => string;
   stageNeutralLoadingHeading: string;
   stageNeutralErrorHeading: string;
+  healthyLeafTitle: string;
   loadingStageTitle: string;
   loadingStageBody: string;
   error400Title: string;
+  errorInvalidFileType: string;
+  errorFileTooLarge: string;
   error422Title: string;
   error422Body: string;
   error429Title: string;
@@ -47,6 +51,7 @@ export interface UiCopy {
   coInfectionPrefix: string;
   harvestWaitDays: (days: number) => string;
   harvestSafeZero: string;
+  harvestDayUnit: string;
   howHeading: string;
   howLead: string;
   howStep1Title: string;
@@ -62,6 +67,8 @@ export interface UiCopy {
   almanacOfflineNote: string;
   almanacEmpty: string;
   almanacHealthyOnlyCrop: string;
+  sheetLoading: string;
+  scientificNameLabel: string;
   sheetSymptomsHeading: string;
   sheetConditionsHeading: string;
   sheetTreatmentsHeading: string;
@@ -73,6 +80,7 @@ export interface UiCopy {
 export const UI_DICTIONARY: Record<Locale, UiCopy> = {
   vi: {
     brandSubtitle: 'Hệ Thống Nhận Diện Bệnh Cây Trồng',
+    navAriaLabel: 'Điều hướng trang chủ',
     navWorkbench: 'Soi Lá Bệnh',
     navHowItWorks: 'Cách Hoạt Động',
     navAlmanac: '9 Cây & 15 Bệnh',
@@ -101,9 +109,12 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     confidenceLabel: (pct, count) => `Độ chắc chắn ${pct}% · Khoanh ${count} vùng trên lá`,
     stageNeutralLoadingHeading: 'Bàn Soi Mẫu Lá Đang Phân Tích',
     stageNeutralErrorHeading: 'Cần Kiểm Tra Lại Ảnh Lá Tải Lên',
+    healthyLeafTitle: 'Lá cây khỏe mạnh',
     loadingStageTitle: 'Đang soi mặt lá & đối chiếu phác đồ nông học...',
     loadingStageBody: 'Bà con chờ khoảng 2–4 giây để máy khoanh vùng đốm bệnh và tra ngày cách ly.',
     error400Title: 'Tệp ảnh tải lên chưa đúng định dạng hoặc quá lớn',
+    errorInvalidFileType: 'Chỉ hỗ trợ định dạng ảnh JPEG, PNG hoặc WebP.',
+    errorFileTooLarge: 'Dung lượng ảnh vượt quá giới hạn 15MB cho phép.',
     error422Title: 'Chưa nhìn rõ lá cây hoặc vết bệnh trong ảnh',
     error422Body:
       'Bà con hãy đặt chiếc lá lên nền phẳng hoặc giữ tay thật vững, đưa camera lại gần mặt lá dưới chỗ đủ ánh sáng tự nhiên rồi chụp lại nhé.',
@@ -123,6 +134,7 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     coInfectionPrefix: 'Dấu hiệu đi kèm trên cùng lá:',
     harvestWaitDays: (days) => `Ngưng phun tối thiểu ${days} ngày trước khi thu hoạch.`,
     harvestSafeZero: '0 ngày · An toàn thu hoạch bình thường theo lịch canh tác.',
+    harvestDayUnit: 'Ngày',
     howHeading: 'Ba Bước Khám Lá Đơn Giản Ngoài Vườn',
     howLead:
       'Thiết kế tối giản thao tác để bất kỳ người trồng cây nào cũng kiểm tra được ngay ngoài hiên nhà hay bờ ruộng.',
@@ -144,6 +156,8 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     almanacEmpty: 'Không tìm thấy bệnh nào khớp với từ khóa đang lọc.',
     almanacHealthyOnlyCrop:
       'Cây trồng này hiện hỗ trợ nhận diện lá khỏe mạnh; chưa có bệnh hại riêng trong danh mục 15\u00A0bệnh.',
+    sheetLoading: 'Đang mở tờ hướng dẫn chi tiết...',
+    scientificNameLabel: 'Tên khoa học:',
     sheetSymptomsHeading: 'Dấu hiệu nhận biết trên lá & thân',
     sheetConditionsHeading: 'Điều kiện thời tiết dễ bùng bệnh',
     sheetTreatmentsHeading: 'Phác đồ xử lý tham khảo',
@@ -156,6 +170,7 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
   },
   en: {
     brandSubtitle: 'EIU Plant Disease Detection System',
+    navAriaLabel: 'Homepage navigation',
     navWorkbench: 'Leaf Scanner',
     navHowItWorks: 'How It Works',
     navAlmanac: '9 Crops & 15 Diseases',
@@ -184,9 +199,12 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     confidenceLabel: (pct, count) => `${pct}% confidence · ${count} region(s) bounded`,
     stageNeutralLoadingHeading: 'Analyzing Uploaded Leaf Specimen',
     stageNeutralErrorHeading: 'Uploaded Leaf Photo Needs Attention',
+    healthyLeafTitle: 'Healthy leaf',
     loadingStageTitle: 'Inspecting leaf surface & matching agronomic protocols...',
     loadingStageBody: 'Please wait 2–4 seconds while lesion coordinates and pre-harvest intervals are prepared.',
     error400Title: 'Unsupported file format or file exceeds size limit',
+    errorInvalidFileType: 'Supported image formats are JPEG, PNG, or WebP.',
+    errorFileTooLarge: 'Image file size exceeds the 15MB maximum limit.',
     error422Title: 'No clear leaf or disease lesion detected in this photo',
     error422Body:
       'Place the leaf against a steady surface in natural daylight, move the camera closer to the affected blade, and try another photo.',
@@ -206,6 +224,7 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     coInfectionPrefix: 'Co-occurring signs on leaf:',
     harvestWaitDays: (days) => `Stop spraying at least ${days} day(s) before harvest.`,
     harvestSafeZero: '0 days · Safe for normal harvest schedule.',
+    harvestDayUnit: 'Days',
     howHeading: 'Three Straightforward Field Steps',
     howLead:
       'Built with large type and calm controls so growers can verify plant health effortlessly outdoors or at home.',
@@ -227,6 +246,8 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     almanacEmpty: 'No diseases match the current crop and keyword filter.',
     almanacHealthyOnlyCrop:
       'This crop currently supports healthy-leaf verification; no separate pathology entry is listed among the 15 catalog\u00A0diseases.',
+    sheetLoading: 'Loading pathology sheet...',
+    scientificNameLabel: 'Scientific name:',
     sheetSymptomsHeading: 'Foliar & Stem Symptoms',
     sheetConditionsHeading: 'Favorable Weather & Risk Conditions',
     sheetTreatmentsHeading: 'Curated Agronomic Treatments',

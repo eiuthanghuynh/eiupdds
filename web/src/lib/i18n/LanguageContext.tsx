@@ -1,6 +1,12 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import type {
+  DiagnosisAnalyzeResponse,
+  DiseaseDetailDto,
+  SampleSpecimen,
+  TreatmentDto,
+} from '@/types/pdds';
 import {
   EN_SEVERITY_LABELS,
   EN_TREATMENT_TYPES,
@@ -12,6 +18,11 @@ import {
   VI_SEVERITY_LABELS,
   VI_TREATMENT_TYPES,
 } from './dictionary';
+import {
+  getDiseaseDetailOverride,
+  localizeSampleResponse as localizeSpecimenPayload,
+  VI_SAMPLE_SPECIMENS,
+} from './viCatalog';
 
 const STORAGE_KEY = 'eiu_pdds_lang';
 
@@ -23,6 +34,17 @@ export interface LanguageContextValue {
   localizeDiseaseName: (code: string, fallback: string) => string;
   localizeSeverity: (severity?: string | null) => string;
   localizeTreatmentType: (type: string) => string;
+  localizeSampleLabel: (sample: SampleSpecimen) => string;
+  localizeSampleResponse: (sample: SampleSpecimen) => DiagnosisAnalyzeResponse;
+  localizeDiseaseDetail: (
+    diseaseCode: string,
+    detail?: DiseaseDetailDto,
+    englishFallback?: DiseaseDetailDto
+  ) => {
+    symptoms: string;
+    description: string;
+    treatments: TreatmentDto[];
+  };
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
@@ -35,6 +57,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }): R
       const saved = window.localStorage.getItem(STORAGE_KEY);
       if (saved === 'vi' || saved === 'en') {
         setLocaleState(saved);
+        document.documentElement.lang = saved;
       }
     } catch {
       // Ignore storage failures in restricted browsers
@@ -70,7 +93,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }): R
           return VI_DISEASE_NAMES[upper];
         }
         if (upper.endsWith('_HEALTHY')) {
-          return 'Lá cây khỏe mạnh';
+          return UI_DICTIONARY.vi.healthyLeafTitle;
         }
       }
       return fallback || upper;
@@ -101,6 +124,48 @@ export function LanguageProvider({ children }: { children: React.ReactNode }): R
     [locale]
   );
 
+  const localizeSampleLabel = useCallback(
+    (sample: SampleSpecimen): string => {
+      if (locale === 'vi') {
+        return VI_SAMPLE_SPECIMENS[sample.key]?.shortLabel ?? sample.shortLabel;
+      }
+      return sample.shortLabel;
+    },
+    [locale]
+  );
+
+  const localizeSampleResponse = useCallback(
+    (sample: SampleSpecimen): DiagnosisAnalyzeResponse => {
+      return localizeSpecimenPayload(sample, locale);
+    },
+    [locale]
+  );
+
+  const localizeDiseaseDetail = useCallback(
+    (
+      diseaseCode: string,
+      detail?: DiseaseDetailDto,
+      englishFallback?: DiseaseDetailDto
+    ): {
+      symptoms: string;
+      description: string;
+      treatments: TreatmentDto[];
+    } => {
+      if (locale === 'vi') {
+        return getDiseaseDetailOverride(diseaseCode, 'vi', detail ?? englishFallback);
+      }
+      const primary = detail ?? englishFallback;
+      return {
+        symptoms: primary?.symptoms ?? englishFallback?.symptoms ?? '',
+        description: primary?.description ?? englishFallback?.description ?? '',
+        treatments: primary?.treatments?.length
+          ? primary.treatments
+          : englishFallback?.treatments ?? [],
+      };
+    },
+    [locale]
+  );
+
   const value = useMemo<LanguageContextValue>(
     () => ({
       locale,
@@ -110,8 +175,21 @@ export function LanguageProvider({ children }: { children: React.ReactNode }): R
       localizeDiseaseName,
       localizeSeverity,
       localizeTreatmentType,
+      localizeSampleLabel,
+      localizeSampleResponse,
+      localizeDiseaseDetail,
     }),
-    [locale, setLocale, localizePlantName, localizeDiseaseName, localizeSeverity, localizeTreatmentType]
+    [
+      locale,
+      setLocale,
+      localizePlantName,
+      localizeDiseaseName,
+      localizeSeverity,
+      localizeTreatmentType,
+      localizeSampleLabel,
+      localizeSampleResponse,
+      localizeDiseaseDetail,
+    ]
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

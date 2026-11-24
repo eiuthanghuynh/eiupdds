@@ -19,9 +19,9 @@ const beVietnamPro = Be_Vietnam_Pro({
 });
 
 export const metadata: Metadata = {
-  title: 'EIU PDDS — Hệ Thống Nhận Diện Bệnh Cây Trồng',
+  title: 'EIU PDDS — Plant Disease Detection System',
   description:
-    'EIU Plant Disease Detection System (EIU PDDS): Chụp hoặc tải ảnh lá cây để khoanh vùng đốm bệnh trực tiếp và tra cứu phác đồ xử lý nông học an toàn.',
+    'EIU Plant Disease Detection System (EIU PDDS): Capture or upload leaf photos to inspect disease lesion bounding boxes and browse safe agronomic treatment protocols.',
 };
 
 export default function RootLayout({

@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Select } from 'antd';
 import { PddsApiError, validateLeafFile } from '@/lib/api/client';
 import { useAnalyzeLeafMutation, usePlantsQuery } from '@/lib/api/queries';
-import { getLocalizedSampleResponse, SAMPLE_SPECIMENS } from '@/lib/data/sampleDiagnoses';
+import { SAMPLE_SPECIMENS } from '@/lib/data/sampleDiagnoses';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { SEEDHOUSE_COLORS } from '@/lib/theme/seedhouseTheme';
 import { UploadArrowIcon } from '@/components/primitives/WoodcutIcons';
@@ -27,7 +27,7 @@ function measureLocalImageDimensions(url: string): Promise<{ width: number; heig
 }
 
 export function DiagnosticWorkbench(): React.JSX.Element {
-  const { locale, t, localizePlantName } = useLanguage();
+  const { t, localizePlantName, localizeSampleLabel, localizeSampleResponse } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [selectedSampleIndex, setSelectedSampleIndex] = useState<number | null>(0);
@@ -51,8 +51,8 @@ export function DiagnosticWorkbench(): React.JSX.Element {
 
   const activeDiagnosis: DiagnosisAnalyzeResponse =
     selectedSampleIndex !== null
-      ? getLocalizedSampleResponse(SAMPLE_SPECIMENS[selectedSampleIndex], locale)
-      : liveDiagnosis ?? getLocalizedSampleResponse(SAMPLE_SPECIMENS[0], locale);
+      ? localizeSampleResponse(SAMPLE_SPECIMENS[selectedSampleIndex])
+      : liveDiagnosis ?? localizeSampleResponse(SAMPLE_SPECIMENS[0]);
 
   const activeError = clientError ?? (analyzeMutation.error as PddsApiError | Error | null);
 
@@ -124,7 +124,7 @@ export function DiagnosticWorkbench(): React.JSX.Element {
   ];
 
   return (
-    <div id="ban-kham" className="w-full">
+    <div id="workbench" className="w-full">
       {/* First Viewport: 5:7 Ribbed Kraft Hero & Olive Specimen Stage */}
       <section className="w-full bg-kraft-ribbed px-5 sm:px-8 lg:px-12 pt-8 pb-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
@@ -257,7 +257,7 @@ export function DiagnosticWorkbench(): React.JSX.Element {
                               }
                         }
                       >
-                        {locale === 'vi' ? item.shortLabelVi : item.shortLabelEn}
+                        {localizeSampleLabel(item)}
                       </button>
                     );
                   })}

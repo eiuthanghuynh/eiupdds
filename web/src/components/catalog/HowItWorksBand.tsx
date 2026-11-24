@@ -14,7 +14,7 @@ export function HowItWorksBand(): React.JSX.Element {
   const { t } = useLanguage();
 
   return (
-    <section id="quy-trinh" className="w-full">
+    <section id="how-it-works" className="w-full">
       <DeckledEdge
         fillTop={SEEDHOUSE_COLORS.parchment}
         fillBottom={SEEDHOUSE_COLORS.olive}

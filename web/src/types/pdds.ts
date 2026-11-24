@@ -102,8 +102,6 @@ export interface GuestQuotaInfo {
 
 export interface SampleSpecimen {
   key: string;
-  shortLabelVi: string;
-  shortLabelEn: string;
+  shortLabel: string;
   response: DiagnosisAnalyzeResponse;
-  enTreatments: TreatmentDto[];
 }

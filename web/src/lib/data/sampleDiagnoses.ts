@@ -1,5 +1,4 @@
-import type { DiagnosisAnalyzeResponse, SampleSpecimen, TreatmentDto } from '@/types/pdds';
-import type { Locale } from '@/lib/i18n/dictionary';
+import type { SampleSpecimen } from '@/types/pdds';
 
 function svgToDataUri(svg: string): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg.trim())}`;
@@ -66,8 +65,7 @@ const RICE_LEAF_SVG = svgToDataUri(`
 export const SAMPLE_SPECIMENS: SampleSpecimen[] = [
   {
     key: 'potato-late-blight',
-    shortLabelVi: 'Khoai tây mốc sương',
-    shortLabelEn: 'Potato late blight',
+    shortLabel: 'Potato late blight',
     response: {
       diagnosisId: '55555555-5555-5555-5555-555555555501',
       originalImageUrl: POTATO_LEAF_SVG,
@@ -126,33 +124,33 @@ export const SAMPLE_SPECIMENS: SampleSpecimen[] = [
         {
           id: 'tr-potato-bio',
           treatmentType: 'BIOLOGICAL',
-          title: 'Xử lý sinh học bằng nấm đối kháng Trichoderma',
+          title: 'Biological suppression with Trichoderma & Bacillus',
           instructions:
-            'Cắt bỏ ngay các lá gốc bị thối sũng nước đem tiêu hủy xa ruộng. Phun chế phẩm nấm đối kháng Trichoderma harzianum hoặc Bacillus subtilis vào buổi sáng sớm khi lá vừa ráo sương.',
+            'Prune and destroy water-soaked lower leaves away from the field. Spray Trichoderma harzianum or Bacillus subtilis bio-fungicide in early morning after dew dries.',
           activeIngredients: 'Trichoderma harzianum / Bacillus subtilis',
-          dosageRecommendation: '30–40g chế phẩm pha cho bình 16 lít nước, phun ướt đều mặt\u00A0lá.',
+          dosageRecommendation: '30–40g per 16L knapsack sprayer with full foliar coverage.',
           safetyIntervalDays: 0,
-          warning: 'Không pha chung chế phẩm sinh học với thuốc trừ nấm gốc đồng hoặc hóa học.',
+          warning: 'Do not tank-mix microbial bio-agents with copper or synthetic chemical fungicides.',
         },
         {
           id: 'tr-potato-chem',
           treatmentType: 'CHEMICAL',
-          title: 'Phun đặc trị Mancozeb khi trời mưa ẩm kéo dài',
+          title: 'Targeted Mancozeb protection during cool wet spells',
           instructions:
-            'Khi vết mốc sương lan nhanh trong tiết trời lạnh ẩm, phun thuốc đặc trị ướt đều cả mặt trên và mặt dưới lá để khóa ổ bào tử.',
-          activeIngredients: 'Mancozeb 80WP hoặc Cymoxanil + Mancozeb',
-          dosageRecommendation: '40g cho bình 16 lít nước; phun nhắc lại sau 5–7 ngày nếu sương mù dày.',
+            'When lesions expand rapidly in cool, foggy weather, apply protective-curative fungicide thoroughly across upper and lower leaf surfaces.',
+          activeIngredients: 'Mancozeb 80WP or Cymoxanil + Mancozeb',
+          dosageRecommendation: '40g per 16L water; repeat once after 5–7 days if humid fog persists.',
           safetyIntervalDays: 7,
-          warning: 'Mang găng tay, khẩu trang khi pha phun; ngưng thuốc đủ 7 ngày trước khi thu hoạch củ.',
+          warning: 'Wear protective gear during application; strictly observe a 7-day pre-harvest interval.',
         },
         {
           id: 'tr-potato-cult',
           treatmentType: 'CULTURAL',
-          title: 'Vun cao luống & tránh tưới phun mưa chiều tối',
+          title: 'High hilling & morning-only root irrigation',
           instructions:
-            'Vun đất kín gốc củ để bào tử trên lá không theo nước mưa trôi xuống gây thối củ. Tuyệt đối không tưới phun mưa lên lá vào chiều muộn.',
+            'Hill soil firmly over tubers so sporangia washed from leaves cannot infect tubers. Avoid overhead irrigation in late afternoon.',
           activeIngredients: null,
-          dosageRecommendation: 'Kiểm tra thoát nước rãnh luống sau mỗi cơn mưa.',
+          dosageRecommendation: 'Clear furrow drainage immediately after heavy rain.',
           safetyIntervalDays: 0,
           warning: null,
         },
@@ -161,46 +159,10 @@ export const SAMPLE_SPECIMENS: SampleSpecimen[] = [
       status: 'COMPLETED',
       diagnosedAt: '2026-11-24T08:30:00Z',
     },
-    enTreatments: [
-      {
-        id: 'tr-potato-bio',
-        treatmentType: 'BIOLOGICAL',
-        title: 'Biological suppression with Trichoderma & Bacillus',
-        instructions:
-          'Prune and destroy water-soaked lower leaves away from the field. Spray Trichoderma harzianum or Bacillus subtilis bio-fungicide in early morning after dew dries.',
-        activeIngredients: 'Trichoderma harzianum / Bacillus subtilis',
-        dosageRecommendation: '30–40g per 16L knapsack sprayer with full foliar coverage.',
-        safetyIntervalDays: 0,
-        warning: 'Do not tank-mix microbial bio-agents with copper or synthetic chemical fungicides.',
-      },
-      {
-        id: 'tr-potato-chem',
-        treatmentType: 'CHEMICAL',
-        title: 'Targeted Mancozeb protection during cool wet spells',
-        instructions:
-          'When lesions expand rapidly in cool, foggy weather, apply protective-curative fungicide thoroughly across upper and lower leaf surfaces.',
-        activeIngredients: 'Mancozeb 80WP or Cymoxanil + Mancozeb',
-        dosageRecommendation: '40g per 16L water; repeat once after 5–7 days if humid fog persists.',
-        safetyIntervalDays: 7,
-        warning: 'Wear protective gear during application; strictly observe a 7-day pre-harvest interval.',
-      },
-      {
-        id: 'tr-potato-cult',
-        treatmentType: 'CULTURAL',
-        title: 'High hilling & morning-only root irrigation',
-        instructions:
-          'Hill soil firmly over tubers so sporangia washed from leaves cannot infect tubers. Avoid overhead irrigation in late afternoon.',
-        activeIngredients: null,
-        dosageRecommendation: 'Clear furrow drainage immediately after heavy rain.',
-        safetyIntervalDays: 0,
-        warning: null,
-      },
-    ],
   },
   {
     key: 'tomato-early-blight',
-    shortLabelVi: 'Cà chua đốm vòng',
-    shortLabelEn: 'Tomato early blight',
+    shortLabel: 'Tomato early blight',
     response: {
       diagnosisId: '55555555-5555-5555-5555-555555555502',
       originalImageUrl: TOMATO_LEAF_SVG,
@@ -259,59 +221,34 @@ export const SAMPLE_SPECIMENS: SampleSpecimen[] = [
         {
           id: 'tr-tomato-bio',
           treatmentType: 'BIOLOGICAL',
-          title: 'Tỉa lá chân thoáng gốc & phun Bacillus subtilis',
+          title: 'Lower canopy pruning, mulching & Bacillus bio-spray',
           instructions:
-            'Tỉa bỏ các lá già sát mặt đất khoảng 20–25cm có đốm vòng đồng tâm, phủ rơm khô hoặc màng phủ nông nghiệp để ngăn đất bắn bào tử lên tán trên.',
-          activeIngredients: 'Bacillus subtilis (chủng QST 713)',
-          dosageRecommendation: '35ml chế phẩm sinh học cho bình 16 lít nước.',
+            'Remove infected lower leaves within 20–25cm of soil and lay clean straw mulch to block rain-splashed Alternaria spores.',
+          activeIngredients: 'Bacillus subtilis (strain QST 713)',
+          dosageRecommendation: '35ml bio-concentrate per 16L water.',
           safetyIntervalDays: 0,
           warning: null,
         },
         {
           id: 'tr-tomato-chem',
           treatmentType: 'CHEMICAL',
-          title: 'Phun Azoxystrobin hoặc Chlorothalonil đúng cử',
+          title: 'Targeted Azoxystrobin or Chlorothalonil spray',
           instructions:
-            'Khi đốm vòng lan từ tầng lá dưới lên tầng lá nuôi chùm quả, phun bao phủ mặt lá lúc trời mát.',
-          activeIngredients: 'Azoxystrobin hoặc Chlorothalonil 75WP',
-          dosageRecommendation: '20–25g cho bình 16 lít nước, luân phiên hoạt chất tránh kháng thuốc.',
+            'When concentric target spots climb toward fruit-bearing trusses, spray evenly in cool morning hours.',
+          activeIngredients: 'Azoxystrobin or Chlorothalonil 75WP',
+          dosageRecommendation: '20–25g per 16L sprayer; rotate FRAC groups to prevent resistance.',
           safetyIntervalDays: 5,
-          warning: 'Ngưng phun tối thiểu 5 ngày trước đợt hái quả chín.',
+          warning: 'Observe at least a 5-day pre-harvest interval before picking ripe fruit.',
         },
       ],
       inferenceTimeMs: 219,
       status: 'COMPLETED',
       diagnosedAt: '2026-11-24T09:00:00Z',
     },
-    enTreatments: [
-      {
-        id: 'tr-tomato-bio',
-        treatmentType: 'BIOLOGICAL',
-        title: 'Lower canopy pruning, mulching & Bacillus bio-spray',
-        instructions:
-          'Remove infected lower leaves within 20–25cm of soil and lay clean straw mulch to block rain-splashed Alternaria spores.',
-        activeIngredients: 'Bacillus subtilis (strain QST 713)',
-        dosageRecommendation: '35ml bio-concentrate per 16L water.',
-        safetyIntervalDays: 0,
-        warning: null,
-      },
-      {
-        id: 'tr-tomato-chem',
-        treatmentType: 'CHEMICAL',
-        title: 'Targeted Azoxystrobin or Chlorothalonil spray',
-        instructions:
-          'When concentric target spots climb toward fruit-bearing trusses, spray evenly in cool morning hours.',
-        activeIngredients: 'Azoxystrobin or Chlorothalonil 75WP',
-        dosageRecommendation: '20–25g per 16L sprayer; rotate FRAC groups to prevent resistance.',
-        safetyIntervalDays: 5,
-        warning: 'Observe at least a 5-day pre-harvest interval before picking ripe fruit.',
-      },
-    ],
   },
   {
     key: 'rice-blast',
-    shortLabelVi: 'Lúa đạo ôn',
-    shortLabelEn: 'Rice blast',
+    shortLabel: 'Rice blast',
     response: {
       diagnosisId: '55555555-5555-5555-5555-555555555503',
       originalImageUrl: RICE_LEAF_SVG,
@@ -370,88 +307,40 @@ export const SAMPLE_SPECIMENS: SampleSpecimen[] = [
         {
           id: 'tr-rice-cult',
           treatmentType: 'CULTURAL',
-          title: 'Giữ mực nước ruộng 3–5cm & ngưng bón thúc đạm',
+          title: 'Maintain 3–5cm paddy water & halt nitrogen top-dressing',
           instructions:
-            'Tuyệt đối ngưng bón phân đạm (Ure) và không phun phân bón lá khi ruộng đang có vết đạo ôn hình mắt én. Giữ nước ruộng ổn định 3–5cm giúp cây lúa tăng sức chống chịu.',
+            'Immediately suspend urea/nitrogen fertilizer and foliar feeds while spindle lesions are active. Keep 3–5cm standing water to reduce plant stress.',
           activeIngredients: null,
-          dosageRecommendation: 'Chỉ bón cân đối Kali khi vết bệnh đã khô trắng hoàn toàn.',
+          dosageRecommendation: 'Resume balanced potassium only after lesions dry completely.',
           safetyIntervalDays: 0,
-          warning: 'Ruộng khô hạn kết hợp thừa đạm sẽ làm bệnh cháy rụi rất nhanh.',
+          warning: 'Drained paddies combined with excess nitrogen trigger rapid leaf blast collapse.',
         },
         {
           id: 'tr-rice-bio',
           treatmentType: 'BIOLOGICAL',
-          title: 'Kháng sinh sinh học Kasugamycin nguồn gốc lên men',
+          title: 'Fermentation-derived Kasugamycin bio-bactericide/fungicide',
           instructions:
-            'Phun chế phẩm Kasugamycin vào chiều mát khi chớm xuất hiện vết chấm kim hoặc mắt én nhỏ trên lá đòng.',
+            'Apply at early pinpoint or small spindle stage across the canopy in cool late afternoon.',
           activeIngredients: 'Kasugamycin 2SL',
-          dosageRecommendation: '35–40ml cho bình 16 lít nước, rẽ hàng phun kỹ phần bẹ và lá dưới.',
+          dosageRecommendation: '35–40ml per 16L sprayer.',
           safetyIntervalDays: 7,
           warning: null,
         },
         {
           id: 'tr-rice-chem',
           treatmentType: 'CHEMICAL',
-          title: 'Đặc trị Tricyclazole chặn đạo ôn lá & cổ bông',
+          title: 'Systemic Tricyclazole protection against neck blast',
           instructions:
-            'Sử dụng thuốc nội hấp chuyên biệt chặn đứng nấm xâm nhập cổ bông khi lúa chuẩn bị trỗ.',
-          activeIngredients: 'Tricyclazole 75WP hoặc Isoprothiolane',
-          dosageRecommendation: '15–20g cho bình 16 lít nước (phun 2 bình cho 1 công 1.000m²).',
+            'Apply systemic melanin-biosynthesis inhibitor prior to heading to protect panicle necks.',
+          activeIngredients: 'Tricyclazole 75WP or Isoprothiolane',
+          dosageRecommendation: '15–20g per 16L sprayer.',
           safetyIntervalDays: 14,
-          warning: 'Ngưng phun tối thiểu 14 ngày trước khi gặt lúa.',
+          warning: 'Strictly observe a 14-day pre-harvest interval before harvesting grain.',
         },
       ],
       inferenceTimeMs: 234,
       status: 'COMPLETED',
       diagnosedAt: '2026-11-24T09:15:00Z',
     },
-    enTreatments: [
-      {
-        id: 'tr-rice-cult',
-        treatmentType: 'CULTURAL',
-        title: 'Maintain 3–5cm paddy water & halt nitrogen top-dressing',
-        instructions:
-          'Immediately suspend urea/nitrogen fertilizer and foliar feeds while spindle lesions are active. Keep 3–5cm standing water to reduce plant stress.',
-        activeIngredients: null,
-        dosageRecommendation: 'Resume balanced potassium only after lesions dry completely.',
-        safetyIntervalDays: 0,
-        warning: 'Drained paddies combined with excess nitrogen trigger rapid leaf blast collapse.',
-      },
-      {
-        id: 'tr-rice-bio',
-        treatmentType: 'BIOLOGICAL',
-        title: 'Fermentation-derived Kasugamycin bio-bactericide/fungicide',
-        instructions:
-          'Apply at early pinpoint or small spindle stage across the canopy in cool late afternoon.',
-        activeIngredients: 'Kasugamycin 2SL',
-        dosageRecommendation: '35–40ml per 16L sprayer.',
-        safetyIntervalDays: 7,
-        warning: null,
-      },
-      {
-        id: 'tr-rice-chem',
-        treatmentType: 'CHEMICAL',
-        title: 'Systemic Tricyclazole protection against neck blast',
-        instructions:
-          'Apply systemic melanin-biosynthesis inhibitor prior to heading to protect panicle necks.',
-        activeIngredients: 'Tricyclazole 75WP or Isoprothiolane',
-        dosageRecommendation: '15–20g per 16L sprayer.',
-        safetyIntervalDays: 14,
-        warning: 'Strictly observe a 14-day pre-harvest interval before harvesting grain.',
-      },
-    ],
   },
 ];
-
-export function getLocalizedSampleResponse(
-  specimen: SampleSpecimen,
-  locale: Locale
-): DiagnosisAnalyzeResponse {
-  if (locale === 'en') {
-    return {
-      ...specimen.response,
-      recommendedTreatments: specimen.enTreatments,
-    };
-  }
-  return specimen.response;
-}

@@ -40,8 +40,8 @@ describe('PrescriptionSpread & DiagnosticWorkbench', () => {
         {
           id: 't-healthy',
           treatmentType: 'PREVENTIVE' as const,
-          title: 'Duy trì tưới gốc thoáng tán',
-          instructions: 'Tưới nước vào gốc buổi sáng, giữ luống thông thoáng.',
+          title: 'Maintain ventilated root irrigation',
+          instructions: 'Water at the root zone in early morning and keep beds well drained.',
           activeIngredients: null,
           dosageRecommendation: null,
           safetyIntervalDays: null,
@@ -86,5 +86,6 @@ describe('PrescriptionSpread & DiagnosticWorkbench', () => {
     expect(
       screen.queryByRole('heading', { name: /hướng xử lý & thời gian cách ly/i })
     ).not.toBeInTheDocument();
+    expect(screen.getByText(/chỉ hỗ trợ định dạng ảnh jpeg, png hoặc webp/i)).toBeInTheDocument();
   });
 });
