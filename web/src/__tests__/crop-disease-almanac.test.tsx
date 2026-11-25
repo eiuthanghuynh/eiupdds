@@ -7,7 +7,7 @@ import { CropDiseaseAlmanac } from '@/components/catalog/CropDiseaseAlmanac';
 describe('CropDiseaseAlmanac & Inline Fold-Open Sheet', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('renders 9 crops (using offline fallback when server is down), filters by crop, and unfolds inline sheet on click', async () => {
+  it('shows 6 disease rows by default, hides Latin binomials when collapsed, expands to 15, and unfolds/closes sheet with dosage on click & Escape', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
     const user = userEvent.setup();
     render(
@@ -20,19 +20,35 @@ describe('CropDiseaseAlmanac & Inline Fold-Open Sheet', () => {
       expect(screen.getByRole('button', { name: /^Cà chua$/i })).toBeInTheDocument();
     });
 
+    expect(screen.getAllByTestId('almanac-disease-row')).toHaveLength(6);
+    expect(screen.queryByText(/magnaporthe oryzae/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /xem tất cả/i }));
+    expect(screen.getAllByTestId('almanac-disease-row')).toHaveLength(15);
+
     await user.click(screen.getByRole('button', { name: /^Lúa$/i }));
     await waitFor(() => {
       expect(screen.queryByText(/mốc sương khoai tây/i)).not.toBeInTheDocument();
     });
+
     const riceBlastRow = await screen.findByRole('button', { name: /đạo ôn lúa/i });
     await user.click(riceBlastRow);
 
-    // Inline paper sheet unfolds in-place (not a modal dialog)
+    // Inline paper sheet unfolds in-place (not a modal dialog) with active ingredients & dosage
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect((await screen.findAllByText(/magnaporthe oryzae/i)).length).toBeGreaterThan(0);
+    expect(await screen.findByText(/magnaporthe oryzae/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/hoạt chất/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/tricyclazole/i).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText(/liều lượng/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/30–40g/i)).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByText(/magnaporthe oryzae/i)).not.toBeInTheDocument();
+    });
   });
 
-  it('matches Vietnamese placeholder keywords ("mốc sương", "đạo ôn", "cà chua") and explains healthy-only crops ("Đào")', async () => {
+  it('supports accentless Vietnamese search ("moc suong") and omits empty crop buttons with a concise note', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
     const user = userEvent.setup();
     render(
@@ -41,14 +57,17 @@ describe('CropDiseaseAlmanac & Inline Fold-Open Sheet', () => {
       </Providers>
     );
 
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^Cà chua$/i })).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole('button', { name: /^Đào$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Đậu nành$/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/đào.*đậu nành/i)).toBeInTheDocument();
+
     const searchBox = await screen.findByPlaceholderText(/mốc sương/i);
-    await user.type(searchBox, 'mốc sương');
+    await user.type(searchBox, 'moc suong');
     expect(await screen.findByRole('button', { name: /mốc sương khoai tây/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /mốc sương cà chua/i })).toBeInTheDocument();
-
-    await user.clear(searchBox);
-    await user.click(screen.getByRole('button', { name: /^Đào$/i }));
-    expect(await screen.findByText(/nhận diện lá khỏe mạnh/i)).toBeInTheDocument();
-    expect(screen.queryByText(/không tìm thấy bệnh nào khớp với từ khóa/i)).not.toBeInTheDocument();
   });
 });

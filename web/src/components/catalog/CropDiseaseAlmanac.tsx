@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Input } from 'antd';
 import { useDiseasesQuery, usePlantsQuery } from '@/lib/api/queries';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -12,11 +12,15 @@ import {
 } from '@/components/primitives/WoodcutIcons';
 import { DiseaseDetailSheet } from '@/components/catalog/DiseaseDetailSheet';
 
+const HEALTHY_ONLY_PLANTS = new Set(['PEACH', 'SOYBEAN']);
+const DEFAULT_VISIBLE_ROWS = 6;
+
 export function CropDiseaseAlmanac(): React.JSX.Element {
   const { t, localizePlantName, localizeDiseaseName, localizeSeverity } = useLanguage();
   const [selectedPlantCode, setSelectedPlantCode] = useState<string>('');
   const [keyword, setKeyword] = useState<string>('');
   const [expandedDiseaseCode, setExpandedDiseaseCode] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState<boolean>(false);
 
   const plantsQuery = usePlantsQuery();
   const diseasesQuery = useDiseasesQuery({
@@ -24,25 +28,43 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
     keyword: keyword || undefined,
   });
 
-  const plants = plantsQuery.data?.plants ?? [];
+  useEffect(() => {
+    if (!expandedDiseaseCode) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setExpandedDiseaseCode(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [expandedDiseaseCode]);
+
+  const plants = (plantsQuery.data?.plants ?? []).filter(
+    (p) => !HEALTHY_ONLY_PLANTS.has(p.plantCode.toUpperCase())
+  );
   const diseases = diseasesQuery.data?.diseases ?? [];
+  const isUnfiltered = !selectedPlantCode && !keyword.trim();
+  const visibleDiseases =
+    isUnfiltered && !showAll ? diseases.slice(0, DEFAULT_VISIBLE_ROWS) : diseases;
   const isOffline = Boolean(diseasesQuery.data?.isOfflineFallback);
 
   return (
     <section
       id="almanac"
-      className="w-full px-5 sm:px-8 lg:px-12 py-12"
+      className="w-full px-5 sm:px-8 lg:px-12 py-10"
       style={{
         backgroundColor: SEEDHOUSE_COLORS.parchment,
         color: SEEDHOUSE_COLORS.ink,
       }}
     >
-      <div className="max-w-7xl mx-auto space-y-7">
+      <div className="max-w-7xl mx-auto space-y-6">
         <div
-          className="pb-5 border-b flex flex-wrap items-end justify-between gap-4"
+          className="pb-4 border-b flex flex-wrap items-end justify-between gap-4"
           style={{ borderColor: SEEDHOUSE_COLORS.hairline }}
         >
-          <div className="space-y-2 max-w-3xl">
+          <div className="space-y-1.5 max-w-3xl">
             <h2 className="font-display text-2xl sm:text-3xl font-bold m-0">
               {t.almanacHeading}
             </h2>
@@ -59,7 +81,7 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
         </div>
 
         {/* Crop Filter Strip + Keyword Input */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -68,7 +90,7 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                 setExpandedDiseaseCode(null);
               }}
               aria-pressed={selectedPlantCode === ''}
-              className="px-4 py-2.5 text-xs sm:text-sm font-bold border cursor-pointer transition-colors"
+              className="px-4 py-2 min-h-[44px] text-xs sm:text-sm font-bold border cursor-pointer transition-colors"
               style={
                 selectedPlantCode === ''
                   ? {
@@ -97,7 +119,7 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                     setExpandedDiseaseCode(null);
                   }}
                   aria-pressed={active}
-                  className="px-3.5 py-2.5 text-xs sm:text-sm font-bold border flex items-center gap-2 cursor-pointer transition-colors"
+                  className="px-3.5 py-2 min-h-[44px] text-xs sm:text-sm font-bold border flex items-center gap-2 cursor-pointer transition-colors"
                   style={
                     active
                       ? {
@@ -122,6 +144,10 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
             })}
           </div>
 
+          <p className="text-xs m-0" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
+            {t.almanacHealthyCropsNote}
+          </p>
+
           <div className="max-w-xl">
             <Input
               size="large"
@@ -144,12 +170,12 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
             <div className="py-8 text-base" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
               ...
             </div>
-          ) : diseases.length === 0 ? (
+          ) : visibleDiseases.length === 0 ? (
             <div className="py-8 text-base" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
-              {selectedPlantCode && !keyword.trim() ? t.almanacHealthyOnlyCrop : t.almanacEmpty}
+              {t.almanacEmpty}
             </div>
           ) : (
-            diseases.map((disease) => {
+            visibleDiseases.map((disease) => {
               const isOpen = expandedDiseaseCode === disease.diseaseCode;
               const isSevere =
                 disease.severity === 'CRITICAL' || disease.severity === 'HIGH';
@@ -161,27 +187,21 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                 >
                   <button
                     type="button"
+                    data-testid="almanac-disease-row"
                     aria-expanded={isOpen}
                     onClick={() =>
                       setExpandedDiseaseCode((prev) =>
                         prev === disease.diseaseCode ? null : disease.diseaseCode
                       )
                     }
-                    className="w-full px-4 sm:px-6 py-4 text-left flex flex-wrap items-center justify-between gap-4 cursor-pointer transition-colors hover:bg-[#FAF5EB]"
+                    className="w-full min-h-[44px] px-4 sm:px-6 py-3.5 text-left flex flex-wrap items-center justify-between gap-4 cursor-pointer transition-colors hover:bg-[#FAF5EB]"
                     style={{
                       backgroundColor: isOpen ? SEEDHOUSE_COLORS.sheet : 'transparent',
                       color: SEEDHOUSE_COLORS.ink,
                     }}
                   >
-                    <div className="space-y-1">
-                      <div className="font-display text-lg sm:text-xl font-bold leading-snug">
-                        {localizeDiseaseName(disease.diseaseCode, disease.commonName)}
-                      </div>
-                      {disease.scientificName && (
-                        <div className="text-sm italic" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
-                          {disease.scientificName}
-                        </div>
-                      )}
+                    <div className="font-display text-lg sm:text-xl font-bold leading-snug">
+                      {localizeDiseaseName(disease.diseaseCode, disease.commonName)}
                     </div>
 
                     <div className="flex items-center gap-4 shrink-0">
@@ -217,6 +237,28 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
             })
           )}
         </div>
+
+        {isUnfiltered && diseases.length > DEFAULT_VISIBLE_ROWS && (
+          <div className="flex justify-center pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setShowAll((prev) => !prev);
+                if (showAll) {
+                  setExpandedDiseaseCode(null);
+                }
+              }}
+              className="px-5 py-2.5 min-h-[44px] text-sm font-bold border cursor-pointer transition-colors hover:bg-[#FAF5EB]"
+              style={{
+                backgroundColor: SEEDHOUSE_COLORS.sheet,
+                borderColor: SEEDHOUSE_COLORS.hairline,
+                color: SEEDHOUSE_COLORS.ink,
+              }}
+            >
+              {showAll ? t.almanacShowLess : t.almanacShowAll(diseases.length)}
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -15,6 +15,7 @@ import {
 } from '@/lib/data/fallbackCatalog';
 import { VI_DISEASE_NAMES, VI_PLANT_NAMES } from '@/lib/i18n/dictionary';
 import { getDiseaseLocalizationSearchText } from '@/lib/i18n/viCatalog';
+import { normalizeSearchText } from '@/lib/i18n/search';
 
 const DEFAULT_API_BASE = 'http://localhost:8080';
 const MAX_LEAF_IMAGE_BYTES = 15 * 1024 * 1024;
@@ -173,7 +174,7 @@ export async function fetchDiseases(params?: {
     }
     const body = (await response.json()) as ApiResponse<PageResponse<DiseaseSummaryDto>>;
     if (body?.data?.content) {
-      const kw = params?.keyword?.trim().toLowerCase();
+      const kw = normalizeSearchText(params?.keyword ?? '');
       const filtered = kw
         ? body.data.content.filter((d) => {
             const fallbackRecord = findFallbackDiseaseRecord(d.diseaseCode);
@@ -181,9 +182,11 @@ export async function fetchDiseases(params?: {
             const plantCodes = fallbackRecord?.plantCodes ?? (params?.plantCode ? [params.plantCode] : []);
             const localizedPlants = plantCodes.map((code) => VI_PLANT_NAMES[code] ?? '').join(' ');
             const localizedSymptoms = getDiseaseLocalizationSearchText(d.diseaseCode);
-            const haystack = `${d.diseaseCode} ${d.commonName} ${d.scientificName ?? ''} ${localizedDisease} ${localizedPlants} ${localizedSymptoms} ${plantCodes.join(
-              ' '
-            )}`.toLowerCase();
+            const haystack = normalizeSearchText(
+              `${d.diseaseCode} ${d.commonName} ${d.scientificName ?? ''} ${localizedDisease} ${localizedPlants} ${localizedSymptoms} ${plantCodes.join(
+                ' '
+              )}`
+            );
             return haystack.includes(kw);
           })
         : body.data.content;

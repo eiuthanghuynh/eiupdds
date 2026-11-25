@@ -1,6 +1,7 @@
 import type { DiseaseDetailDto, DiseaseSummaryDto, PlantDto, TreatmentDto } from '@/types/pdds';
 import { VI_DISEASE_NAMES, VI_PLANT_NAMES } from '@/lib/i18n/dictionary';
 import { getDiseaseLocalizationSearchText } from '@/lib/i18n/viCatalog';
+import { normalizeSearchText } from '@/lib/i18n/search';
 
 export interface FallbackDiseaseRecord extends DiseaseDetailDto {
   plantCodes: string[];
@@ -391,7 +392,7 @@ export function filterFallbackDiseases(params?: {
   keyword?: string;
 }): DiseaseSummaryDto[] {
   const plantNorm = params?.plantCode?.trim().toUpperCase();
-  const kw = params?.keyword?.trim().toLowerCase();
+  const kw = normalizeSearchText(params?.keyword ?? '');
 
   return FALLBACK_DISEASES.filter((d) => {
     if (plantNorm && !d.plantCodes.includes(plantNorm)) {
@@ -401,9 +402,11 @@ export function filterFallbackDiseases(params?: {
       const localizedDisease = VI_DISEASE_NAMES[d.diseaseCode] ?? '';
       const localizedPlants = d.plantCodes.map((code) => VI_PLANT_NAMES[code] ?? '').join(' ');
       const localizedSymptoms = getDiseaseLocalizationSearchText(d.diseaseCode);
-      const haystack = `${d.diseaseCode} ${d.commonName} ${d.scientificName ?? ''} ${localizedDisease} ${localizedPlants} ${localizedSymptoms} ${d.plantCodes.join(
-        ' '
-      )}`.toLowerCase();
+      const haystack = normalizeSearchText(
+        `${d.diseaseCode} ${d.commonName} ${d.scientificName ?? ''} ${localizedDisease} ${localizedPlants} ${localizedSymptoms} ${d.plantCodes.join(
+          ' '
+        )}`
+      );
       if (!haystack.includes(kw)) {
         return false;
       }

@@ -99,6 +99,20 @@ export function DiseaseDetailSheet({
                 <p className="text-sm leading-relaxed m-0" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
                   {tr.instructions}
                 </p>
+                {tr.activeIngredients && (
+                  <div className="text-xs leading-snug" style={{ color: SEEDHOUSE_COLORS.ink }}>
+                    <span className="font-bold">{t.activeIngredientLabel}</span>{' '}
+                    <span>{tr.activeIngredients}</span>
+                  </div>
+                )}
+                {tr.dosageRecommendation && (
+                  <div className="text-xs leading-snug" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
+                    <span className="font-bold" style={{ color: SEEDHOUSE_COLORS.ink }}>
+                      {t.dosageLabel}
+                    </span>{' '}
+                    <span>{tr.dosageRecommendation}</span>
+                  </div>
+                )}
                 {tr.safetyIntervalDays != null && tr.safetyIntervalDays > 0 && (
                   <div
                     className="text-xs font-bold tabular-nums"

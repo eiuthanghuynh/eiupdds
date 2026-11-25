@@ -55,21 +55,15 @@ export interface UiCopy {
   harvestSafeZero: string;
   harvestDayUnit: string;
   chemicalWaitCrossNotice: (days: number) => string;
-  howHeading: string;
-  howLead: string;
-  howStep1Title: string;
-  howStep1Body: string;
-  howStep2Title: string;
-  howStep2Body: string;
-  howStep3Title: string;
-  howStep3Body: string;
   almanacHeading: string;
   almanacLead: string;
   almanacAllCrops: string;
   almanacSearchPlaceholder: string;
   almanacOfflineNote: string;
   almanacEmpty: string;
-  almanacHealthyOnlyCrop: string;
+  almanacShowAll: (count: number) => string;
+  almanacShowLess: string;
+  almanacHealthyCropsNote: string;
   sheetLoading: string;
   scientificNameLabel: string;
   sheetSymptomsHeading: string;
@@ -141,38 +135,26 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     harvestDayUnit: 'Ngày',
     chemicalWaitCrossNotice: (days) =>
       `Lưu ý: nếu chuyển sang thuốc đặc trị, cần cách ly ${days} ngày trước thu hoạch.`,
-    howHeading: 'Ba Bước Khám Lá Đơn Giản Ngoài Vườn',
-    howLead:
-      'Thiết kế tối giản thao tác để bất kỳ người trồng cây nào cũng kiểm tra được ngay ngoài hiên nhà hay bờ ruộng.',
-    howStep1Title: 'Chụp Rõ Một Mặt Lá Đang Nghi Bệnh',
-    howStep1Body:
-      'Chọn chiếc lá có vết đốm đặc trưng nhất, hướng ra chỗ sáng tự nhiên để thấy rõ màu vết bệnh và gân\u00A0lá.',
-    howStep2Title: 'Đối Chiếu Khung Vết Bệnh Bằng\u00A0Mắt',
-    howStep2Body:
-      'Bật hoặc tắt khung vàng trên ảnh để tự mắt kiểm tra xem máy có khoanh đúng vết cháy lá thật hay\u00A0không.',
-    howStep3Title: 'Ưu Tiên Sinh Học & Đúng Ngày Cách\u00A0Ly',
-    howStep3Body:
-      'Luôn xem biện pháp cắt tỉa và nấm đối kháng trước; khi buộc phải dùng thuốc đặc trị, tuân thủ tuyệt đối số ngày ngưng\u00A0thuốc.',
-    almanacHeading: 'Sổ Tay 9 Cây Trồng & 15 Bệnh Thường Gặp',
-    almanacLead:
-      'Bấm chọn loại cây bà con đang trồng, sau đó bấm vào tên bệnh để lật mở tờ hướng dẫn triệu chứng và cách phòng trị ngay tại chỗ.',
-    almanacAllCrops: 'Tất cả 9 cây',
-    almanacSearchPlaceholder: 'Tìm tên bệnh hoặc tên cây (ví dụ: mốc sương, đạo ôn, cà chua)...',
-    almanacOfflineNote: 'Đang hiển thị bản dữ liệu chuẩn lưu sẵn (máy chủ API nội bộ đang tạm nghỉ).',
-    almanacEmpty: 'Không tìm thấy bệnh nào khớp với từ khóa đang lọc.',
-    almanacHealthyOnlyCrop:
-      'Cây trồng này hiện hỗ trợ nhận diện lá khỏe mạnh; chưa có bệnh hại riêng trong danh mục 15\u00A0bệnh.',
+    almanacHeading: 'Sổ Tay Bệnh Cây Trồng',
+    almanacLead: 'Chọn cây hoặc gõ từ khóa để xem triệu chứng và phác đồ xử lý.',
+    almanacAllCrops: 'Tất cả',
+    almanacSearchPlaceholder: 'Tìm tên bệnh hoặc cây (vd: mốc sương, đạo ôn)...',
+    almanacOfflineNote: 'Đang dùng dữ liệu ngoại tuyến.',
+    almanacEmpty: 'Không tìm thấy bệnh nào khớp từ khóa.',
+    almanacShowAll: (count) => `Xem tất cả ${count} bệnh`,
+    almanacShowLess: 'Thu gọn',
+    almanacHealthyCropsNote: 'Đào & Đậu nành: hiện hỗ trợ kiểm tra lá khỏe mạnh.',
     sheetLoading: 'Đang mở tờ hướng dẫn chi tiết...',
     scientificNameLabel: 'Tên khoa học:',
     sheetSymptomsHeading: 'Dấu hiệu nhận biết trên lá & thân',
     sheetConditionsHeading: 'Điều kiện thời tiết dễ bùng bệnh',
     sheetTreatmentsHeading: 'Phác đồ xử lý tham khảo',
     footerSummary:
-      'EIU Plant Disease Detection System (EIU PDDS) — Dự án Kỹ thuật Phần mềm ứng dụng Thị giác Máy tính hỗ trợ nhận diện bệnh lá cây và tra cứu phác đồ nông học an\u00A0toàn.',
+      'EIU PDDS — Nền tảng nhận diện bệnh lá cây & tra cứu phác đồ nông học.',
     footerSafetyNote:
-      'Lưu ý nông học: Kết quả nhận diện qua hình ảnh là tài liệu tham khảo nhanh tại vườn. Với diện tích canh tác lớn hoặc bệnh lây lan bất thường, bà con nên tham khảo thêm cán bộ bảo vệ thực vật địa\u00A0phương.',
+      'Kết quả tham khảo nhanh; cần chuyên gia xác nhận với diện tích lớn.',
     footerCopyright:
-      '© 2026 EIU Plant Disease Detection System (EIU PDDS) · Eastern International\u00A0University.',
+      '© 2026 EIU Plant Disease Detection System · EIU.',
   },
   en: {
     brandSubtitle: 'EIU Plant Disease Detection System',
@@ -234,37 +216,25 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     harvestDayUnit: 'Days',
     chemicalWaitCrossNotice: (days) =>
       `Note: switching to targeted chemical spray requires a ${days}-day harvest wait.`,
-    howHeading: 'Three Straightforward Field Steps',
-    howLead:
-      'Built with large type and calm controls so growers can verify plant health effortlessly outdoors or at home.',
-    howStep1Title: 'Photograph One Affected Leaf Clearly',
-    howStep1Body:
-      'Pick a leaf showing representative spots or blight margins in natural light so veins and lesion borders read clearly.',
-    howStep2Title: 'Cross-Check the Bounded Lesions Yourself',
-    howStep2Body:
-      'Toggle the mustard bounding boxes on and off to verify the highlighted spots against the real leaf surface.',
-    howStep3Title: 'Start With Biological Care & Respect Wait Days',
-    howStep3Body:
-      'Prioritize sanitation and biological agents first; whenever targeted fungicides are needed, honor the pre-harvest safety interval.',
-    almanacHeading: 'Field Almanac: 9 Supported Crops & 15 Pathologies',
-    almanacLead:
-      'Filter by crop and select any disease row to unfold an inline reference sheet with morphological symptoms and curated remedies.',
-    almanacAllCrops: 'All 9 crops',
-    almanacSearchPlaceholder: 'Search disease or crop name (e.g., late blight, blast, tomato)...',
-    almanacOfflineNote: 'Showing bundled reference catalog snapshot (local API server is currently offline).',
-    almanacEmpty: 'No diseases match the current crop and keyword filter.',
-    almanacHealthyOnlyCrop:
-      'This crop currently supports healthy-leaf verification; no separate pathology entry is listed among the 15 catalog\u00A0diseases.',
+    almanacHeading: 'Crop Pathology Almanac',
+    almanacLead: 'Filter by crop or keyword to inspect foliar symptoms and remedies.',
+    almanacAllCrops: 'All crops',
+    almanacSearchPlaceholder: 'Search disease or crop (e.g. late blight, blast)...',
+    almanacOfflineNote: 'Showing offline reference snapshot.',
+    almanacEmpty: 'No diseases match the current filter.',
+    almanacShowAll: (count) => `Show all ${count} pathologies`,
+    almanacShowLess: 'Show fewer',
+    almanacHealthyCropsNote: 'Peach & Soybean: healthy-leaf screening only.',
     sheetLoading: 'Loading pathology sheet...',
     scientificNameLabel: 'Scientific name:',
     sheetSymptomsHeading: 'Foliar & Stem Symptoms',
     sheetConditionsHeading: 'Favorable Weather & Risk Conditions',
     sheetTreatmentsHeading: 'Curated Agronomic Treatments',
     footerSummary:
-      'EIU Plant Disease Detection System (EIU PDDS) — Applied Computer Vision & Distributed Systems capstone empowering accessible crop health diagnostics.',
+      'EIU PDDS — Applied computer vision for foliar disease diagnosis & agronomic treatment.',
     footerSafetyNote:
-      'Agronomic notice: Visual AI diagnosis serves as a rapid field reference. For commercial acreage or severe outbreaks, consult certified local plant protection specialists.',
-    footerCopyright: '© 2026 EIU Plant Disease Detection System (EIU PDDS) · Eastern International University.',
+      'Quick field reference; consult local agronomists for large acreage or severe outbreaks.',
+    footerCopyright: '© 2026 EIU Plant Disease Detection System · EIU.',
   },
 };
 
