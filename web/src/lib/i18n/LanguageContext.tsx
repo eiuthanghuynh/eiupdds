@@ -20,6 +20,7 @@ import {
 } from './dictionary';
 import {
   getDiseaseDetailOverride,
+  localizeDiagnosisTreatments,
   localizeSampleResponse as localizeSpecimenPayload,
   VI_SAMPLE_SPECIMENS,
 } from './viCatalog';
@@ -36,6 +37,10 @@ export interface LanguageContextValue {
   localizeTreatmentType: (type: string) => string;
   localizeSampleLabel: (sample: SampleSpecimen) => string;
   localizeSampleResponse: (sample: SampleSpecimen) => DiagnosisAnalyzeResponse;
+  localizeTreatments: (
+    diseaseCode: string | null | undefined,
+    treatments: TreatmentDto[]
+  ) => TreatmentDto[];
   localizeDiseaseDetail: (
     diseaseCode: string,
     detail?: DiseaseDetailDto,
@@ -141,6 +146,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }): R
     [locale]
   );
 
+  const localizeTreatments = useCallback(
+    (diseaseCode: string | null | undefined, treatments: TreatmentDto[]): TreatmentDto[] => {
+      return localizeDiagnosisTreatments(diseaseCode, treatments, locale);
+    },
+    [locale]
+  );
+
   const localizeDiseaseDetail = useCallback(
     (
       diseaseCode: string,
@@ -177,6 +189,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }): R
       localizeTreatmentType,
       localizeSampleLabel,
       localizeSampleResponse,
+      localizeTreatments,
       localizeDiseaseDetail,
     }),
     [
@@ -188,6 +201,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }): R
       localizeTreatmentType,
       localizeSampleLabel,
       localizeSampleResponse,
+      localizeTreatments,
       localizeDiseaseDetail,
     ]
   );

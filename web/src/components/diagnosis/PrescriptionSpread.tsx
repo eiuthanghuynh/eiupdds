@@ -17,16 +17,19 @@ export function PrescriptionSpread({
 }: {
   diagnosis: DiagnosisAnalyzeResponse;
 }): React.JSX.Element {
-  const { t, localizeDiseaseName, localizeTreatmentType } = useLanguage();
+  const { t, localizeDiseaseName, localizeTreatmentType, localizeTreatments } = useLanguage();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const sortedTreatments = useMemo<TreatmentDto[]>(() => {
-    const raw = diagnosis.recommendedTreatments ?? [];
+    const raw = localizeTreatments(
+      diagnosis.dominantDisease?.diseaseCode,
+      diagnosis.recommendedTreatments ?? []
+    );
     return [...raw].sort(
       (a, b) =>
         (PROTOCOL_ORDER[a.treatmentType] ?? 99) - (PROTOCOL_ORDER[b.treatmentType] ?? 99)
     );
-  }, [diagnosis.recommendedTreatments]);
+  }, [diagnosis.dominantDisease?.diseaseCode, diagnosis.recommendedTreatments, localizeTreatments]);
 
   useEffect(() => {
     setSelectedIndex(0);
@@ -37,6 +40,19 @@ export function PrescriptionSpread({
     activeTreatment?.safetyIntervalDays != null && activeTreatment.safetyIntervalDays > 0
       ? activeTreatment.safetyIntervalDays
       : 0;
+  const maxChemicalWaitDays = useMemo(
+    () =>
+      Math.max(
+        0,
+        ...sortedTreatments
+          .filter((tr) => tr.treatmentType === 'CHEMICAL')
+          .map((tr) => tr.safetyIntervalDays ?? 0)
+      ),
+    [sortedTreatments]
+  );
+  const isChemicalOrBio =
+    activeTreatment?.treatmentType === 'BIOLOGICAL' ||
+    activeTreatment?.treatmentType === 'CHEMICAL';
 
   return (
     <section
@@ -142,7 +158,8 @@ export function PrescriptionSpread({
 
               {activeTreatment.dosageRecommendation && (
                 <p className="text-base leading-relaxed m-0">
-                  <strong>{t.dosageLabel}</strong> {activeTreatment.dosageRecommendation}
+                  <strong>{isChemicalOrBio ? t.dosageLabel : t.culturalNoteLabel}</strong>{' '}
+                  {activeTreatment.dosageRecommendation}
                 </p>
               )}
 
@@ -173,6 +190,14 @@ export function PrescriptionSpread({
                 {activeTreatment.warning && (
                   <p className="text-sm leading-relaxed m-0" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
                     {activeTreatment.warning}
+                  </p>
+                )}
+                {waitDays === 0 && maxChemicalWaitDays > 0 && (
+                  <p
+                    className="text-xs font-semibold leading-relaxed m-0"
+                    style={{ color: SEEDHOUSE_COLORS.critical }}
+                  >
+                    {t.chemicalWaitCrossNotice(maxChemicalWaitDays)}
                   </p>
                 )}
               </div>

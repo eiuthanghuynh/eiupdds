@@ -88,4 +88,22 @@ describe('PrescriptionSpread & DiagnosticWorkbench', () => {
     ).not.toBeInTheDocument();
     expect(screen.getByText(/chỉ hỗ trợ định dạng ảnh jpeg, png hoặc webp/i)).toBeInTheDocument();
   });
+
+  it('localizes English live-upload treatments to Vietnamese, warns about chemical wait days on 0-day bio tab, and omits dosage label on CULTURAL tab', async () => {
+    const user = userEvent.setup();
+    const liveEnglishDiag = {
+      ...SAMPLE_SPECIMENS[0].response,
+      diagnosisId: '99999999-9999-9999-9999-999999999999',
+    };
+    render(
+      <Providers>
+        <PrescriptionSpread diagnosis={liveEnglishDiag} />
+      </Providers>
+    );
+    expect(screen.getByText(/vệ sinh tán lá & phun vi sinh đối kháng/i)).toBeInTheDocument();
+    expect(screen.getByText(/nếu chuyển sang thuốc đặc trị.*7 ngày/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: /chăm sóc & canh tác/i }));
+    expect(screen.queryByText(/liều lượng tham khảo/i)).not.toBeInTheDocument();
+  });
 });

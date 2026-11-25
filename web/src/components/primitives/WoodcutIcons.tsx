@@ -4,6 +4,7 @@ interface IconProps {
   size?: number;
   stroke?: string;
   className?: string;
+  testId?: string;
 }
 
 export function WoodcutSunLeafMark({
@@ -115,6 +116,7 @@ export function StampCheckIcon({
   size = 18,
   stroke = 'currentColor',
   className = '',
+  testId,
 }: IconProps): React.JSX.Element {
   return (
     <svg
@@ -127,10 +129,38 @@ export function StampCheckIcon({
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
+      data-testid={testId}
       className={className}
     >
       <circle cx="10" cy="10" r="7.5" strokeDasharray="2.5 2" />
       <path d="M6.8 10.2l2.2 2.2 4.4-4.6" />
+    </svg>
+  );
+}
+
+export function StampAlertIcon({
+  size = 18,
+  stroke = 'currentColor',
+  className = '',
+  testId,
+}: IconProps): React.JSX.Element {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke={stroke}
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      data-testid={testId}
+      className={className}
+    >
+      <path d="M10 3L17.5 16.2H2.5L10 3Z" />
+      <path d="M10 8v4" />
+      <circle cx="10" cy="14" r="0.6" fill={stroke} />
     </svg>
   );
 }

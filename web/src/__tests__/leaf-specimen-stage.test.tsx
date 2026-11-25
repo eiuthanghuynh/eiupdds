@@ -81,6 +81,42 @@ describe('LeafSpecimenStage', () => {
     }
   });
 
+  it('renders StampAlertIcon on CRITICAL severity, shortens same-disease pills to #1 · 86%, hides Latin subtitle, and keeps preview thumbnail on 422', () => {
+    const { rerender } = render(
+      <Providers>
+        <LeafSpecimenStage
+          diagnosis={SAMPLE_SPECIMENS[0].response}
+          isSample={true}
+          isLoading={false}
+          error={null}
+          onRetryUpload={vi.fn()}
+          onSelectSample={vi.fn()}
+        />
+      </Providers>
+    );
+    expect(screen.getByTestId('severity-alert-icon')).toBeInTheDocument();
+    expect(screen.queryByTestId('severity-check-icon')).not.toBeInTheDocument();
+    const pills = screen.getAllByTestId('bbox-label-pill');
+    expect(pills[0]).toHaveTextContent('#1 · 86%');
+    expect(screen.queryByText('Phytophthora infestans')).not.toBeInTheDocument();
+
+    rerender(
+      <Providers>
+        <LeafSpecimenStage
+          diagnosis={SAMPLE_SPECIMENS[0].response}
+          previewUrl="blob:mock-blurry-leaf"
+          isSample={false}
+          isLoading={false}
+          error={new PddsApiError(422, 'DIAGNOSIS_003', 'No leaf found')}
+          onRetryUpload={vi.fn()}
+          onSelectSample={vi.fn()}
+        />
+      </Providers>
+    );
+    const thumb = screen.getByTestId('error-422-preview');
+    expect(thumb).toHaveAttribute('src', 'blob:mock-blurry-leaf');
+  });
+
   it('renders plain-Vietnamese retake guidance on 422 DIAGNOSIS_003 and sample buttons on 429 RATE_001', async () => {
     const onSelectSample = vi.fn();
     const user = userEvent.setup();

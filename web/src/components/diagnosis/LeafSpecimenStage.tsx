@@ -5,7 +5,11 @@ import { PddsApiError } from '@/lib/api/client';
 import { SAMPLE_SPECIMENS } from '@/lib/data/sampleDiagnoses';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { SEEDHOUSE_COLORS } from '@/lib/theme/seedhouseTheme';
-import { EyeReticleIcon, StampCheckIcon } from '@/components/primitives/WoodcutIcons';
+import {
+  EyeReticleIcon,
+  StampAlertIcon,
+  StampCheckIcon,
+} from '@/components/primitives/WoodcutIcons';
 import type { DiagnosisAnalyzeResponse } from '@/types/pdds';
 
 export interface LeafSpecimenStageProps {
@@ -30,9 +34,16 @@ export function LeafSpecimenStage({
   const { t, localizeDiseaseName, localizePlantName, localizeSeverity, localizeSampleLabel } =
     useLanguage();
   const [showBoxes, setShowBoxes] = useState(true);
+  const [naturalDims, setNaturalDims] = useState<{ w: number; h: number } | null>(null);
 
-  const imgW = diagnosis.imageWidth && diagnosis.imageWidth > 0 ? diagnosis.imageWidth : 800;
-  const imgH = diagnosis.imageHeight && diagnosis.imageHeight > 0 ? diagnosis.imageHeight : 520;
+  const imgW =
+    diagnosis.imageWidth && diagnosis.imageWidth > 0
+      ? diagnosis.imageWidth
+      : naturalDims?.w ?? 800;
+  const imgH =
+    diagnosis.imageHeight && diagnosis.imageHeight > 0
+      ? diagnosis.imageHeight
+      : naturalDims?.h ?? 520;
   const displaySrc = previewUrl || diagnosis.originalImageUrl;
 
   const diseaseCode = diagnosis.dominantDisease?.diseaseCode ?? 'LEAF_HEALTHY';
@@ -49,6 +60,13 @@ export function LeafSpecimenStage({
   const boxCount = diagnosis.boundingBoxes?.length ?? 0;
   const severity = isHealthy ? null : diagnosis.dominantDisease?.severity ?? 'MODERATE';
   const severityText = localizeSeverity(severity);
+  const isSevere = !isHealthy && (severity === 'CRITICAL' || severity === 'HIGH');
+  const hasDistinctCoInfections =
+    new Set(
+      (diagnosis.boundingBoxes ?? []).map((b) =>
+        (b.diseaseCode || b.label || '').trim().toUpperCase()
+      )
+    ).size > 1;
 
   const apiErr = error instanceof PddsApiError ? error : null;
   const is400 = apiErr?.status === 400;
@@ -172,7 +190,7 @@ export function LeafSpecimenStage({
                 <>
                   <span aria-hidden="true">·</span>
                   <span
-                    className="underline decoration-dotted font-semibold"
+                    className="font-semibold"
                     style={{ color: SEEDHOUSE_COLORS.mustard }}
                   >
                     {t.sampleReferenceBadge}
@@ -191,23 +209,38 @@ export function LeafSpecimenStage({
             style={
               isHealthy
                 ? { borderColor: '#B8E0A8', color: '#E4F7DC', backgroundColor: '#2A3818' }
-                : severity === 'CRITICAL' || severity === 'HIGH'
+                : severity === 'CRITICAL'
                   ? {
                       borderColor: SEEDHOUSE_COLORS.mustard,
-                      color: SEEDHOUSE_COLORS.mustard,
-                      backgroundColor: '#2B2114',
+                      color: '#FFFDF9',
+                      backgroundColor: SEEDHOUSE_COLORS.critical,
                     }
-                  : {
-                      borderColor: '#E5DEC9',
-                      color: SEEDHOUSE_COLORS.creamWarm,
-                      backgroundColor: '#30381C',
-                    }
+                  : severity === 'HIGH'
+                    ? {
+                        borderColor: SEEDHOUSE_COLORS.mustard,
+                        color: SEEDHOUSE_COLORS.mustard,
+                        backgroundColor: '#5C2112',
+                      }
+                    : {
+                        borderColor: '#E5DEC9',
+                        color: SEEDHOUSE_COLORS.creamWarm,
+                        backgroundColor: '#30381C',
+                      }
             }
           >
-            <StampCheckIcon
-              size={16}
-              stroke={isHealthy ? '#E4F7DC' : SEEDHOUSE_COLORS.mustard}
-            />
+            {isSevere ? (
+              <StampAlertIcon
+                size={16}
+                stroke={severity === 'CRITICAL' ? '#FFFDF9' : SEEDHOUSE_COLORS.mustard}
+                testId="severity-alert-icon"
+              />
+            ) : (
+              <StampCheckIcon
+                size={16}
+                stroke={isHealthy ? '#E4F7DC' : SEEDHOUSE_COLORS.creamWarm}
+                testId="severity-check-icon"
+              />
+            )}
             <span>{severityText}</span>
           </div>
         )}
@@ -239,7 +272,16 @@ export function LeafSpecimenStage({
           style={{ backgroundColor: SEEDHOUSE_COLORS.oliveMat, color: SEEDHOUSE_COLORS.creamWarm }}
           role="alert"
         >
-          <div className="space-y-2.5">
+          <div className="space-y-3">
+            {is422 && previewUrl && (
+              <img
+                data-testid="error-422-preview"
+                src={previewUrl}
+                alt=""
+                className="max-h-28 w-auto object-contain border"
+                style={{ borderColor: SEEDHOUSE_COLORS.oliveRule }}
+              />
+            )}
             <h3
               className="font-display text-lg sm:text-xl font-bold m-0"
               style={{ color: SEEDHOUSE_COLORS.mustard }}
@@ -272,7 +314,7 @@ export function LeafSpecimenStage({
               <button
                 type="button"
                 onClick={onRetryUpload}
-                className="plaque-terracotta px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] border-0 cursor-pointer"
+                className="plaque-terracotta min-h-[44px] px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] border-0 cursor-pointer"
               >
                 {t.retryUploadButton}
               </button>
@@ -284,7 +326,7 @@ export function LeafSpecimenStage({
                   key={item.key}
                   type="button"
                   onClick={() => onSelectSample(idx)}
-                  className="px-3 py-2 font-bold border cursor-pointer"
+                  className="min-h-[44px] px-3 py-2 font-bold border cursor-pointer"
                   style={{
                     borderColor: SEEDHOUSE_COLORS.mustard,
                     backgroundColor: '#3B4423',
@@ -314,6 +356,12 @@ export function LeafSpecimenStage({
             <img
               src={displaySrc}
               alt={diseaseTitle}
+              onLoad={(e) => {
+                const img = e.currentTarget;
+                if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+                  setNaturalDims({ w: img.naturalWidth, h: img.naturalHeight });
+                }
+              }}
               className="block w-full h-full object-fill select-none"
             />
             {showBoxes && boxCount > 0 && (
@@ -350,12 +398,13 @@ export function LeafSpecimenStage({
                 </svg>
 
                 {pillLayouts.map(
-                  ({ box, anchorRight, rightPct, leftPct, maxWidthPct, placement, topPct }) => {
+                  ({ box, anchorRight, rightPct, leftPct, maxWidthPct, placement, topPct }, idx) => {
                     const boxPct = Math.round((box.confidence ?? 0.85) * 100);
                     const rawTitle = box.diseaseCode
                       ? localizeDiseaseName(box.diseaseCode, box.label)
                       : box.label;
                     const compactTitle = rawTitle.replace(/\s*\([^)]*\)/g, '').trim();
+                    const pillLabel = hasDistinctCoInfections ? compactTitle : `#${idx + 1}`;
 
                     return (
                       <span
@@ -376,8 +425,8 @@ export function LeafSpecimenStage({
                           color: SEEDHOUSE_COLORS.creamWarm,
                         }}
                       >
-                        <span className="truncate">{compactTitle}</span>
-                        <span className="shrink-0 ml-1">· {boxPct}%</span>
+                        <span className="truncate">{pillLabel}</span>
+                        <span className="shrink-0">&nbsp;· {boxPct}%</span>
                       </span>
                     );
                   }
@@ -393,20 +442,14 @@ export function LeafSpecimenStage({
         className="pt-3 border-t flex flex-wrap items-center justify-between gap-3 text-xs"
         style={{ borderColor: SEEDHOUSE_COLORS.oliveRule }}
       >
-        <span style={{ color: '#E2D8C1' }}>
-          {showActiveResult && diagnosis.dominantDisease?.scientificName ? (
-            <em>{diagnosis.dominantDisease.scientificName}</em>
-          ) : (
-            <span>EIU PDDS Computer Vision</span>
-          )}
-        </span>
+        <span style={{ color: '#E2D8C1' }}>EIU PDDS</span>
 
         {boxCount > 0 && !error && !isLoading && (
           <button
             type="button"
             onClick={() => setShowBoxes((prev) => !prev)}
             aria-pressed={showBoxes}
-            className="px-3.5 py-2 font-bold uppercase tracking-[0.1em] border flex items-center gap-2 cursor-pointer transition-colors"
+            className="min-h-[44px] px-3.5 py-2 font-bold uppercase tracking-[0.1em] border flex items-center gap-2 cursor-pointer transition-colors"
             style={{
               borderColor: SEEDHOUSE_COLORS.mustard,
               backgroundColor: '#2B3318',

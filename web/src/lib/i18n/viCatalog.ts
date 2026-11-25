@@ -392,3 +392,39 @@ export function getDiseaseDetailOverride(
       : englishFallback?.treatments ?? [],
   };
 }
+
+const VI_DIACRITIC_RE =
+  /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
+
+export function localizeDiagnosisTreatments(
+  diseaseCode: string | null | undefined,
+  treatments: TreatmentDto[],
+  locale: Locale
+): TreatmentDto[] {
+  if (locale !== 'vi' || !diseaseCode || treatments.length === 0) {
+    return treatments;
+  }
+  const viEntry = VI_DISEASE_LOCALIZATIONS[diseaseCode.trim().toUpperCase()];
+  if (!viEntry) {
+    return treatments;
+  }
+
+  return treatments.map((tr) => {
+    if (VI_DIACRITIC_RE.test(tr.title)) {
+      return tr;
+    }
+    const localized = viEntry.treatments.find((item) => item.treatmentType === tr.treatmentType);
+    if (!localized) {
+      return tr;
+    }
+    return {
+      ...tr,
+      title: localized.title,
+      instructions: localized.instructions,
+      activeIngredients: localized.activeIngredients ?? tr.activeIngredients,
+      dosageRecommendation: localized.dosageRecommendation ?? tr.dosageRecommendation,
+      safetyIntervalDays: tr.safetyIntervalDays ?? localized.safetyIntervalDays,
+      warning: localized.warning ?? tr.warning,
+    };
+  });
+}

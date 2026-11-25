@@ -47,11 +47,13 @@ export interface UiCopy {
   colHarvestSafety: string;
   activeIngredientLabel: string;
   dosageLabel: string;
+  culturalNoteLabel: string;
   noChemicalNote: string;
   coInfectionPrefix: string;
   harvestWaitDays: (days: number) => string;
   harvestSafeZero: string;
   harvestDayUnit: string;
+  chemicalWaitCrossNotice: (days: number) => string;
   howHeading: string;
   howLead: string;
   howStep1Title: string;
@@ -130,11 +132,14 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     colHarvestSafety: 'An toàn trước thu hoạch',
     activeIngredientLabel: 'Hoạt chất / Chế phẩm:',
     dosageLabel: 'Liều lượng tham khảo:',
+    culturalNoteLabel: 'Ghi chú canh tác:',
     noChemicalNote: 'Biện pháp sinh học / canh tác tự nhiên — không để lại dư lượng hóa chất.',
     coInfectionPrefix: 'Dấu hiệu đi kèm trên cùng lá:',
     harvestWaitDays: (days) => `Ngưng phun tối thiểu ${days} ngày trước khi thu hoạch.`,
     harvestSafeZero: '0 ngày · An toàn thu hoạch bình thường theo lịch canh tác.',
     harvestDayUnit: 'Ngày',
+    chemicalWaitCrossNotice: (days) =>
+      `Lưu ý: nếu chuyển sang thuốc đặc trị, cần cách ly ${days} ngày trước thu hoạch.`,
     howHeading: 'Ba Bước Khám Lá Đơn Giản Ngoài Vườn',
     howLead:
       'Thiết kế tối giản thao tác để bất kỳ người trồng cây nào cũng kiểm tra được ngay ngoài hiên nhà hay bờ ruộng.',
@@ -220,11 +225,14 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     colHarvestSafety: 'Pre-Harvest Safety',
     activeIngredientLabel: 'Active ingredient / Agent:',
     dosageLabel: 'Recommended dosage:',
+    culturalNoteLabel: 'Field note:',
     noChemicalNote: 'Biological or cultural practice — zero synthetic chemical residue.',
     coInfectionPrefix: 'Co-occurring signs on leaf:',
     harvestWaitDays: (days) => `Stop spraying at least ${days} day(s) before harvest.`,
     harvestSafeZero: '0 days · Safe for normal harvest schedule.',
     harvestDayUnit: 'Days',
+    chemicalWaitCrossNotice: (days) =>
+      `Note: switching to targeted chemical spray requires a ${days}-day harvest wait.`,
     howHeading: 'Three Straightforward Field Steps',
     howLead:
       'Built with large type and calm controls so growers can verify plant health effortlessly outdoors or at home.',
