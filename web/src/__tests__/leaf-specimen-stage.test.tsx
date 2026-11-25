@@ -46,7 +46,7 @@ describe('LeafSpecimenStage', () => {
     expect(frame).toHaveStyle({ aspectRatio: '1080 / 1920' });
     const overlayGroup = screen.getByTestId('bbox-overlay-group');
     expect(overlayGroup).toBeVisible();
-    expect(overlayGroup).toHaveClass('animate-bbox-reveal');
+    expect(overlayGroup).not.toHaveClass('animate-bbox-reveal');
     expect(screen.queryByText('EIU PDDS')).not.toBeInTheDocument();
     const pills = screen.getAllByTestId('bbox-label-pill');
     const firstTag = pills[0];
@@ -138,7 +138,7 @@ describe('LeafSpecimenStage', () => {
       </Providers>
     );
     expect(screen.getByText(/chưa nhìn rõ lá cây hoặc vết bệnh/i)).toBeInTheDocument();
-    expect(screen.queryByText(/nguy hiểm khẩn cấp/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/nguy hiểm/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/bệnh mốc sương khoai tây/i)).not.toBeInTheDocument();
 
     rerender(

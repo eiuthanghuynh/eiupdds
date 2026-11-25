@@ -396,11 +396,11 @@ export function LeafSpecimenStage({
                 <m.div
                   key="bbox-overlay-group"
                   data-testid="bbox-overlay-group"
-                  initial={{ opacity: 0, scale: 0.985 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.985 }}
-                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                  className="absolute inset-0 w-full h-full pointer-events-none animate-bbox-reveal"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.16, ease: 'easeOut' }}
+                  className="absolute inset-0 w-full h-full pointer-events-none"
                 >
                   <svg
                     viewBox="0 0 1000 1000"
@@ -493,7 +493,10 @@ export function LeafSpecimenStage({
         >
           <button
             type="button"
-            onClick={() => setShowBoxes((prev) => !prev)}
+            onClick={() => {
+              setActiveBoxId(null);
+              setShowBoxes((prev) => !prev);
+            }}
             aria-pressed={showBoxes}
             className="min-h-[44px] px-3.5 py-2 font-bold uppercase tracking-[0.1em] border flex items-center gap-2 cursor-pointer transition-all duration-200 ease-out active:translate-y-[1px]"
             style={{

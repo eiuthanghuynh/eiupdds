@@ -163,17 +163,6 @@ input::placeholder,
   }
 }
 
-@keyframes seedhouseBboxReveal {
-  from {
-    opacity: 0;
-    transform: scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 @keyframes seedhouseSheetUnfold {
   from {
     opacity: 0;
@@ -212,10 +201,6 @@ input::placeholder,
   animation: seedhouseFadeSlide 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.animate-bbox-reveal {
-  animation: seedhouseBboxReveal 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
 .animate-sheet-unfold {
   animation: seedhouseSheetUnfold 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -234,7 +219,6 @@ input::placeholder,
   }
   .animate-ink-stamp,
   .animate-specimen-fade,
-  .animate-bbox-reveal,
   .animate-sheet-unfold,
   .animate-stage-pulse,
   .animate-reticle-draw {

@@ -306,17 +306,17 @@ export const VI_DISEASE_NAMES: Record<string, string> = {
 };
 
 export const VI_SEVERITY_LABELS: Record<string, string> = {
-  LOW: 'Mức nhẹ / Theo dõi',
-  MODERATE: 'Mức trung bình',
-  HIGH: 'Nguy cơ cao',
-  CRITICAL: 'Nguy hiểm khẩn cấp',
+  LOW: 'Nhẹ',
+  MODERATE: 'Trung bình',
+  HIGH: 'Cao',
+  CRITICAL: 'Nguy hiểm',
 };
 
 export const EN_SEVERITY_LABELS: Record<string, string> = {
-  LOW: 'Low severity',
-  MODERATE: 'Moderate severity',
-  HIGH: 'High risk',
-  CRITICAL: 'Critical severity',
+  LOW: 'Low',
+  MODERATE: 'Moderate',
+  HIGH: 'High',
+  CRITICAL: 'Critical',
 };
 
 export const VI_TREATMENT_TYPES: Record<string, string> = {

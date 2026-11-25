@@ -28,11 +28,12 @@ describe('SeedhouseHeader & Bilingual Agronomic Dictionary', () => {
     expect(screen.getByText('EIU PDDS')).toBeInTheDocument();
     expect(screen.getByTestId('plant')).toHaveTextContent('Khoai tây');
     expect(screen.getByTestId('disease')).toHaveTextContent('Bệnh mốc sương khoai tây');
-    expect(screen.getByTestId('sev')).toHaveTextContent('Nguy hiểm khẩn cấp');
+    expect(screen.getByTestId('sev')).toHaveTextContent(/^Nguy hiểm$/);
 
     await user.click(screen.getByRole('button', { name: /chuyển sang tiếng anh|english|en/i }));
     expect(screen.getByTestId('plant')).toHaveTextContent('Potato');
     expect(screen.getByTestId('disease')).toHaveTextContent('Potato late blight');
+    expect(screen.getByTestId('sev')).toHaveTextContent(/^Critical$/);
   });
 
   it('toggles inline Mobile App companion sheet without opening a modal or dead link', async () => {
