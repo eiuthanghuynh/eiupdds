@@ -12,6 +12,7 @@ import {
   FALLBACK_PLANTS,
   filterFallbackDiseases,
   findFallbackDiseaseRecord,
+  isHealthyLeafDisease,
 } from '@/lib/data/fallbackCatalog';
 import { VI_DISEASE_NAMES, VI_PLANT_NAMES } from '@/lib/i18n/dictionary';
 import { getDiseaseLocalizationSearchText } from '@/lib/i18n/viCatalog';
@@ -174,9 +175,10 @@ export async function fetchDiseases(params?: {
     }
     const body = (await response.json()) as ApiResponse<PageResponse<DiseaseSummaryDto>>;
     if (body?.data?.content) {
+      const pathologiesOnly = body.data.content.filter((d) => !isHealthyLeafDisease(d));
       const kw = normalizeSearchText(params?.keyword ?? '');
       const filtered = kw
-        ? body.data.content.filter((d) => {
+        ? pathologiesOnly.filter((d) => {
             const fallbackRecord = findFallbackDiseaseRecord(d.diseaseCode);
             const localizedDisease = VI_DISEASE_NAMES[d.diseaseCode] ?? '';
             const plantCodes = fallbackRecord?.plantCodes ?? (params?.plantCode ? [params.plantCode] : []);
@@ -189,7 +191,7 @@ export async function fetchDiseases(params?: {
             );
             return haystack.includes(kw);
           })
-        : body.data.content;
+        : pathologiesOnly;
       return { diseases: filtered, isOfflineFallback: false };
     }
     return { diseases: filterFallbackDiseases(params), isOfflineFallback: true };

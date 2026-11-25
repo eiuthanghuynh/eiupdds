@@ -89,14 +89,15 @@ describe('PrescriptionSpread & DiagnosticWorkbench', () => {
     expect(screen.getByText(/chỉ hỗ trợ định dạng ảnh jpeg, png hoặc webp/i)).toBeInTheDocument();
   });
 
-  it('uses a native zero-FOUC crop select below CTA and replaces JPEG/PNG/WebP tech copy with an inline photo tip', () => {
-    render(
+  it('renders AntD Seedhouse crop select below CTA and balanced 3-column treatment spread without JPEG/PNG/WebP tech copy', () => {
+    const { container } = render(
       <Providers>
         <DiagnosticWorkbench />
       </Providers>
     );
-    const cropSelect = document.getElementById('crop-hint-select');
-    expect(cropSelect?.tagName).toBe('SELECT');
+    const antSelect = container.querySelector('.ant-select .ant-select-selector');
+    expect(antSelect).not.toBeNull();
+    expect(container.querySelector('.lg\\:grid-cols-3')).not.toBeNull();
     expect(screen.queryByText(/JPEG, PNG, WebP/i)).not.toBeInTheDocument();
     expect(screen.getByText(/1 lá đủ sáng/i)).toBeInTheDocument();
   });

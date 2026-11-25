@@ -63,7 +63,7 @@ export interface UiCopy {
   almanacEmpty: string;
   almanacShowAll: (count: number) => string;
   almanacShowLess: string;
-  almanacHealthyCropsNote: string;
+  almanacHealthyCropsNote: (cropsList: string) => string;
   sheetLoading: string;
   scientificNameLabel: string;
   sheetSymptomsHeading: string;
@@ -143,7 +143,7 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     almanacEmpty: 'Không tìm thấy bệnh nào khớp từ khóa.',
     almanacShowAll: (count) => `Xem tất cả ${count} bệnh`,
     almanacShowLess: 'Thu gọn',
-    almanacHealthyCropsNote: 'Đào & Đậu nành: hiện hỗ trợ kiểm tra lá khỏe mạnh.',
+    almanacHealthyCropsNote: (cropsList) => `Chỉ hỗ trợ kiểm tra lá khỏe: ${cropsList}.`,
     sheetLoading: 'Đang mở tờ hướng dẫn chi tiết...',
     scientificNameLabel: 'Tên khoa học:',
     sheetSymptomsHeading: 'Dấu hiệu nhận biết trên lá & thân',
@@ -222,7 +222,7 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     almanacEmpty: 'No diseases match the current filter.',
     almanacShowAll: (count) => `Show all ${count} pathologies`,
     almanacShowLess: 'Show fewer',
-    almanacHealthyCropsNote: 'Peach & Soybean: healthy-leaf screening only.',
+    almanacHealthyCropsNote: (cropsList) => `Healthy-leaf screening only: ${cropsList}.`,
     sheetLoading: 'Loading pathology sheet...',
     scientificNameLabel: 'Scientific name:',
     sheetSymptomsHeading: 'Foliar & Stem Symptoms',
@@ -244,6 +244,11 @@ export const VI_PLANT_NAMES: Record<string, string> = {
   PEACH: 'Đào',
   SOYBEAN: 'Đậu nành',
   RICE: 'Lúa',
+  BLUEBERRY: 'Việt quất',
+  CHERRY: 'Anh đào',
+  RASPBERRY: 'Mâm xôi',
+  SQUASH: 'Bí ngô',
+  STRAWBERRY: 'Dâu tây',
 };
 
 export const VI_DISEASE_NAMES: Record<string, string> = {
@@ -261,6 +266,10 @@ export const VI_DISEASE_NAMES: Record<string, string> = {
   TOMATO_SEPTORIA_LEAF_SPOT: 'Bệnh đốm lá Septoria cà chua',
   TOMATO_BACTERIAL_SPOT: 'Bệnh đốm vi khuẩn cà chua',
   TOMATO_YELLOW_VIRUS: 'Bệnh virus xoăn vàng lá cà chua (TYLCV)',
+  TOMATO_MOSAIC_VIRUS: 'Bệnh khảm virus lá cà chua',
+  TOMATO_LEAF_MOLD: 'Bệnh mốc lá cà chua',
+  TOMATO_SPIDER_MITES: 'Nhện đỏ hai chấm hại lá cà chua',
+  SQUASH_POWDERY_MILDEW: 'Bệnh phấn trắng lá bí ngô',
   RICE_BLAST: 'Bệnh đạo ôn lúa (Cháy lá lúa)',
   POTATO_HEALTHY: 'Lá khoai tây khỏe mạnh',
   TOMATO_HEALTHY: 'Lá cà chua khỏe mạnh',
@@ -271,6 +280,11 @@ export const VI_DISEASE_NAMES: Record<string, string> = {
   PEACH_HEALTHY: 'Lá đào khỏe mạnh',
   SOYBEAN_HEALTHY: 'Lá đậu nành khỏe mạnh',
   RICE_HEALTHY: 'Lá lúa khỏe mạnh',
+  BLUEBERRY_HEALTHY: 'Lá việt quất khỏe mạnh',
+  CHERRY_HEALTHY: 'Lá anh đào khỏe mạnh',
+  RASPBERRY_HEALTHY: 'Lá mâm xôi khỏe mạnh',
+  SQUASH_HEALTHY: 'Lá bí ngô khỏe mạnh',
+  STRAWBERRY_HEALTHY: 'Lá dâu tây khỏe mạnh',
 };
 
 export const VI_SEVERITY_LABELS: Record<string, string> = {

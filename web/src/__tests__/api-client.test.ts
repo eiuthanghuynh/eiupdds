@@ -42,10 +42,10 @@ describe('PddsApiClient & Resilience Guards', () => {
     });
   });
 
-  it('falls back to bundled 9-crop snapshot when backend is unreachable', async () => {
+  it('falls back to bundled 14-crop snapshot when backend is unreachable', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new TypeError('Failed to fetch'));
     const res = await fetchPlants();
     expect(res.isOfflineFallback).toBe(true);
-    expect(res.plants).toHaveLength(9);
+    expect(res.plants).toHaveLength(14);
   });
 });

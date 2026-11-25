@@ -114,10 +114,10 @@ export function PrescriptionSpread({
         </div>
 
         {activeTreatment && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 items-stretch">
             {/* Column 1: Field Action Steps */}
             <div
-              className="lg:col-span-5 lg:pr-8 lg:border-r space-y-2.5"
+              className="pb-6 lg:pb-0 lg:pr-8 lg:border-r space-y-2.5"
               style={{ borderColor: SEEDHOUSE_COLORS.hairline }}
             >
               <h3
@@ -129,14 +129,14 @@ export function PrescriptionSpread({
               <div className="font-display text-lg font-bold leading-snug">
                 {activeTreatment.title}
               </div>
-              <p className="text-base leading-relaxed m-0 max-w-[65ch]" style={{ color: SEEDHOUSE_COLORS.ink }}>
+              <p className="text-base leading-relaxed m-0" style={{ color: SEEDHOUSE_COLORS.ink }}>
                 {activeTreatment.instructions}
               </p>
             </div>
 
             {/* Column 2: Active Ingredient, Dosage & Co-Occurring Signs */}
             <div
-              className="lg:col-span-4 lg:pr-8 lg:border-r space-y-3"
+              className="py-6 lg:py-0 lg:px-8 lg:border-r border-t lg:border-t-0 space-y-3"
               style={{ borderColor: SEEDHOUSE_COLORS.hairline }}
             >
               <h3
@@ -174,7 +174,10 @@ export function PrescriptionSpread({
             </div>
 
             {/* Column 3: Pre-Harvest Safety Interval & Woodcut Day Seal */}
-            <div className="lg:col-span-3 flex items-center justify-between gap-4">
+            <div
+              className="pt-6 lg:pt-0 lg:pl-8 border-t lg:border-t-0 flex items-start justify-between gap-4"
+              style={{ borderColor: SEEDHOUSE_COLORS.hairline }}
+            >
               <div className="space-y-2">
                 <h3
                   className="text-sm font-bold uppercase tracking-[0.12em] m-0"

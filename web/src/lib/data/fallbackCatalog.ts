@@ -71,6 +71,41 @@ export const FALLBACK_PLANTS: PlantDto[] = [
     scientificName: 'Glycine max',
     description: 'Nitrogen-fixing rotational legume crop supported for healthy foliage verification.',
   },
+  {
+    id: '11111111-1111-1111-1111-111111111113',
+    plantCode: 'BLUEBERRY',
+    commonName: 'Blueberry',
+    scientificName: 'Vaccinium corymbosum',
+    description: 'Temperate berry shrub supported for healthy foliage screening.',
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111114',
+    plantCode: 'CHERRY',
+    commonName: 'Cherry',
+    scientificName: 'Prunus avium',
+    description: 'Orchard stone-fruit tree supported for healthy foliage screening.',
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111115',
+    plantCode: 'RASPBERRY',
+    commonName: 'Raspberry',
+    scientificName: 'Rubus idaeus',
+    description: 'Caneberry crop supported for healthy foliage screening.',
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111116',
+    plantCode: 'SQUASH',
+    commonName: 'Squash',
+    scientificName: 'Cucurbita pepo',
+    description: 'Vine cucurbit crop supported for healthy foliage screening.',
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111117',
+    plantCode: 'STRAWBERRY',
+    commonName: 'Strawberry',
+    scientificName: 'Fragaria x ananassa',
+    description: 'Ground-cover berry crop supported for healthy foliage screening.',
+  },
 ];
 
 function buildEnglishBioAndChemTreatments(
@@ -384,6 +419,21 @@ export function findFallbackDiseaseRecord(codeOrId: string): FallbackDiseaseReco
   const norm = codeOrId.trim().toUpperCase();
   return FALLBACK_DISEASES.find(
     (d) => d.diseaseCode.toUpperCase() === norm || d.id.toUpperCase() === norm
+  );
+}
+
+export function isHealthyLeafDisease(
+  disease: Pick<DiseaseSummaryDto, 'diseaseCode' | 'commonName' | 'severity'>
+): boolean {
+  const code = (disease.diseaseCode ?? '').trim().toUpperCase();
+  const severity = disease.severity?.trim().toUpperCase() ?? '';
+  const name = (disease.commonName ?? '').trim();
+  return (
+    code.endsWith('_HEALTHY') ||
+    severity === '' ||
+    severity === 'NONE' ||
+    severity === 'HEALTHY' ||
+    /^healthy\b/i.test(name)
   );
 }
 

@@ -61,12 +61,6 @@ export function LeafSpecimenStage({
   const severity = isHealthy ? null : diagnosis.dominantDisease?.severity ?? 'MODERATE';
   const severityText = localizeSeverity(severity);
   const isSevere = !isHealthy && (severity === 'CRITICAL' || severity === 'HIGH');
-  const hasDistinctCoInfections =
-    new Set(
-      (diagnosis.boundingBoxes ?? []).map((b) =>
-        (b.diseaseCode || b.label || '').trim().toUpperCase()
-      )
-    ).size > 1;
 
   const apiErr = error instanceof PddsApiError ? error : null;
   const is400 = apiErr?.status === 400;
@@ -398,13 +392,13 @@ export function LeafSpecimenStage({
                 </svg>
 
                 {pillLayouts.map(
-                  ({ box, anchorRight, rightPct, leftPct, maxWidthPct, placement, topPct }, idx) => {
+                  ({ box, anchorRight, rightPct, leftPct, maxWidthPct, placement, topPct }) => {
                     const boxPct = Math.round((box.confidence ?? 0.85) * 100);
                     const rawTitle = box.diseaseCode
                       ? localizeDiseaseName(box.diseaseCode, box.label)
                       : box.label;
                     const compactTitle = rawTitle.replace(/\s*\([^)]*\)/g, '').trim();
-                    const pillLabel = hasDistinctCoInfections ? compactTitle : `#${idx + 1}`;
+                    const pillLabel = compactTitle;
 
                     return (
                       <span

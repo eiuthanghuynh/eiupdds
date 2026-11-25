@@ -81,7 +81,7 @@ describe('LeafSpecimenStage', () => {
     }
   });
 
-  it('renders StampAlertIcon on CRITICAL severity, shortens same-disease pills to #1 · 86%, hides Latin subtitle, and keeps preview thumbnail on 422', () => {
+  it('renders StampAlertIcon on CRITICAL severity, displays disease names on lesion pills, hides Latin subtitle, and keeps preview thumbnail on 422', () => {
     const { rerender } = render(
       <Providers>
         <LeafSpecimenStage
@@ -97,7 +97,7 @@ describe('LeafSpecimenStage', () => {
     expect(screen.getByTestId('severity-alert-icon')).toBeInTheDocument();
     expect(screen.queryByTestId('severity-check-icon')).not.toBeInTheDocument();
     const pills = screen.getAllByTestId('bbox-label-pill');
-    expect(pills[0]).toHaveTextContent('#1 · 86%');
+    expect(pills[0]).toHaveTextContent(/bệnh mốc sương khoai tây.*86%/i);
     expect(screen.queryByText('Phytophthora infestans')).not.toBeInTheDocument();
 
     rerender(

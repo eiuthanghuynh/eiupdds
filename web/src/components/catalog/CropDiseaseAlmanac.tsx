@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Input } from 'antd';
 import { useDiseasesQuery, usePlantsQuery } from '@/lib/api/queries';
-import { matchesDiseaseKeyword } from '@/lib/data/fallbackCatalog';
+import { isHealthyLeafDisease, matchesDiseaseKeyword } from '@/lib/data/fallbackCatalog';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { SEEDHOUSE_COLORS } from '@/lib/theme/seedhouseTheme';
 import {
@@ -13,7 +13,15 @@ import {
 } from '@/components/primitives/WoodcutIcons';
 import { DiseaseDetailSheet } from '@/components/catalog/DiseaseDetailSheet';
 
-const HEALTHY_ONLY_PLANTS = new Set(['PEACH', 'SOYBEAN']);
+const HEALTHY_ONLY_PLANTS = new Set([
+  'PEACH',
+  'SOYBEAN',
+  'BLUEBERRY',
+  'CHERRY',
+  'RASPBERRY',
+  'SQUASH',
+  'STRAWBERRY',
+]);
 const DEFAULT_VISIBLE_ROWS = 6;
 
 export function CropDiseaseAlmanac(): React.JSX.Element {
@@ -41,10 +49,16 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [expandedDiseaseCode]);
 
-  const plants = (plantsQuery.data?.plants ?? []).filter(
+  const allPlants = plantsQuery.data?.plants ?? [];
+  const plants = allPlants.filter(
     (p) => !HEALTHY_ONLY_PLANTS.has(p.plantCode.toUpperCase())
   );
-  const allDiseases = diseasesQuery.data?.diseases ?? [];
+  const healthyOnlyPlants = allPlants.filter((p) =>
+    HEALTHY_ONLY_PLANTS.has(p.plantCode.toUpperCase())
+  );
+  const allDiseases = (diseasesQuery.data?.diseases ?? []).filter(
+    (disease) => !isHealthyLeafDisease(disease)
+  );
   const diseases = useMemo(
     () =>
       allDiseases.filter((disease) =>
@@ -155,9 +169,15 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
             })}
           </div>
 
-          <p className="text-xs m-0" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
-            {t.almanacHealthyCropsNote}
-          </p>
+          {healthyOnlyPlants.length > 0 && (
+            <p className="text-xs m-0" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
+              {t.almanacHealthyCropsNote(
+                healthyOnlyPlants
+                  .map((p) => localizePlantName(p.plantCode, p.commonName))
+                  .join(', ')
+              )}
+            </p>
+          )}
 
           <div className="max-w-xl">
             <Input

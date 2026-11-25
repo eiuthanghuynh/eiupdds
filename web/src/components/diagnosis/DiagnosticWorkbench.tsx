@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Select } from 'antd';
 import { PddsApiError, validateLeafFile } from '@/lib/api/client';
 import { useAnalyzeLeafMutation, usePlantsQuery } from '@/lib/api/queries';
 import { SAMPLE_SPECIMENS } from '@/lib/data/sampleDiagnoses';
@@ -246,7 +247,7 @@ export function DiagnosticWorkbench(): React.JSX.Element {
                 )}
               </div>
 
-              {/* Optional Crop Hint (Native zero-FOUC select placed below primary CTA) */}
+              {/* Optional Crop Hint (Seedhouse AntD Select placed below primary CTA) */}
               <div className="space-y-1.5">
                 <label
                   htmlFor="crop-hint-select"
@@ -255,24 +256,15 @@ export function DiagnosticWorkbench(): React.JSX.Element {
                 >
                   {t.cropHintLabel}
                 </label>
-                <select
+                <Select
                   id="crop-hint-select"
-                  value={plantCodeHint}
-                  onChange={(e) => setPlantCodeHint(e.target.value)}
+                  size="large"
+                  className="w-full"
                   aria-label={t.cropHintLabel}
-                  className="w-full min-h-[44px] px-3.5 text-sm font-medium border rounded-[2px] cursor-pointer"
-                  style={{
-                    backgroundColor: SEEDHOUSE_COLORS.sheet,
-                    borderColor: SEEDHOUSE_COLORS.hairline,
-                    color: SEEDHOUSE_COLORS.ink,
-                  }}
-                >
-                  {cropOptions.map((opt) => (
-                    <option key={opt.value || 'AUTO'} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  value={plantCodeHint}
+                  onChange={(val) => setPlantCodeHint(val)}
+                  options={cropOptions}
+                />
               </div>
 
               {/* 3 Sample Reference Specimens */}
