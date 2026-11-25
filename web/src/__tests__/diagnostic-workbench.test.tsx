@@ -129,9 +129,11 @@ describe('PrescriptionSpread & DiagnosticWorkbench', () => {
     );
 
     const bioTab = screen.getByRole('tab', { name: /hướng sinh học/i });
+    expect(bioTab).not.toHaveClass('overflow-hidden');
     expect(bioTab.querySelector('[data-testid="prescription-active-indicator"]')).not.toBeNull();
 
     const chemTab = screen.getByRole('tab', { name: /thuốc đặc trị/i });
+    expect(chemTab).not.toHaveClass('overflow-hidden');
     await user.click(chemTab);
     expect(chemTab.querySelector('[data-testid="prescription-active-indicator"]')).not.toBeNull();
     expect(bioTab.querySelector('[data-testid="prescription-active-indicator"]')).toBeNull();

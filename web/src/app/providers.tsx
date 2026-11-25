@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConfigProvider } from 'antd';
-import { LazyMotion, MotionConfig, domAnimation } from 'motion/react';
+import { LazyMotion, MotionConfig, domMax } from 'motion/react';
 import { seedhouseAntdTheme } from '@/lib/theme/seedhouseTheme';
 import { LanguageProvider } from '@/lib/i18n/LanguageContext';
 
@@ -24,7 +24,7 @@ export function Providers({ children }: { children: React.ReactNode }): React.JS
   return (
     <QueryClientProvider client={queryClient}>
       <ConfigProvider theme={seedhouseAntdTheme}>
-        <LazyMotion features={domAnimation}>
+        <LazyMotion features={domMax}>
           <MotionConfig reducedMotion="user">
             <LanguageProvider>{children}</LanguageProvider>
           </MotionConfig>

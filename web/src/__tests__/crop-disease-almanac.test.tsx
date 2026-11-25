@@ -29,6 +29,7 @@ describe('CropDiseaseAlmanac & Inline Fold-Open Sheet', () => {
     expect(screen.getAllByTestId('almanac-disease-row')).toHaveLength(15);
 
     const riceCropBtn = screen.getByRole('button', { name: /^Lúa$/i });
+    expect(riceCropBtn).not.toHaveClass('overflow-hidden');
     await user.click(riceCropBtn);
     await waitFor(() => {
       expect(screen.queryByText(/mốc sương khoai tây/i)).not.toBeInTheDocument();

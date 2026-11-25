@@ -103,7 +103,7 @@ export function PrescriptionSpread({
                     role="tab"
                     aria-selected={isSelected}
                     onClick={() => setSelectedIndex(idx)}
-                    className="relative px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-[0.08em] border cursor-pointer transition-colors duration-200 active:translate-y-[1px] overflow-hidden"
+                    className="relative px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-[0.08em] border cursor-pointer transition-colors duration-200 active:translate-y-[1px]"
                     style={
                       isSelected
                         ? {

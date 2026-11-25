@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { SEEDHOUSE_COLORS, seedhouseAntdTheme } from '@/lib/theme/seedhouseTheme';
@@ -22,5 +24,22 @@ describe('Seedhouse Theme & Craft Primitives', () => {
     );
     expect(container.querySelectorAll('svg').length).toBe(2);
     expect(container.textContent).toBe('');
+  });
+
+  it('uses Motion domMax for layoutId projection and avoids keyframe opacity overrides on reticle draw', () => {
+    const providersSrc = fs.readFileSync(
+      path.resolve(process.cwd(), 'src/app/providers.tsx'),
+      'utf8'
+    );
+    expect(providersSrc).toContain('domMax');
+    expect(providersSrc).not.toContain('domAnimation');
+
+    const globalsCss = fs.readFileSync(
+      path.resolve(process.cwd(), 'src/app/globals.css'),
+      'utf8'
+    );
+    const reticleBlock = globalsCss.match(/@keyframes\s+seedhouseReticleDraw\s*\{[\s\S]*?\n\}/)?.[0] ?? '';
+    expect(reticleBlock).toContain('stroke-dashoffset');
+    expect(reticleBlock).not.toMatch(/\bopacity\s*:/);
   });
 });

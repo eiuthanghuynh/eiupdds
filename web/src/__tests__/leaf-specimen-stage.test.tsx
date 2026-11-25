@@ -181,6 +181,7 @@ describe('LeafSpecimenStage', () => {
     await user.hover(pills[0]);
     expect(pills[0]).toHaveAttribute('data-highlighted', 'true');
     expect(pills[1]).toHaveAttribute('data-dimmed', 'true');
+    expect(rects[1]).toHaveAttribute('opacity', '0.28');
 
     await user.unhover(pills[0]);
     expect(pills[0]).not.toHaveAttribute('data-highlighted', 'true');

@@ -116,7 +116,7 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                 setExpandedDiseaseCode(null);
               }}
               aria-pressed={selectedPlantCode === ''}
-              className="relative px-4 py-2 min-h-[44px] text-xs sm:text-sm font-bold border cursor-pointer transition-colors duration-200 active:translate-y-[1px] overflow-hidden"
+              className="relative px-4 py-2 min-h-[44px] text-xs sm:text-sm font-bold border cursor-pointer transition-colors duration-200 active:translate-y-[1px]"
               style={
                 selectedPlantCode === ''
                   ? {
@@ -155,7 +155,7 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                     setExpandedDiseaseCode(null);
                   }}
                   aria-pressed={active}
-                  className="relative px-3.5 py-2 min-h-[44px] text-xs sm:text-sm font-bold border flex items-center gap-2 cursor-pointer transition-colors duration-200 active:translate-y-[1px] overflow-hidden"
+                  className="relative px-3.5 py-2 min-h-[44px] text-xs sm:text-sm font-bold border flex items-center gap-2 cursor-pointer transition-colors duration-200 active:translate-y-[1px]"
                   style={
                     active
                       ? {
