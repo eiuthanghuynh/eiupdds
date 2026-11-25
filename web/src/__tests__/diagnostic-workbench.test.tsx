@@ -65,8 +65,8 @@ describe('PrescriptionSpread & DiagnosticWorkbench', () => {
         <DiagnosticWorkbench />
       </Providers>
     );
-    await user.click(screen.getByRole('button', { name: /lúa đạo ôn/i }));
-    expect(screen.getAllByText(/đạo ôn lúa/i).length).toBeGreaterThan(0);
+    await user.click(screen.getByRole('button', { name: /táo gỉ sắt/i }));
+    expect(screen.getAllByText(/gỉ sắt lá táo/i).length).toBeGreaterThan(0);
   });
 
   it('omits capture attribute on file input for gallery picking and hides stale prescription on upload error', async () => {

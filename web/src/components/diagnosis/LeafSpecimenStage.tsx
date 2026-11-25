@@ -66,30 +66,67 @@ export function LeafSpecimenStage({
     const leftPct = Math.round(Math.max(2, Math.min(42, box.xMinNormalized * 100)));
     const maxWidthPct = anchorRight ? 98 - rightPct : 98 - leftPct;
 
-    const pillSpanW = 0.42;
+    // Reserve conservative 72% normalized pill span width so long localized labels never collide on 390px mobile
+    const pillSpanW = 0.72;
+    const pillBandH = 0.145;
     const pillX1 = anchorRight ? Math.max(0, 1 - rightPct / 100 - pillSpanW) : leftPct / 100;
     const pillX2 = anchorRight ? 1 - rightPct / 100 : Math.min(1, leftPct / 100 + pillSpanW);
 
-    const aboveY1 = box.yMinNormalized - 0.09;
+    const overlapsBox = (y1: number, y2: number) =>
+      allBoxes.some((other, otherIdx) => {
+        if (otherIdx === idx) return false;
+        const ox1 = other.xMinNormalized - 0.02;
+        const ox2 = other.xMinNormalized + other.widthNormalized + 0.02;
+        const oy1 = other.yMinNormalized - 0.02;
+        const oy2 = other.yMinNormalized + other.heightNormalized + 0.02;
+        return pillX1 <= ox2 && pillX2 >= ox1 && y1 <= oy2 && y2 >= oy1;
+      });
+
+    const overlapsPill = (y1: number, y2: number) =>
+      placedPillBands.some(
+        (b) => pillX1 <= b.x2 && pillX2 >= b.x1 && y1 < b.y2 && y2 > b.y1
+      );
+
+    const aboveY1 = box.yMinNormalized - pillBandH;
     const aboveY2 = box.yMinNormalized;
+    const belowY1 = box.yMinNormalized + box.heightNormalized;
+    const belowY2 = belowY1 + pillBandH;
 
-    const collidesAboveWithBox = allBoxes.some((other, otherIdx) => {
-      if (otherIdx === idx) return false;
-      const ox1 = other.xMinNormalized - 0.02;
-      const ox2 = other.xMinNormalized + other.widthNormalized + 0.02;
-      const oy1 = other.yMinNormalized - 0.02;
-      const oy2 = other.yMinNormalized + other.heightNormalized + 0.02;
-      return pillX1 <= ox2 && pillX2 >= ox1 && aboveY1 <= oy2 && aboveY2 >= oy1;
-    });
+    const canPlaceAbove =
+      box.yMinNormalized >= 0.14 && !overlapsBox(aboveY1, aboveY2) && !overlapsPill(aboveY1, aboveY2);
+    const canPlaceBelow =
+      belowY2 <= 0.99 && !overlapsBox(belowY1, belowY2) && !overlapsPill(belowY1, belowY2);
 
-    const collidesAboveWithPill = placedPillBands.some(
-      (b) => pillX1 <= b.x2 && pillX2 >= b.x1 && aboveY1 <= b.y2 && aboveY2 >= b.y1
-    );
+    let placement: 'above' | 'below' | 'inside' = 'inside';
+    let topPct = Math.min(86, box.yMinNormalized * 100 + 1.5);
+    let bandY1 = box.yMinNormalized + 0.015;
+    let bandY2 = bandY1 + pillBandH;
 
-    const placeAbove = box.yMinNormalized >= 0.12 && !collidesAboveWithBox && !collidesAboveWithPill;
-    const finalY1 = placeAbove ? aboveY1 : box.yMinNormalized + box.heightNormalized;
-    const finalY2 = placeAbove ? aboveY2 : box.yMinNormalized + box.heightNormalized + 0.09;
-    placedPillBands.push({ x1: pillX1, x2: pillX2, y1: finalY1, y2: finalY2 });
+    if (canPlaceAbove) {
+      placement = 'above';
+      topPct = box.yMinNormalized * 100;
+      bandY1 = aboveY1;
+      bandY2 = aboveY2;
+    } else if (canPlaceBelow) {
+      placement = 'below';
+      topPct = belowY1 * 100;
+      bandY1 = belowY1;
+      bandY2 = belowY2;
+    } else {
+      const candidateOffsets = [0.015, 0.17, 0.33, -0.11, 0.49];
+      for (const offset of candidateOffsets) {
+        const cy1 = Math.max(0.02, Math.min(0.84, box.yMinNormalized + offset));
+        const cy2 = cy1 + pillBandH;
+        if (!overlapsPill(cy1, cy2)) {
+          topPct = cy1 * 100;
+          bandY1 = cy1;
+          bandY2 = cy2;
+          break;
+        }
+      }
+    }
+
+    placedPillBands.push({ x1: pillX1, x2: pillX2, y1: bandY1, y2: bandY2 });
 
     return {
       box,
@@ -97,10 +134,8 @@ export function LeafSpecimenStage({
       rightPct,
       leftPct,
       maxWidthPct,
-      placement: placeAbove ? ('above' as const) : ('below' as const),
-      topPct: placeAbove
-        ? box.yMinNormalized * 100
-        : (box.yMinNormalized + box.heightNormalized) * 100,
+      placement,
+      topPct,
     };
   });
 

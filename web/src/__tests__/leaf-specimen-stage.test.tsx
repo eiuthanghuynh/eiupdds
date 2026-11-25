@@ -13,6 +13,22 @@ describe('LeafSpecimenStage', () => {
       ...SAMPLE_SPECIMENS[0].response,
       imageWidth: 1080,
       imageHeight: 1920,
+      boundingBoxes: [
+        {
+          ...SAMPLE_SPECIMENS[0].response.boundingBoxes[0],
+          xMinNormalized: 0.48,
+          yMinNormalized: 0.28,
+          widthNormalized: 0.18,
+          heightNormalized: 0.24,
+        },
+        {
+          ...SAMPLE_SPECIMENS[0].response.boundingBoxes[1],
+          xMinNormalized: 0.35,
+          yMinNormalized: 0.53,
+          widthNormalized: 0.1,
+          heightNormalized: 0.11,
+        },
+      ],
     };
     render(
       <Providers>
@@ -40,6 +56,29 @@ describe('LeafSpecimenStage', () => {
 
     await user.click(screen.getByRole('button', { name: /khung đốm bệnh/i }));
     expect(screen.queryByTestId('bbox-overlay-group')).not.toBeInTheDocument();
+  });
+
+  it('staggers real 4-box Potato Late Blight pills to distinct vertical bands without sharing top% across boxes', () => {
+    render(
+      <Providers>
+        <LeafSpecimenStage
+          diagnosis={SAMPLE_SPECIMENS[0].response}
+          isSample={true}
+          isLoading={false}
+          error={null}
+          onRetryUpload={vi.fn()}
+          onSelectSample={vi.fn()}
+        />
+      </Providers>
+    );
+    const pills = screen.getAllByTestId('bbox-label-pill');
+    expect(pills).toHaveLength(4);
+    const tops = pills.map((p) => Number.parseFloat(p.style.top || '0'));
+    for (let i = 0; i < tops.length; i += 1) {
+      for (let j = i + 1; j < tops.length; j += 1) {
+        expect(Math.abs(tops[i] - tops[j])).toBeGreaterThanOrEqual(12);
+      }
+    }
   });
 
   it('renders plain-Vietnamese retake guidance on 422 DIAGNOSIS_003 and sample buttons on 429 RATE_001', async () => {

@@ -1,76 +1,14 @@
 import type { SampleSpecimen } from '@/types/pdds';
 
-function svgToDataUri(svg: string): string {
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg.trim())}`;
-}
-
-const POTATO_LEAF_SVG = svgToDataUri(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520">
-  <rect width="800" height="520" fill="#2A3319"/>
-  <g opacity="0.22" stroke="#6E7B4F" stroke-width="1">
-    <line x1="0" y1="130" x2="800" y2="130"/>
-    <line x1="0" y1="260" x2="800" y2="260"/>
-    <line x1="0" y1="390" x2="800" y2="390"/>
-    <line x1="200" y1="0" x2="200" y2="520"/>
-    <line x1="400" y1="0" x2="400" y2="520"/>
-    <line x1="600" y1="0" x2="600" y2="520"/>
-  </g>
-  <path d="M130 278 C210 108, 455 82, 650 220 C555 392, 305 426, 130 278 Z" fill="#4D7836" stroke="#233817" stroke-width="4"/>
-  <path d="M92 292 L134 277" stroke="#6C8F4B" stroke-width="8" stroke-linecap="round"/>
-  <path d="M132 278 Q390 250 644 221" stroke="#8AB267" stroke-width="4.5" fill="none"/>
-  <path d="M245 266 L195 178 M335 256 L282 148 M430 245 L385 142 M518 235 L482 164 M270 268 L228 355 M372 256 L332 372 M474 244 L442 346" stroke="#8AB267" stroke-width="2.6" fill="none" stroke-linecap="round"/>
-  <!-- Water-soaked late blight lesion #1 -->
-  <path d="M408 166 C446 148, 508 164, 520 206 C530 244, 480 278, 434 264 C394 252, 382 190, 408 166 Z" fill="#5B4423"/>
-  <path d="M424 180 C452 168, 492 178, 498 208 C504 234, 468 254, 440 244 C416 235, 410 194, 424 180 Z" fill="#321D0E"/>
-  <path d="M418 238 C438 252, 474 256, 496 240" stroke="#DDD6C5" stroke-width="3" stroke-dasharray="4 4" fill="none" opacity="0.75"/>
-  <!-- Secondary lesion #2 -->
-  <ellipse cx="322" cy="304" rx="32" ry="22" fill="#4A2E18"/>
-  <ellipse cx="325" cy="305" rx="18" ry="12" fill="#29160A"/>
-</svg>
-`);
-
-const TOMATO_LEAF_SVG = svgToDataUri(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520">
-  <rect width="800" height="520" fill="#2A3319"/>
-  <path d="M145 268 C195 162, 290 120, 410 128 C515 135, 608 182, 658 252 C590 344, 485 394, 375 392 C265 390, 185 342, 145 268 Z" fill="#4B7F39" stroke="#223B19" stroke-width="4"/>
-  <path d="M100 275 L148 268" stroke="#769E58" stroke-width="7" stroke-linecap="round"/>
-  <path d="M148 268 Q400 256 652 252" stroke="#90BC70" stroke-width="4" fill="none"/>
-  <path d="M250 264 L204 185 M356 260 L312 158 M468 256 L426 164 M282 266 L240 348 M396 260 L356 362 M506 255 L472 338" stroke="#90BC70" stroke-width="2.4" fill="none"/>
-  <!-- Concentric target-ring early blight lesion #1 -->
-  <circle cx="348" cy="214" r="38" fill="#9E8231" opacity="0.85"/>
-  <circle cx="348" cy="214" r="28" fill="#523318"/>
-  <circle cx="348" cy="214" r="20" fill="none" stroke="#85582F" stroke-width="2.5"/>
-  <circle cx="348" cy="214" r="11" fill="none" stroke="#85582F" stroke-width="2.2"/>
-  <!-- Target-ring lesion #2 -->
-  <circle cx="486" cy="292" r="30" fill="#A38734" opacity="0.85"/>
-  <circle cx="486" cy="292" r="21" fill="#4C2E15"/>
-  <circle cx="486" cy="292" r="13" fill="none" stroke="#875A31" stroke-width="2.2"/>
-</svg>
-`);
-
-const RICE_LEAF_SVG = svgToDataUri(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520">
-  <rect width="800" height="520" fill="#2A3319"/>
-  <path d="M68 332 Q395 190 738 168 Q430 286 84 368 Z" fill="#598A39" stroke="#294218" stroke-width="3.5"/>
-  <path d="M76 350 Q405 236 732 169" stroke="#98C474" stroke-width="2.8" fill="none"/>
-  <!-- Diamond/spindle-shaped rice blast lesion #1 -->
-  <path d="M330 258 L388 232 L446 238 L388 266 Z" fill="#7D321D"/>
-  <path d="M350 254 L388 239 L426 242 L388 259 Z" fill="#D5CEBE"/>
-  <!-- Diamond/spindle-shaped rice blast lesion #2 -->
-  <path d="M492 214 L542 194 L590 198 L540 220 Z" fill="#7D321D"/>
-  <path d="M510 210 L541 199 L572 201 L541 214 Z" fill="#D5CEBE"/>
-</svg>
-`);
-
 export const SAMPLE_SPECIMENS: SampleSpecimen[] = [
   {
     key: 'potato-late-blight',
     shortLabel: 'Potato late blight',
     response: {
       diagnosisId: '55555555-5555-5555-5555-555555555501',
-      originalImageUrl: POTATO_LEAF_SVG,
-      imageWidth: 800,
-      imageHeight: 520,
+      originalImageUrl: '/samples/potato-late-blight.jpg',
+      imageWidth: 1280,
+      imageHeight: 852,
       plant: {
         id: '11111111-1111-1111-1111-111111111101',
         plantCode: 'POTATO',
@@ -84,39 +22,71 @@ export const SAMPLE_SPECIMENS: SampleSpecimen[] = [
         scientificName: 'Phytophthora infestans',
         severity: 'CRITICAL',
       },
-      dominantConfidence: 0.894,
+      dominantConfidence: 0.859,
       boundingBoxes: [
         {
           id: 'b1-potato',
           label: 'Potato leaf late blight',
           diseaseCode: 'POTATO_LATE_BLIGHT',
-          confidence: 0.894,
-          x: 456,
-          y: 212,
-          width: 148,
-          height: 128,
-          xMin: 382,
-          yMin: 148,
-          xMinNormalized: 0.4775,
-          yMinNormalized: 0.2846,
-          widthNormalized: 0.185,
-          heightNormalized: 0.2462,
+          confidence: 0.859,
+          x: 354,
+          y: 240,
+          width: 216,
+          height: 302,
+          xMin: 246,
+          yMin: 89,
+          xMinNormalized: 0.1922,
+          yMinNormalized: 0.1045,
+          widthNormalized: 0.1688,
+          heightNormalized: 0.3545,
         },
         {
           id: 'b2-potato',
           label: 'Potato leaf late blight',
           diseaseCode: 'POTATO_LATE_BLIGHT',
-          confidence: 0.782,
-          x: 322,
-          y: 304,
-          width: 78,
-          height: 58,
-          xMin: 283,
-          yMin: 275,
-          xMinNormalized: 0.3538,
-          yMinNormalized: 0.5288,
-          widthNormalized: 0.0975,
-          heightNormalized: 0.1115,
+          confidence: 0.821,
+          x: 825,
+          y: 557.5,
+          width: 226,
+          height: 279,
+          xMin: 712,
+          yMin: 418,
+          xMinNormalized: 0.5563,
+          yMinNormalized: 0.4906,
+          widthNormalized: 0.1766,
+          heightNormalized: 0.3275,
+        },
+        {
+          id: 'b3-potato',
+          label: 'Potato leaf late blight',
+          diseaseCode: 'POTATO_LATE_BLIGHT',
+          confidence: 0.714,
+          x: 816.5,
+          y: 238,
+          width: 349,
+          height: 296,
+          xMin: 642,
+          yMin: 90,
+          xMinNormalized: 0.5016,
+          yMinNormalized: 0.1056,
+          widthNormalized: 0.2727,
+          heightNormalized: 0.3474,
+        },
+        {
+          id: 'b4-potato',
+          label: 'Potato leaf late blight',
+          diseaseCode: 'POTATO_LATE_BLIGHT',
+          confidence: 0.575,
+          x: 294,
+          y: 461.5,
+          width: 288,
+          height: 147,
+          xMin: 150,
+          yMin: 388,
+          xMinNormalized: 0.1172,
+          yMinNormalized: 0.4554,
+          widthNormalized: 0.225,
+          heightNormalized: 0.1725,
         },
       ],
       coOccurringDiseases: [],
@@ -161,13 +131,13 @@ export const SAMPLE_SPECIMENS: SampleSpecimen[] = [
     },
   },
   {
-    key: 'tomato-early-blight',
-    shortLabel: 'Tomato early blight',
+    key: 'tomato-bacterial-spot',
+    shortLabel: 'Tomato bacterial spot',
     response: {
       diagnosisId: '55555555-5555-5555-5555-555555555502',
-      originalImageUrl: TOMATO_LEAF_SVG,
-      imageWidth: 800,
-      imageHeight: 520,
+      originalImageUrl: '/samples/tomato-bacterial-spot.jpg',
+      imageWidth: 1280,
+      imageHeight: 857,
       plant: {
         id: '11111111-1111-1111-1111-111111111102',
         plantCode: 'TOMATO',
@@ -175,170 +145,178 @@ export const SAMPLE_SPECIMENS: SampleSpecimen[] = [
         scientificName: 'Solanum lycopersicum',
       },
       dominantDisease: {
-        id: '22222222-2222-2222-2222-222222222230',
-        diseaseCode: 'TOMATO_EARLY_BLIGHT',
-        commonName: 'Tomato early blight',
-        scientificName: 'Alternaria solani',
+        id: '22222222-2222-2222-2222-222222222231',
+        diseaseCode: 'TOMATO_BACTERIAL_SPOT',
+        commonName: 'Tomato bacterial spot',
+        scientificName: 'Xanthomonas vesicatoria',
         severity: 'HIGH',
       },
-      dominantConfidence: 0.912,
+      dominantConfidence: 0.589,
       boundingBoxes: [
         {
           id: 'b1-tomato',
-          label: 'Tomato Early blight leaf',
-          diseaseCode: 'TOMATO_EARLY_BLIGHT',
-          confidence: 0.912,
-          x: 348,
-          y: 214,
-          width: 92,
-          height: 92,
-          xMin: 302,
-          yMin: 168,
-          xMinNormalized: 0.3775,
-          yMinNormalized: 0.3231,
-          widthNormalized: 0.115,
-          heightNormalized: 0.1769,
+          label: 'Tomato leaf bacterial spot',
+          diseaseCode: 'TOMATO_BACTERIAL_SPOT',
+          confidence: 0.589,
+          x: 1034,
+          y: 483.5,
+          width: 486,
+          height: 277,
+          xMin: 791,
+          yMin: 345,
+          xMinNormalized: 0.618,
+          yMinNormalized: 0.4026,
+          widthNormalized: 0.3797,
+          heightNormalized: 0.3232,
         },
         {
           id: 'b2-tomato',
           label: 'Tomato Early blight leaf',
           diseaseCode: 'TOMATO_EARLY_BLIGHT',
-          confidence: 0.845,
-          x: 486,
-          y: 292,
-          width: 74,
-          height: 74,
-          xMin: 449,
-          yMin: 255,
-          xMinNormalized: 0.5613,
-          yMinNormalized: 0.4904,
-          widthNormalized: 0.0925,
-          heightNormalized: 0.1423,
+          confidence: 0.498,
+          x: 405.5,
+          y: 450,
+          width: 665,
+          height: 450,
+          xMin: 73,
+          yMin: 225,
+          xMinNormalized: 0.057,
+          yMinNormalized: 0.2625,
+          widthNormalized: 0.5195,
+          heightNormalized: 0.5251,
         },
       ],
-      coOccurringDiseases: [],
+      coOccurringDiseases: [
+        {
+          id: '22222222-2222-2222-2222-222222222230',
+          diseaseCode: 'TOMATO_EARLY_BLIGHT',
+          commonName: 'Tomato early blight',
+          scientificName: 'Alternaria solani',
+          severity: 'HIGH',
+        },
+      ],
       recommendedTreatments: [
         {
           id: 'tr-tomato-bio',
           treatmentType: 'BIOLOGICAL',
-          title: 'Lower canopy pruning, mulching & Bacillus bio-spray',
+          title: 'Wet-foliage avoidance & Bacillus bio-bactericide',
           instructions:
-            'Remove infected lower leaves within 20–25cm of soil and lay clean straw mulch to block rain-splashed Alternaria spores.',
+            'Avoid pruning, tying, or handling wet tomato foliage in morning dew. Remove badly spotted lower leaves, switch to drip irrigation, and spray Bacillus subtilis bio-control.',
           activeIngredients: 'Bacillus subtilis (strain QST 713)',
-          dosageRecommendation: '35ml bio-concentrate per 16L water.',
+          dosageRecommendation: '35ml bio-concentrate per 16L water in dry morning hours.',
           safetyIntervalDays: 0,
-          warning: null,
+          warning: 'Sanitize pruning shears between beds to avoid spreading bacteria.',
         },
         {
           id: 'tr-tomato-chem',
           treatmentType: 'CHEMICAL',
-          title: 'Targeted Azoxystrobin or Chlorothalonil spray',
+          title: 'Targeted Kasugamycin or Copper oxychloride protection',
           instructions:
-            'When concentric target spots climb toward fruit-bearing trusses, spray evenly in cool morning hours.',
-          activeIngredients: 'Azoxystrobin or Chlorothalonil 75WP',
-          dosageRecommendation: '20–25g per 16L sprayer; rotate FRAC groups to prevent resistance.',
-          safetyIntervalDays: 5,
-          warning: 'Observe at least a 5-day pre-harvest interval before picking ripe fruit.',
+            'When warm driving rain accelerates angular bacterial lesions across fruit-bearing leaves, apply bactericide evenly across upper and lower leaf surfaces.',
+          activeIngredients: 'Kasugamycin 2SL / Copper oxychloride',
+          dosageRecommendation: '25–30g per 16L sprayer; avoid spraying under intense midday sun.',
+          safetyIntervalDays: 7,
+          warning: 'Strictly observe a 7-day pre-harvest interval before picking ripe tomatoes.',
         },
       ],
-      inferenceTimeMs: 219,
+      inferenceTimeMs: 226,
       status: 'COMPLETED',
       diagnosedAt: '2026-11-24T09:00:00Z',
     },
   },
   {
-    key: 'rice-blast',
-    shortLabel: 'Rice blast',
+    key: 'apple-rust',
+    shortLabel: 'Cedar apple rust',
     response: {
       diagnosisId: '55555555-5555-5555-5555-555555555503',
-      originalImageUrl: RICE_LEAF_SVG,
-      imageWidth: 800,
-      imageHeight: 520,
+      originalImageUrl: '/samples/apple-rust.jpg',
+      imageWidth: 1280,
+      imageHeight: 851,
       plant: {
-        id: '11111111-1111-1111-1111-111111111103',
-        plantCode: 'RICE',
-        commonName: 'Rice',
-        scientificName: 'Oryza sativa',
+        id: '11111111-1111-1111-1111-111111111105',
+        plantCode: 'APPLE',
+        commonName: 'Apple',
+        scientificName: 'Malus domestica',
       },
       dominantDisease: {
-        id: '22222222-2222-2222-2222-222222222205',
-        diseaseCode: 'RICE_BLAST',
-        commonName: 'Rice blast',
-        scientificName: 'Magnaporthe oryzae',
-        severity: 'CRITICAL',
+        id: '22222222-2222-2222-2222-222222222213',
+        diseaseCode: 'APPLE_RUST',
+        commonName: 'Cedar apple rust',
+        scientificName: 'Gymnosporangium juniperi-virginianae',
+        severity: 'MODERATE',
       },
-      dominantConfidence: 0.905,
+      dominantConfidence: 0.896,
       boundingBoxes: [
         {
-          id: 'b1-rice',
-          label: 'Rice Blast',
-          diseaseCode: 'RICE_BLAST',
-          confidence: 0.905,
-          x: 388,
-          y: 249,
-          width: 128,
-          height: 52,
-          xMin: 324,
-          yMin: 223,
-          xMinNormalized: 0.405,
-          yMinNormalized: 0.4288,
-          widthNormalized: 0.16,
-          heightNormalized: 0.1,
+          id: 'b1-apple',
+          label: 'Apple rust leaf',
+          diseaseCode: 'APPLE_RUST',
+          confidence: 0.896,
+          x: 504,
+          y: 466.5,
+          width: 422,
+          height: 701,
+          xMin: 293,
+          yMin: 116,
+          xMinNormalized: 0.2289,
+          yMinNormalized: 0.1363,
+          widthNormalized: 0.3297,
+          heightNormalized: 0.8237,
         },
         {
-          id: 'b2-rice',
-          label: 'Rice Blast',
-          diseaseCode: 'RICE_BLAST',
-          confidence: 0.861,
-          x: 541,
-          y: 207,
-          width: 112,
-          height: 44,
-          xMin: 485,
-          yMin: 185,
-          xMinNormalized: 0.6063,
-          yMinNormalized: 0.3558,
-          widthNormalized: 0.14,
-          heightNormalized: 0.0846,
+          id: 'b2-apple',
+          label: 'Apple rust leaf',
+          diseaseCode: 'APPLE_RUST',
+          confidence: 0.862,
+          x: 910,
+          y: 255.5,
+          width: 474,
+          height: 421,
+          xMin: 673,
+          yMin: 45,
+          xMinNormalized: 0.5258,
+          yMinNormalized: 0.0529,
+          widthNormalized: 0.3703,
+          heightNormalized: 0.4947,
         },
       ],
       coOccurringDiseases: [],
       recommendedTreatments: [
         {
-          id: 'tr-rice-cult',
+          id: 'tr-apple-cult',
           treatmentType: 'CULTURAL',
-          title: 'Maintain 3–5cm paddy water & halt nitrogen top-dressing',
+          title: 'Prune alternate juniper/cedar galls & thin canopy',
           instructions:
-            'Immediately suspend urea/nitrogen fertilizer and foliar feeds while spindle lesions are active. Keep 3–5cm standing water to reduce plant stress.',
+            'Inspect and prune gelatinous rust galls on nearby juniper or cedar windbreaks in late winter before spring rain releases basidiospores.',
           activeIngredients: null,
-          dosageRecommendation: 'Resume balanced potassium only after lesions dry completely.',
+          dosageRecommendation: 'Maintain open orchard row spacing for fast morning drying.',
           safetyIntervalDays: 0,
-          warning: 'Drained paddies combined with excess nitrogen trigger rapid leaf blast collapse.',
+          warning: 'Remove severely rusted young shoots before aeciospores mature.',
         },
         {
-          id: 'tr-rice-bio',
+          id: 'tr-apple-bio',
           treatmentType: 'BIOLOGICAL',
-          title: 'Fermentation-derived Kasugamycin bio-bactericide/fungicide',
+          title: 'Preventive sulfur / Bacillus bio-protection at bud break',
           instructions:
-            'Apply at early pinpoint or small spindle stage across the canopy in cool late afternoon.',
-          activeIngredients: 'Kasugamycin 2SL',
-          dosageRecommendation: '35–40ml per 16L sprayer.',
-          safetyIntervalDays: 7,
-          warning: null,
+            'Apply wettable sulfur or Bacillus subtilis preventively from tight-cluster through petal-fall when spring winds carry rust spores.',
+          activeIngredients: 'Wettable Sulfur / Bacillus subtilis',
+          dosageRecommendation: '30–40g per 16L sprayer in cool overcast weather.',
+          safetyIntervalDays: 0,
+          warning: 'Do not apply wettable sulfur within 14 days of oil sprays.',
         },
         {
-          id: 'tr-rice-chem',
+          id: 'tr-apple-chem',
           treatmentType: 'CHEMICAL',
-          title: 'Systemic Tricyclazole protection against neck blast',
+          title: 'Targeted Myclobutanil rust control during wet spring',
           instructions:
-            'Apply systemic melanin-biosynthesis inhibitor prior to heading to protect panicle necks.',
-          activeIngredients: 'Tricyclazole 75WP or Isoprothiolane',
-          dosageRecommendation: '15–20g per 16L sprayer.',
+            'When yellow-orange lesions expand across actively growing foliage in wet spring conditions, apply systemic DMI fungicide at labeled orchard rates.',
+          activeIngredients: 'Myclobutanil / Propiconazole',
+          dosageRecommendation: '15–20ml per 16L sprayer at 10–14 day intervals if rain persists.',
           safetyIntervalDays: 14,
-          warning: 'Strictly observe a 14-day pre-harvest interval before harvesting grain.',
+          warning: 'Strictly observe a 14-day pre-harvest interval before harvesting fruit.',
         },
       ],
-      inferenceTimeMs: 234,
+      inferenceTimeMs: 212,
       status: 'COMPLETED',
       diagnosedAt: '2026-11-24T09:15:00Z',
     },
