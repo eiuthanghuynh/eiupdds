@@ -1,8 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { QRCode } from 'antd';
+import { AnimatePresence, m } from 'motion/react';
 import { DeckledEdge } from '@/components/primitives/DeckledEdge';
 import { StampCheckIcon, WoodcutSunLeafMark } from '@/components/primitives/WoodcutIcons';
+import { OPEN_APP_SHEET_EVENT, getMobileAppDownloadUrl } from '@/lib/config/mobileApp';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { SEEDHOUSE_COLORS } from '@/lib/theme/seedhouseTheme';
 
@@ -10,8 +13,20 @@ export function SeedhouseHeader(): React.JSX.Element {
   const { locale, setLocale, t } = useLanguage();
   const [appSheetOpen, setAppSheetOpen] = useState(false);
 
+  const downloadUrl = getMobileAppDownloadUrl();
   const nextLocale = locale === 'vi' ? 'en' : 'vi';
   const toggleAria = locale === 'vi' ? t.langToggleAriaToEn : t.langToggleAriaToVi;
+
+  useEffect(() => {
+    const handleOpenDrawer = () => {
+      setAppSheetOpen(true);
+      if (typeof window.scrollTo === 'function') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+    window.addEventListener(OPEN_APP_SHEET_EVENT, handleOpenDrawer);
+    return () => window.removeEventListener(OPEN_APP_SHEET_EVENT, handleOpenDrawer);
+  }, []);
 
   useEffect(() => {
     if (!appSheetOpen) return;
@@ -106,57 +121,112 @@ export function SeedhouseHeader(): React.JSX.Element {
         </div>
       </div>
 
-      {appSheetOpen && (
-        <section
-          id="eiu-pdds-app-companion"
-          className="w-full px-5 sm:px-8 lg:px-12 py-6 border-b animate-sheet-unfold"
-          style={{
-            backgroundColor: SEEDHOUSE_COLORS.sheet,
-            borderColor: SEEDHOUSE_COLORS.hairline,
-            color: SEEDHOUSE_COLORS.ink,
-          }}
-        >
-          <div className="max-w-7xl mx-auto space-y-4">
-            <div className="flex flex-wrap items-baseline justify-between gap-4">
-              <h2 className="font-display text-xl sm:text-2xl font-bold m-0">
-                {t.appSheetTitle}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setAppSheetOpen(false)}
-                className="min-h-[44px] px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] border cursor-pointer"
-                style={{
-                  borderColor: SEEDHOUSE_COLORS.hairline,
-                  backgroundColor: SEEDHOUSE_COLORS.parchment,
-                  color: SEEDHOUSE_COLORS.ink,
-                }}
-              >
-                {t.appSheetClose}
-              </button>
+      <AnimatePresence initial={false}>
+        {appSheetOpen && (
+          <m.section
+            id="eiu-pdds-app-companion"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full overflow-hidden border-b"
+            style={{
+              backgroundColor: SEEDHOUSE_COLORS.sheet,
+              borderColor: SEEDHOUSE_COLORS.hairline,
+              color: SEEDHOUSE_COLORS.ink,
+            }}
+          >
+            <div className="w-full px-5 sm:px-8 lg:px-12 py-6">
+              <div className="max-w-7xl mx-auto space-y-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-4">
+                  <h2 className="font-display text-xl sm:text-2xl font-bold m-0">
+                    {t.appSheetTitle}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setAppSheetOpen(false)}
+                    className="min-h-[44px] px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] border cursor-pointer transition-all duration-200 active:translate-y-[1px]"
+                    style={{
+                      borderColor: SEEDHOUSE_COLORS.hairline,
+                      backgroundColor: SEEDHOUSE_COLORS.parchment,
+                      color: SEEDHOUSE_COLORS.ink,
+                    }}
+                  >
+                    {t.appSheetClose}
+                  </button>
+                </div>
+
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+                  <p className="text-base m-0 max-w-3xl" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
+                    {t.appSheetBody}
+                  </p>
+
+                  {downloadUrl ? (
+                    <div className="flex flex-wrap items-center gap-4 shrink-0">
+                      <a
+                        href={downloadUrl}
+                        download
+                        className="plaque-terracotta min-h-[44px] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.12em] inline-flex items-center gap-2 no-underline"
+                      >
+                        {t.appDownloadApkButton}
+                      </a>
+                      <div
+                        data-testid="mobile-app-qr"
+                        className="flex items-center gap-3 px-3 py-2 border"
+                        style={{
+                          borderColor: SEEDHOUSE_COLORS.hairline,
+                          backgroundColor: SEEDHOUSE_COLORS.parchment,
+                        }}
+                      >
+                        <QRCode
+                          type="svg"
+                          value={downloadUrl}
+                          size={72}
+                          bordered={false}
+                          color={SEEDHOUSE_COLORS.ink}
+                          bgColor={SEEDHOUSE_COLORS.sheet}
+                        />
+                        <span className="text-xs font-medium max-w-[14ch] leading-snug" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
+                          {t.appQrCaption}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <span
+                      className="text-xs font-semibold px-3.5 py-2.5 border shrink-0"
+                      style={{
+                        borderColor: SEEDHOUSE_COLORS.hairline,
+                        backgroundColor: SEEDHOUSE_COLORS.parchment,
+                        color: SEEDHOUSE_COLORS.inkMuted,
+                      }}
+                    >
+                      {t.appUnavailableNotice}
+                    </span>
+                  )}
+                </div>
+
+                <div
+                  className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-3 border-t"
+                  style={{ borderColor: '#D6C8B0' }}
+                >
+                  <div className="flex items-start gap-3">
+                    <StampCheckIcon size={20} stroke={SEEDHOUSE_COLORS.olive} className="shrink-0 mt-1" />
+                    <p className="text-sm leading-relaxed m-0">{t.appFeatureHistory}</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <StampCheckIcon size={20} stroke={SEEDHOUSE_COLORS.terracotta} className="shrink-0 mt-1" />
+                    <p className="text-sm leading-relaxed m-0">{t.appFeatureExpert}</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <StampCheckIcon size={20} stroke={SEEDHOUSE_COLORS.moderate} className="shrink-0 mt-1" />
+                    <p className="text-sm leading-relaxed m-0">{t.appFeatureGps}</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p className="text-base m-0 max-w-4xl" style={{ color: SEEDHOUSE_COLORS.inkMuted }}>
-              {t.appSheetBody}
-            </p>
-            <div
-              className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-3 border-t"
-              style={{ borderColor: '#D6C8B0' }}
-            >
-              <div className="flex items-start gap-3">
-                <StampCheckIcon size={20} stroke={SEEDHOUSE_COLORS.olive} className="shrink-0 mt-1" />
-                <p className="text-sm leading-relaxed m-0">{t.appFeatureHistory}</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <StampCheckIcon size={20} stroke={SEEDHOUSE_COLORS.terracotta} className="shrink-0 mt-1" />
-                <p className="text-sm leading-relaxed m-0">{t.appFeatureExpert}</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <StampCheckIcon size={20} stroke={SEEDHOUSE_COLORS.moderate} className="shrink-0 mt-1" />
-                <p className="text-sm leading-relaxed m-0">{t.appFeatureGps}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+          </m.section>
+        )}
+      </AnimatePresence>
 
       <DeckledEdge
         fillTop={appSheetOpen ? SEEDHOUSE_COLORS.sheet : SEEDHOUSE_COLORS.olive}

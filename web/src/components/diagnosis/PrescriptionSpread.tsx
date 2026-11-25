@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { openMobileAppDrawer } from '@/lib/config/mobileApp';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { SEEDHOUSE_COLORS } from '@/lib/theme/seedhouseTheme';
 import type { DiagnosisAnalyzeResponse, TreatmentDto, TreatmentType } from '@/types/pdds';
@@ -226,6 +227,25 @@ export function PrescriptionSpread({
             </div>
           </div>
         )}
+
+        <div
+          className="pt-4 border-t flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm"
+          style={{ borderColor: '#D6C8B0' }}
+        >
+          <span style={{ color: SEEDHOUSE_COLORS.inkMuted }}>{t.prescriptionAppPrompt}</span>
+          <button
+            type="button"
+            onClick={openMobileAppDrawer}
+            className="min-h-[44px] px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] border cursor-pointer transition-all duration-200 active:translate-y-[1px]"
+            style={{
+              borderColor: SEEDHOUSE_COLORS.olive,
+              backgroundColor: SEEDHOUSE_COLORS.sheet,
+              color: SEEDHOUSE_COLORS.olive,
+            }}
+          >
+            {t.prescriptionAppButton}
+          </button>
+        </div>
       </div>
     </section>
   );

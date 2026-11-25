@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Providers } from '@/app/providers';
 import { SeedhouseHeader } from '@/components/layout/SeedhouseHeader';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -36,6 +36,7 @@ describe('SeedhouseHeader & Bilingual Agronomic Dictionary', () => {
   });
 
   it('toggles inline Mobile App companion sheet without opening a modal or dead link', async () => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     const user = userEvent.setup();
     render(
       <Providers>
@@ -46,7 +47,9 @@ describe('SeedhouseHeader & Bilingual Agronomic Dictionary', () => {
     expect(screen.getByText(/lưu nhật ký đồng ruộng/i)).toBeInTheDocument();
 
     await user.keyboard('{Escape}');
-    expect(screen.queryByText(/lưu nhật ký đồng ruộng/i)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText(/lưu nhật ký đồng ruộng/i)).not.toBeInTheDocument();
+    });
 
     const nav = screen.getByRole('navigation', { name: /điều hướng trang chủ/i });
     expect(nav.className).not.toMatch(/\bhidden\b/);

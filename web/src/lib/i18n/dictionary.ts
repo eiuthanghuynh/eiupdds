@@ -15,6 +15,12 @@ export interface UiCopy {
   appFeatureExpert: string;
   appFeatureGps: string;
   appSheetClose: string;
+  appDownloadApkButton: string;
+  appQrCaption: string;
+  appUnavailableNotice: string;
+  prescriptionAppPrompt: string;
+  prescriptionAppButton: string;
+  error429AppButton: string;
   heroHeading: string;
   heroLead: string;
   cropHintLabel: string;
@@ -91,6 +97,12 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     appFeatureExpert: 'Gửi phản hồi để chuyên gia nông nghiệp kiểm chứng lại các ca bệnh khó.',
     appFeatureGps: 'Ghi nhận vị trí thửa ruộng tự động giúp theo dõi ổ bệnh theo mùa vụ.',
     appSheetClose: 'Thu gọn',
+    appDownloadApkButton: 'Tải APK Android',
+    appQrCaption: 'Quét mã để cài trên điện thoại',
+    appUnavailableNotice: 'Bản cài Android nội bộ đang cập nhật liên kết — liên hệ nhóm EIU PDDS khi trình chiếu.',
+    prescriptionAppPrompt: 'Cần lưu lịch sử phun & vị trí thửa ruộng?',
+    prescriptionAppButton: 'Tải ứng dụng Android',
+    error429AppButton: 'Cài app quét không giới hạn',
     heroHeading: 'Soi Đốm Lá — Giữ Trọn Vụ Mùa',
     heroLead: 'Chụp ảnh mặt lá có đốm bệnh để xem vùng bệnh và cách xử lý an toàn ngay.',
     cropHintLabel: 'Loại cây (không bắt buộc):',
@@ -170,6 +182,12 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     appFeatureExpert: 'Submit human-in-the-loop feedback for agricultural experts to verify tricky lesions.',
     appFeatureGps: 'Attach field GPS coordinates automatically to track seasonal disease hotspots.',
     appSheetClose: 'Close',
+    appDownloadApkButton: 'Download Android APK',
+    appQrCaption: 'Scan with your phone to install',
+    appUnavailableNotice: 'Internal Android APK link is being prepared — ask the EIU PDDS demo team for direct install.',
+    prescriptionAppPrompt: 'Want field spray logs & GPS tracking?',
+    prescriptionAppButton: 'Get Android App',
+    error429AppButton: 'Install mobile app for full scans',
     heroHeading: 'Inspect Leaf Spots — Protect Your Harvest',
     heroLead: 'Snap a spotted leaf to locate lesions and get safe treatment steps instantly.',
     cropHintLabel: 'Crop (optional):',

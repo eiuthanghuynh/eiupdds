@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { PddsApiError } from '@/lib/api/client';
+import { openMobileAppDrawer } from '@/lib/config/mobileApp';
 import { SAMPLE_SPECIMENS } from '@/lib/data/sampleDiagnoses';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { SEEDHOUSE_COLORS } from '@/lib/theme/seedhouseTheme';
@@ -309,7 +310,15 @@ export function LeafSpecimenStage({
           </div>
 
           <div className="pt-4 border-t flex flex-wrap items-center justify-between gap-3" style={{ borderColor: '#4E5931' }}>
-            {!is429 && (
+            {is429 ? (
+              <button
+                type="button"
+                onClick={openMobileAppDrawer}
+                className="plaque-terracotta min-h-[44px] px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] border-0 cursor-pointer"
+              >
+                {t.error429AppButton}
+              </button>
+            ) : (
               <button
                 type="button"
                 onClick={onRetryUpload}
