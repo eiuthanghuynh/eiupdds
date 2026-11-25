@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Input } from 'antd';
+import { AnimatePresence, m } from 'motion/react';
 import { useDiseasesQuery, usePlantsQuery } from '@/lib/api/queries';
 import { isHealthyLeafDisease, matchesDiseaseKeyword } from '@/lib/data/fallbackCatalog';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -115,11 +116,11 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                 setExpandedDiseaseCode(null);
               }}
               aria-pressed={selectedPlantCode === ''}
-              className="px-4 py-2 min-h-[44px] text-xs sm:text-sm font-bold border cursor-pointer transition-all duration-200 ease-out active:translate-y-[1px]"
+              className="relative px-4 py-2 min-h-[44px] text-xs sm:text-sm font-bold border cursor-pointer transition-colors duration-200 active:translate-y-[1px] overflow-hidden"
               style={
                 selectedPlantCode === ''
                   ? {
-                      backgroundColor: SEEDHOUSE_COLORS.olive,
+                      backgroundColor: 'transparent',
                       borderColor: SEEDHOUSE_COLORS.olive,
                       color: '#FAF3E6',
                     }
@@ -130,7 +131,17 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                     }
               }
             >
-              {t.almanacAllCrops}
+              {selectedPlantCode === '' && (
+                <m.span
+                  layoutId="almanac-crop-highlight"
+                  data-testid="almanac-active-crop-indicator"
+                  transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                  aria-hidden="true"
+                  className="absolute inset-0"
+                  style={{ backgroundColor: SEEDHOUSE_COLORS.olive }}
+                />
+              )}
+              <span className="relative z-10">{t.almanacAllCrops}</span>
             </button>
 
             {plants.map((plant) => {
@@ -144,11 +155,11 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                     setExpandedDiseaseCode(null);
                   }}
                   aria-pressed={active}
-                  className="px-3.5 py-2 min-h-[44px] text-xs sm:text-sm font-bold border flex items-center gap-2 cursor-pointer transition-all duration-200 ease-out active:translate-y-[1px]"
+                  className="relative px-3.5 py-2 min-h-[44px] text-xs sm:text-sm font-bold border flex items-center gap-2 cursor-pointer transition-colors duration-200 active:translate-y-[1px] overflow-hidden"
                   style={
                     active
                       ? {
-                          backgroundColor: SEEDHOUSE_COLORS.terracotta,
+                          backgroundColor: 'transparent',
                           borderColor: SEEDHOUSE_COLORS.terracotta,
                           color: '#FFFDF9',
                         }
@@ -159,11 +170,23 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                         }
                   }
                 >
-                  <CropGlyphIcon
-                    size={16}
-                    stroke={active ? '#FFFDF9' : SEEDHOUSE_COLORS.olive}
-                  />
-                  <span>{localizePlantName(plant.plantCode, plant.commonName)}</span>
+                  {active && (
+                    <m.span
+                      layoutId="almanac-crop-highlight"
+                      data-testid="almanac-active-crop-indicator"
+                      transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                      aria-hidden="true"
+                      className="absolute inset-0"
+                      style={{ backgroundColor: SEEDHOUSE_COLORS.terracotta }}
+                    />
+                  )}
+                  <span className="relative z-10 inline-flex items-center gap-2">
+                    <CropGlyphIcon
+                      size={16}
+                      stroke={active ? '#FFFDF9' : SEEDHOUSE_COLORS.olive}
+                    />
+                    <span>{localizePlantName(plant.plantCode, plant.commonName)}</span>
+                  </span>
                 </button>
               );
             })}
@@ -262,7 +285,21 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                     </div>
                   </button>
 
-                  {isOpen && <DiseaseDetailSheet diseaseCode={disease.diseaseCode} />}
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <m.div
+                        key="detail-sheet"
+                        data-testid="almanac-accordion"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <DiseaseDetailSheet diseaseCode={disease.diseaseCode} />
+                      </m.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             })

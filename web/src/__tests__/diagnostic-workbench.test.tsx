@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { Providers } from '@/app/providers';
@@ -118,5 +118,26 @@ describe('PrescriptionSpread & DiagnosticWorkbench', () => {
 
     await user.click(screen.getByRole('tab', { name: /chăm sóc & canh tác/i }));
     expect(screen.queryByText(/liều lượng tham khảo/i)).not.toBeInTheDocument();
+  });
+
+  it('moves shared layoutId highlight across treatment tabs and counts harvest safety seal on Thuốc đặc trị', async () => {
+    const user = userEvent.setup();
+    render(
+      <Providers>
+        <PrescriptionSpread diagnosis={SAMPLE_SPECIMENS[0].response} />
+      </Providers>
+    );
+
+    const bioTab = screen.getByRole('tab', { name: /hướng sinh học/i });
+    expect(bioTab.querySelector('[data-testid="prescription-active-indicator"]')).not.toBeNull();
+
+    const chemTab = screen.getByRole('tab', { name: /thuốc đặc trị/i });
+    await user.click(chemTab);
+    expect(chemTab.querySelector('[data-testid="prescription-active-indicator"]')).not.toBeNull();
+    expect(bioTab.querySelector('[data-testid="prescription-active-indicator"]')).toBeNull();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('harvest-day-seal')).toHaveTextContent(/07/);
+    });
   });
 });

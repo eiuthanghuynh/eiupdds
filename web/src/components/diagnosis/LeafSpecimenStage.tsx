@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { AnimatePresence, m } from 'motion/react';
 import { PddsApiError } from '@/lib/api/client';
 import { openMobileAppDrawer } from '@/lib/config/mobileApp';
 import { SAMPLE_SPECIMENS } from '@/lib/data/sampleDiagnoses';
@@ -35,7 +36,12 @@ export function LeafSpecimenStage({
   const { t, localizeDiseaseName, localizePlantName, localizeSeverity, localizeSampleLabel } =
     useLanguage();
   const [showBoxes, setShowBoxes] = useState(true);
+  const [activeBoxId, setActiveBoxId] = useState<string | null>(null);
   const [naturalDims, setNaturalDims] = useState<{ w: number; h: number } | null>(null);
+
+  useEffect(() => {
+    setActiveBoxId(null);
+  }, [diagnosis.diagnosisId]);
 
   const imgW =
     diagnosis.imageWidth && diagnosis.imageWidth > 0
@@ -247,11 +253,23 @@ export function LeafSpecimenStage({
       {/* Main Optical Mat: Loading / Error Recovery / Aspect-Ratio-Locked Leaf Canvas */}
       {isLoading ? (
         <div
-          className="p-8 min-h-[260px] flex flex-col items-center justify-center text-center gap-3"
+          className="relative overflow-hidden p-8 min-h-[260px] flex flex-col items-center justify-center text-center gap-3"
           style={{ backgroundColor: SEEDHOUSE_COLORS.oliveMat, color: SEEDHOUSE_COLORS.creamWarm }}
           role="status"
           aria-live="polite"
         >
+          <m.div
+            data-testid="specimen-lamp-sweep"
+            aria-hidden="true"
+            initial={{ x: '-55%' }}
+            animate={{ x: '165%' }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            className="pointer-events-none absolute inset-y-0 w-1/3"
+            style={{
+              background:
+                'linear-gradient(90deg, transparent 0%, rgba(245, 207, 122, 0.16) 50%, transparent 100%)',
+            }}
+          />
           {previewUrl && (
             <img
               src={previewUrl}
@@ -373,75 +391,96 @@ export function LeafSpecimenStage({
               }}
               className="block w-full h-full object-fill select-none"
             />
-            {showBoxes && boxCount > 0 && (
-              <div
-                data-testid="bbox-overlay-group"
-                className="absolute inset-0 w-full h-full pointer-events-none animate-bbox-reveal"
-              >
-                <svg
-                  viewBox="0 0 1000 1000"
-                  preserveAspectRatio="none"
-                  className="absolute inset-0 w-full h-full"
+            <AnimatePresence initial={false}>
+              {showBoxes && boxCount > 0 && (
+                <m.div
+                  key="bbox-overlay-group"
+                  data-testid="bbox-overlay-group"
+                  initial={{ opacity: 0, scale: 0.985 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.985 }}
+                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                  className="absolute inset-0 w-full h-full pointer-events-none animate-bbox-reveal"
                 >
-                  {diagnosis.boundingBoxes.map((box) => {
-                    const x = Math.max(0, Math.min(980, box.xMinNormalized * 1000));
-                    const y = Math.max(0, Math.min(980, box.yMinNormalized * 1000));
-                    const w = Math.max(20, Math.min(1000 - x, box.widthNormalized * 1000));
-                    const h = Math.max(20, Math.min(1000 - y, box.heightNormalized * 1000));
+                  <svg
+                    viewBox="0 0 1000 1000"
+                    preserveAspectRatio="none"
+                    className="absolute inset-0 w-full h-full"
+                  >
+                    {diagnosis.boundingBoxes.map((box) => {
+                      const x = Math.max(0, Math.min(980, box.xMinNormalized * 1000));
+                      const y = Math.max(0, Math.min(980, box.yMinNormalized * 1000));
+                      const w = Math.max(20, Math.min(1000 - x, box.widthNormalized * 1000));
+                      const h = Math.max(20, Math.min(1000 - y, box.heightNormalized * 1000));
+                      const isHighlighted = activeBoxId === box.id;
+                      const isDimmed = activeBoxId !== null && !isHighlighted;
 
-                    return (
-                      <rect
-                        key={box.id}
-                        x={x}
-                        y={y}
-                        width={w}
-                        height={h}
-                        fill="rgba(245, 207, 122, 0.12)"
-                        stroke={SEEDHOUSE_COLORS.mustard}
-                        strokeWidth="2.5"
-                        strokeDasharray="8 4"
-                        vectorEffect="non-scaling-stroke"
-                      />
-                    );
-                  })}
-                </svg>
+                      return (
+                        <rect
+                          key={box.id}
+                          x={x}
+                          y={y}
+                          width={w}
+                          height={h}
+                          fill={isHighlighted ? 'rgba(245, 207, 122, 0.24)' : 'rgba(245, 207, 122, 0.12)'}
+                          stroke={SEEDHOUSE_COLORS.mustard}
+                          strokeWidth={isHighlighted ? '3.5' : '2.5'}
+                          strokeDasharray="8 4"
+                          opacity={isDimmed ? 0.28 : 1}
+                          vectorEffect="non-scaling-stroke"
+                          className="animate-reticle-draw transition-opacity duration-200"
+                        />
+                      );
+                    })}
+                  </svg>
 
-                {pillLayouts.map(
-                  ({ box, anchorRight, rightPct, leftPct, maxWidthPct, placement, topPct }) => {
-                    const boxPct = Math.round((box.confidence ?? 0.85) * 100);
-                    const rawTitle = box.diseaseCode
-                      ? localizeDiseaseName(box.diseaseCode, box.label)
-                      : box.label;
-                    const compactTitle = rawTitle.replace(/\s*\([^)]*\)/g, '').trim();
-                    const pillLabel = compactTitle;
+                  {pillLayouts.map(
+                    ({ box, anchorRight, rightPct, leftPct, maxWidthPct, placement, topPct }) => {
+                      const boxPct = Math.round((box.confidence ?? 0.85) * 100);
+                      const rawTitle = box.diseaseCode
+                        ? localizeDiseaseName(box.diseaseCode, box.label)
+                        : box.label;
+                      const pillLabel = rawTitle.replace(/\s*\([^)]*\)/g, '').trim();
+                      const isHighlighted = activeBoxId === box.id;
+                      const isDimmed = activeBoxId !== null && !isHighlighted;
 
-                    return (
-                      <span
-                        key={`${box.id}-tag`}
-                        data-testid="bbox-label-pill"
-                        data-placement={placement}
-                        className="absolute px-2 py-0.5 text-xs font-bold leading-snug inline-flex items-center border tabular-nums overflow-hidden"
-                        style={{
-                          ...(anchorRight ? { right: `${rightPct}%` } : { left: `${leftPct}%` }),
-                          top: `${topPct}%`,
-                          transform:
-                            placement === 'above'
-                              ? 'translateY(calc(-100% - 4px))'
-                              : 'translateY(4px)',
-                          maxWidth: `${maxWidthPct}%`,
-                          backgroundColor: '#241C14',
-                          borderColor: SEEDHOUSE_COLORS.mustard,
-                          color: SEEDHOUSE_COLORS.creamWarm,
-                        }}
-                      >
-                        <span className="truncate">{pillLabel}</span>
-                        <span className="shrink-0">&nbsp;· {boxPct}%</span>
-                      </span>
-                    );
-                  }
-                )}
-              </div>
-            )}
+                      return (
+                        <span
+                          key={`${box.id}-tag`}
+                          tabIndex={0}
+                          data-testid="bbox-label-pill"
+                          data-placement={placement}
+                          data-highlighted={isHighlighted ? 'true' : undefined}
+                          data-dimmed={isDimmed ? 'true' : undefined}
+                          onMouseEnter={() => setActiveBoxId(box.id)}
+                          onMouseLeave={() => setActiveBoxId((prev) => (prev === box.id ? null : prev))}
+                          onFocus={() => setActiveBoxId(box.id)}
+                          onBlur={() => setActiveBoxId((prev) => (prev === box.id ? null : prev))}
+                          onClick={() => setActiveBoxId((prev) => (prev === box.id ? null : box.id))}
+                          className="pointer-events-auto cursor-pointer absolute px-2 py-0.5 text-xs font-bold leading-snug inline-flex items-center border tabular-nums overflow-hidden transition-opacity duration-200"
+                          style={{
+                            ...(anchorRight ? { right: `${rightPct}%` } : { left: `${leftPct}%` }),
+                            top: `${topPct}%`,
+                            transform:
+                              placement === 'above'
+                                ? 'translateY(calc(-100% - 4px))'
+                                : 'translateY(4px)',
+                            maxWidth: `${maxWidthPct}%`,
+                            backgroundColor: isHighlighted ? SEEDHOUSE_COLORS.terracotta : '#241C14',
+                            borderColor: SEEDHOUSE_COLORS.mustard,
+                            color: SEEDHOUSE_COLORS.creamWarm,
+                            opacity: isDimmed ? 0.35 : 1,
+                          }}
+                        >
+                          <span className="truncate">{pillLabel}</span>
+                          <span className="shrink-0">&nbsp;· {boxPct}%</span>
+                        </span>
+                      );
+                    }
+                  )}
+                </m.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       )}

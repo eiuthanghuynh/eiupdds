@@ -19,7 +19,7 @@ export function DiseaseDetailSheet({
     return (
       <div
         data-testid="disease-detail-sheet"
-        className="px-5 sm:px-7 py-6 border-t text-sm animate-sheet-unfold"
+        className="px-5 sm:px-7 py-6 border-t text-sm"
         style={{
           backgroundColor: SEEDHOUSE_COLORS.sheet,
           borderColor: SEEDHOUSE_COLORS.hairline,
@@ -42,7 +42,7 @@ export function DiseaseDetailSheet({
   return (
     <div
       data-testid="disease-detail-sheet"
-      className="px-5 sm:px-7 py-6 border-t space-y-5 animate-sheet-unfold"
+      className="px-5 sm:px-7 py-6 border-t space-y-5"
       style={{
         backgroundColor: SEEDHOUSE_COLORS.sheet,
         borderColor: SEEDHOUSE_COLORS.hairline,

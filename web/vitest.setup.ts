@@ -28,3 +28,8 @@ if (typeof window.ResizeObserver === 'undefined') {
     disconnect() {}
   };
 }
+
+Object.defineProperty(window, 'scrollTo', {
+  writable: true,
+  value: () => {},
+});

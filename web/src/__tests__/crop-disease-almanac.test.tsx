@@ -28,10 +28,12 @@ describe('CropDiseaseAlmanac & Inline Fold-Open Sheet', () => {
     await user.click(screen.getByRole('button', { name: /xem tất cả/i }));
     expect(screen.getAllByTestId('almanac-disease-row')).toHaveLength(15);
 
-    await user.click(screen.getByRole('button', { name: /^Lúa$/i }));
+    const riceCropBtn = screen.getByRole('button', { name: /^Lúa$/i });
+    await user.click(riceCropBtn);
     await waitFor(() => {
       expect(screen.queryByText(/mốc sương khoai tây/i)).not.toBeInTheDocument();
     });
+    expect(riceCropBtn.querySelector('[data-testid="almanac-active-crop-indicator"]')).not.toBeNull();
 
     const riceBlastRow = await screen.findByRole('button', { name: /đạo ôn lúa/i });
     await user.click(riceBlastRow);
@@ -39,7 +41,7 @@ describe('CropDiseaseAlmanac & Inline Fold-Open Sheet', () => {
     // Inline paper sheet unfolds in-place (not a modal dialog) with active ingredients & dosage
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(await screen.findByText(/magnaporthe oryzae/i)).toBeInTheDocument();
-    expect(screen.getByTestId('disease-detail-sheet')).toHaveClass('animate-sheet-unfold');
+    expect(screen.getByTestId('almanac-accordion')).toBeInTheDocument();
     expect(screen.getAllByText(/hoạt chất/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/tricyclazole/i).length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText(/liều lượng/i).length).toBeGreaterThan(0);

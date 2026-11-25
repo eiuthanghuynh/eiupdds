@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { Providers } from '@/app/providers';
@@ -58,7 +58,9 @@ describe('LeafSpecimenStage', () => {
     expect(pills[1]).toHaveAttribute('data-placement', 'below');
 
     await user.click(screen.getByRole('button', { name: /khung đốm bệnh/i }));
-    expect(screen.queryByTestId('bbox-overlay-group')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByTestId('bbox-overlay-group')).not.toBeInTheDocument();
+    });
   });
 
   it('staggers real 4-box Potato Late Blight pills to distinct vertical bands without sharing top% across boxes', () => {
@@ -154,5 +156,67 @@ describe('LeafSpecimenStage', () => {
     expect(screen.getByText(/3 lượt quét ảnh thật/i)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /khoai tây/i }));
     expect(onSelectSample).toHaveBeenCalledWith(0);
+  });
+
+  it('draws SVG reticles, spotlights active lesion pill while dimming siblings, resets on specimen change, and shows lamp sweep while loading', async () => {
+    const user = userEvent.setup();
+    const { container, rerender } = render(
+      <Providers>
+        <LeafSpecimenStage
+          diagnosis={SAMPLE_SPECIMENS[0].response}
+          isSample={true}
+          isLoading={false}
+          error={null}
+          onRetryUpload={vi.fn()}
+          onSelectSample={vi.fn()}
+        />
+      </Providers>
+    );
+
+    const rects = container.querySelectorAll('svg rect');
+    expect(rects.length).toBe(4);
+    expect(rects[0].getAttribute('class') ?? '').toContain('animate-reticle-draw');
+
+    const pills = screen.getAllByTestId('bbox-label-pill');
+    await user.hover(pills[0]);
+    expect(pills[0]).toHaveAttribute('data-highlighted', 'true');
+    expect(pills[1]).toHaveAttribute('data-dimmed', 'true');
+
+    await user.unhover(pills[0]);
+    expect(pills[0]).not.toHaveAttribute('data-highlighted', 'true');
+    expect(pills[1]).not.toHaveAttribute('data-dimmed', 'true');
+
+    // Reset highlight if diagnosis switches while active
+    await user.hover(pills[0]);
+    expect(pills[0]).toHaveAttribute('data-highlighted', 'true');
+    rerender(
+      <Providers>
+        <LeafSpecimenStage
+          diagnosis={SAMPLE_SPECIMENS[1].response}
+          isSample={true}
+          isLoading={false}
+          error={null}
+          onRetryUpload={vi.fn()}
+          onSelectSample={vi.fn()}
+        />
+      </Providers>
+    );
+    const updatedPills = screen.getAllByTestId('bbox-label-pill');
+    expect(updatedPills[0]).not.toHaveAttribute('data-highlighted', 'true');
+
+    // Warm inspection lamp sweep during loading
+    rerender(
+      <Providers>
+        <LeafSpecimenStage
+          diagnosis={SAMPLE_SPECIMENS[0].response}
+          isSample={false}
+          isLoading={true}
+          error={null}
+          onRetryUpload={vi.fn()}
+          onSelectSample={vi.fn()}
+        />
+      </Providers>
+    );
+    expect(screen.getByTestId('specimen-lamp-sweep')).toBeInTheDocument();
   });
 });

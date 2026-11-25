@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { animate, m, useReducedMotion } from 'motion/react';
 import { openMobileAppDrawer } from '@/lib/config/mobileApp';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { SEEDHOUSE_COLORS } from '@/lib/theme/seedhouseTheme';
@@ -51,6 +52,23 @@ export function PrescriptionSpread({
       ),
     [sortedTreatments]
   );
+  const prefersReducedMotion = useReducedMotion();
+  const [displayWaitDays, setDisplayWaitDays] = useState(waitDays);
+
+  useEffect(() => {
+    if (prefersReducedMotion || waitDays <= 0) {
+      setDisplayWaitDays(waitDays);
+      return;
+    }
+    setDisplayWaitDays(0);
+    const controls = animate(0, waitDays, {
+      duration: 0.32,
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (latest) => setDisplayWaitDays(Math.round(latest)),
+    });
+    return () => controls.stop();
+  }, [waitDays, prefersReducedMotion, diagnosis.diagnosisId, activeTreatment?.id]);
+
   const isChemicalOrBio =
     activeTreatment?.treatmentType === 'BIOLOGICAL' ||
     activeTreatment?.treatmentType === 'CHEMICAL';
@@ -85,14 +103,11 @@ export function PrescriptionSpread({
                     role="tab"
                     aria-selected={isSelected}
                     onClick={() => setSelectedIndex(idx)}
-                    className="px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-[0.08em] border cursor-pointer transition-all duration-200 ease-out active:translate-y-[1px]"
+                    className="relative px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-[0.08em] border cursor-pointer transition-colors duration-200 active:translate-y-[1px] overflow-hidden"
                     style={
                       isSelected
                         ? {
-                            backgroundColor:
-                              tr.treatmentType === 'CHEMICAL'
-                                ? SEEDHOUSE_COLORS.terracotta
-                                : SEEDHOUSE_COLORS.olive,
+                            backgroundColor: 'transparent',
                             borderColor:
                               tr.treatmentType === 'CHEMICAL'
                                 ? SEEDHOUSE_COLORS.terracotta
@@ -106,7 +121,22 @@ export function PrescriptionSpread({
                           }
                     }
                   >
-                    {localizeTreatmentType(tr.treatmentType)}
+                    {isSelected && (
+                      <m.span
+                        layoutId="prescription-tab-highlight"
+                        data-testid="prescription-active-indicator"
+                        transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                        aria-hidden="true"
+                        className="absolute inset-0"
+                        style={{
+                          backgroundColor:
+                            tr.treatmentType === 'CHEMICAL'
+                              ? SEEDHOUSE_COLORS.terracotta
+                              : SEEDHOUSE_COLORS.olive,
+                        }}
+                      />
+                    )}
+                    <span className="relative z-10">{localizeTreatmentType(tr.treatmentType)}</span>
                   </button>
                 );
               })}
@@ -115,9 +145,12 @@ export function PrescriptionSpread({
         </div>
 
         {activeTreatment && (
-          <div
+          <m.div
             key={`${diagnosis.diagnosisId}-${activeTreatment.id}`}
-            className="grid grid-cols-1 lg:grid-cols-3 gap-0 items-stretch animate-specimen-fade"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            className="grid grid-cols-1 lg:grid-cols-3 gap-0 items-stretch"
           >
             {/* Column 1: Field Action Steps */}
             <div
@@ -209,7 +242,12 @@ export function PrescriptionSpread({
                 )}
               </div>
 
-              <div
+              <m.div
+                key={`${diagnosis.diagnosisId}-${activeTreatment.id}-${waitDays}`}
+                data-testid="harvest-day-seal"
+                initial={{ scale: 1.08, rotate: -2 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 className="shrink-0 w-20 h-20 rounded-full border-2 border-dashed flex flex-col items-center justify-center text-center p-2 tabular-nums"
                 style={{
                   borderColor:
@@ -218,14 +256,14 @@ export function PrescriptionSpread({
                 }}
               >
                 <span className="text-xl font-extrabold leading-none">
-                  {waitDays > 0 ? String(waitDays).padStart(2, '0') : '0'}
+                  {waitDays > 0 ? String(displayWaitDays).padStart(2, '0') : '0'}
                 </span>
                 <span className="text-xs font-bold uppercase mt-1">
                   {t.harvestDayUnit}
                 </span>
-              </div>
+              </m.div>
             </div>
-          </div>
+          </m.div>
         )}
 
         <div
