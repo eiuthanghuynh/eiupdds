@@ -18,7 +18,7 @@ export function DeckledEdge({
       viewBox="0 0 1440 24"
       preserveAspectRatio="none"
       aria-hidden="true"
-      className={`block w-full h-[18px] select-none pointer-events-none ${className}`}
+      className={`block w-full h-[10px] sm:h-[18px] select-none pointer-events-none ${className}`}
       style={{
         backgroundColor: fillBottom,
         transform: flip ? 'scaleX(-1)' : undefined,

@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Input } from 'antd';
 import { useDiseasesQuery, usePlantsQuery } from '@/lib/api/queries';
+import { matchesDiseaseKeyword } from '@/lib/data/fallbackCatalog';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { SEEDHOUSE_COLORS } from '@/lib/theme/seedhouseTheme';
 import {
@@ -25,7 +26,6 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
   const plantsQuery = usePlantsQuery();
   const diseasesQuery = useDiseasesQuery({
     plantCode: selectedPlantCode || undefined,
-    keyword: keyword || undefined,
   });
 
   useEffect(() => {
@@ -44,7 +44,18 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
   const plants = (plantsQuery.data?.plants ?? []).filter(
     (p) => !HEALTHY_ONLY_PLANTS.has(p.plantCode.toUpperCase())
   );
-  const diseases = diseasesQuery.data?.diseases ?? [];
+  const allDiseases = diseasesQuery.data?.diseases ?? [];
+  const diseases = useMemo(
+    () =>
+      allDiseases.filter((disease) =>
+        matchesDiseaseKeyword(
+          disease,
+          keyword,
+          selectedPlantCode ? [selectedPlantCode] : undefined
+        )
+      ),
+    [allDiseases, keyword, selectedPlantCode]
+  );
   const isUnfiltered = !selectedPlantCode && !keyword.trim();
   const visibleDiseases =
     isUnfiltered && !showAll ? diseases.slice(0, DEFAULT_VISIBLE_ROWS) : diseases;

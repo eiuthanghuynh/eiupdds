@@ -96,7 +96,7 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     cropHintLabel: 'Loại cây (không bắt buộc):',
     cropHintAll: 'Tự động nhận diện từ lá',
     uploadCta: 'Chụp / Tải Ảnh Lá Lên',
-    uploadPhotoTip: 'Mẹo: đặt 1 lá đủ sáng, giữ vững tay để máy khoanh chính xác.',
+    uploadPhotoTip: 'Mẹo: đặt 1 lá đủ sáng, giữ vững tay.',
     quotaLabel: (remaining, limit) => `Còn ${remaining}/${limit} lượt quét miễn phí giờ này`,
     sampleGroupLabel: 'Xem nhanh lá mẫu:',
     sampleReferenceBadge: 'Mẫu có sẵn',
@@ -139,7 +139,7 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     almanacLead: 'Chọn cây hoặc gõ từ khóa để xem triệu chứng và phác đồ xử lý.',
     almanacAllCrops: 'Tất cả',
     almanacSearchPlaceholder: 'Tìm tên bệnh hoặc cây (vd: mốc sương, đạo ôn)...',
-    almanacOfflineNote: 'Đang dùng dữ liệu ngoại tuyến.',
+    almanacOfflineNote: 'Dữ liệu ngoại tuyến.',
     almanacEmpty: 'Không tìm thấy bệnh nào khớp từ khóa.',
     almanacShowAll: (count) => `Xem tất cả ${count} bệnh`,
     almanacShowLess: 'Thu gọn',
@@ -149,10 +149,8 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     sheetSymptomsHeading: 'Dấu hiệu nhận biết trên lá & thân',
     sheetConditionsHeading: 'Điều kiện thời tiết dễ bùng bệnh',
     sheetTreatmentsHeading: 'Phác đồ xử lý tham khảo',
-    footerSummary:
-      'EIU PDDS — Nền tảng nhận diện bệnh lá cây & tra cứu phác đồ nông học.',
-    footerSafetyNote:
-      'Kết quả tham khảo nhanh; cần chuyên gia xác nhận với diện tích lớn.',
+    footerSummary: 'EIU PDDS — Nhận diện bệnh lá cây & phác đồ.',
+    footerSafetyNote: 'Tham khảo nhanh; cần chuyên gia với diện tích lớn.',
     footerCopyright:
       '© 2026 EIU Plant Disease Detection System · EIU.',
   },
@@ -177,7 +175,7 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     cropHintLabel: 'Crop (optional):',
     cropHintAll: 'Auto-detect from leaf photo',
     uploadCta: 'Capture / Upload Leaf Photo',
-    uploadPhotoTip: 'Tip: photograph one leaf in clear daylight for accurate detection.',
+    uploadPhotoTip: 'Tip: photograph one clear leaf in daylight.',
     quotaLabel: (remaining, limit) => `${remaining}/${limit} free guest scans left this hour`,
     sampleGroupLabel: 'Try a real leaf sample:',
     sampleReferenceBadge: 'Sample',
@@ -230,10 +228,8 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     sheetSymptomsHeading: 'Foliar & Stem Symptoms',
     sheetConditionsHeading: 'Favorable Weather & Risk Conditions',
     sheetTreatmentsHeading: 'Curated Agronomic Treatments',
-    footerSummary:
-      'EIU PDDS — Applied computer vision for foliar disease diagnosis & agronomic treatment.',
-    footerSafetyNote:
-      'Quick field reference; consult local agronomists for large acreage or severe outbreaks.',
+    footerSummary: 'EIU PDDS — Foliar disease detection & treatment.',
+    footerSafetyNote: 'Field reference; consult agronomists for large acreage.',
     footerCopyright: '© 2026 EIU Plant Disease Detection System · EIU.',
   },
 };

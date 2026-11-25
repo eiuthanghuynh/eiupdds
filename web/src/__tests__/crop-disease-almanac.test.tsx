@@ -69,5 +69,6 @@ describe('CropDiseaseAlmanac & Inline Fold-Open Sheet', () => {
     await user.type(searchBox, 'moc suong');
     expect(await screen.findByRole('button', { name: /mốc sương khoai tây/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /mốc sương cà chua/i })).toBeInTheDocument();
+    expect(screen.getAllByTestId('almanac-disease-row')).toHaveLength(2);
   });
 });

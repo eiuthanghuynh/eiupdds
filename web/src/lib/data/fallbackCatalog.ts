@@ -387,31 +387,41 @@ export function findFallbackDiseaseRecord(codeOrId: string): FallbackDiseaseReco
   );
 }
 
+export function matchesDiseaseKeyword(
+  disease: Pick<DiseaseSummaryDto, 'diseaseCode' | 'commonName' | 'scientificName'>,
+  keyword?: string,
+  plantCodesOverride?: string[]
+): boolean {
+  const kw = normalizeSearchText(keyword ?? '');
+  if (!kw) {
+    return true;
+  }
+  const fallbackRecord = findFallbackDiseaseRecord(disease.diseaseCode);
+  const plantCodes = plantCodesOverride?.length
+    ? plantCodesOverride
+    : fallbackRecord?.plantCodes ?? [];
+  const localizedDisease = VI_DISEASE_NAMES[disease.diseaseCode] ?? '';
+  const localizedPlants = plantCodes.map((code) => VI_PLANT_NAMES[code] ?? '').join(' ');
+  const localizedSymptoms = getDiseaseLocalizationSearchText(disease.diseaseCode);
+  const haystack = normalizeSearchText(
+    `${disease.diseaseCode} ${disease.commonName} ${disease.scientificName ?? ''} ${localizedDisease} ${localizedPlants} ${localizedSymptoms} ${plantCodes.join(
+      ' '
+    )}`
+  );
+  return haystack.includes(kw);
+}
+
 export function filterFallbackDiseases(params?: {
   plantCode?: string;
   keyword?: string;
 }): DiseaseSummaryDto[] {
   const plantNorm = params?.plantCode?.trim().toUpperCase();
-  const kw = normalizeSearchText(params?.keyword ?? '');
 
   return FALLBACK_DISEASES.filter((d) => {
     if (plantNorm && !d.plantCodes.includes(plantNorm)) {
       return false;
     }
-    if (kw) {
-      const localizedDisease = VI_DISEASE_NAMES[d.diseaseCode] ?? '';
-      const localizedPlants = d.plantCodes.map((code) => VI_PLANT_NAMES[code] ?? '').join(' ');
-      const localizedSymptoms = getDiseaseLocalizationSearchText(d.diseaseCode);
-      const haystack = normalizeSearchText(
-        `${d.diseaseCode} ${d.commonName} ${d.scientificName ?? ''} ${localizedDisease} ${localizedPlants} ${localizedSymptoms} ${d.plantCodes.join(
-          ' '
-        )}`
-      );
-      if (!haystack.includes(kw)) {
-        return false;
-      }
-    }
-    return true;
+    return matchesDiseaseKeyword(d, params?.keyword, d.plantCodes);
   }).map(({ id, diseaseCode, commonName, scientificName, severity }) => ({
     id,
     diseaseCode,

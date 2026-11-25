@@ -27,10 +27,10 @@ export function SeedhouseHeader(): React.JSX.Element {
   return (
     <header className="w-full">
       <div
-        className="w-full px-3.5 sm:px-8 lg:px-12 py-1.5 sm:py-3"
+        className="w-full px-3.5 sm:px-8 lg:px-12 py-1 sm:py-3"
         style={{ backgroundColor: SEEDHOUSE_COLORS.olive, color: SEEDHOUSE_COLORS.cream }}
       >
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-4 gap-y-1">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-4 gap-y-0">
           <a
             href="#workbench"
             className="flex items-center gap-2 sm:gap-3 no-underline group min-h-[44px] shrink-0"
@@ -52,7 +52,7 @@ export function SeedhouseHeader(): React.JSX.Element {
 
           <nav
             aria-label={t.navAriaLabel}
-            className="order-3 lg:order-none w-full lg:w-auto pt-0.5 lg:pt-0 border-t lg:border-t-0 flex items-center gap-x-5 text-xs font-semibold tracking-[0.1em] uppercase"
+            className="order-3 lg:order-none w-full lg:w-auto pt-0 border-t lg:border-t-0 flex items-center gap-x-5 text-xs font-semibold tracking-[0.1em] uppercase"
             style={{ borderColor: '#697349' }}
           >
             <a
