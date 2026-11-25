@@ -54,7 +54,9 @@ describe('Mobile App APK & QR Handoff', () => {
     const apkLink = await screen.findByRole('link', { name: /tải apk android/i });
     expect(apkLink).toHaveAttribute('href', 'https://example.com/eiu-pdds.apk');
     expect(screen.getByTestId('mobile-app-qr')).toBeInTheDocument();
-    expect(scrollToSpy).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(scrollToSpy).toHaveBeenCalled();
+    });
 
     delete process.env.NEXT_PUBLIC_MOBILE_APP_URL;
     rerender(

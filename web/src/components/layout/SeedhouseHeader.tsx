@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { QRCode } from 'antd';
 import { AnimatePresence, m } from 'motion/react';
 import { DeckledEdge } from '@/components/primitives/DeckledEdge';
@@ -13,21 +13,51 @@ import { SEEDHOUSE_COLORS } from '@/lib/theme/seedhouseTheme';
 export function SeedhouseHeader(): React.JSX.Element {
   const { locale, setLocale, t } = useLanguage();
   const [appSheetOpen, setAppSheetOpen] = useState(false);
+  const [openRequestSeq, setOpenRequestSeq] = useState(0);
+  const pendingScrollTopRef = useRef(false);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const downloadUrl = getMobileAppDownloadUrl();
   const nextLocale = locale === 'vi' ? 'en' : 'vi';
   const toggleAria = locale === 'vi' ? t.langToggleAriaToEn : t.langToggleAriaToVi;
 
+  const scrollToHeaderTop = useCallback(() => {
+    if (typeof window.scrollTo === 'function') {
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+    }
+  }, []);
+
   useEffect(() => {
     const handleOpenDrawer = () => {
-      setAppSheetOpen(true);
-      if (typeof window.scrollTo === 'function') {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
       }
+      pendingScrollTopRef.current = true;
+      setAppSheetOpen(true);
+      setOpenRequestSeq((seq) => seq + 1);
     };
     window.addEventListener(OPEN_APP_SHEET_EVENT, handleOpenDrawer);
     return () => window.removeEventListener(OPEN_APP_SHEET_EVENT, handleOpenDrawer);
   }, []);
+
+  useEffect(() => {
+    if (openRequestSeq === 0) return;
+    let raf2 = 0;
+    const raf1 = window.requestAnimationFrame(() => {
+      raf2 = window.requestAnimationFrame(() => {
+        scrollToHeaderTop();
+      });
+    });
+    const fallbackTimer = window.setTimeout(() => {
+      scrollToHeaderTop();
+    }, 80);
+    return () => {
+      window.cancelAnimationFrame(raf1);
+      window.cancelAnimationFrame(raf2);
+      window.clearTimeout(fallbackTimer);
+    };
+  }, [openRequestSeq, scrollToHeaderTop]);
 
   useEffect(() => {
     if (!appSheetOpen) return;
@@ -130,6 +160,14 @@ export function SeedhouseHeader(): React.JSX.Element {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            onAnimationComplete={() => {
+              if (!appSheetOpen || !pendingScrollTopRef.current) return;
+              pendingScrollTopRef.current = false;
+              closeButtonRef.current?.focus({ preventScroll: true });
+              if (window.scrollY > 8) {
+                scrollToHeaderTop();
+              }
+            }}
             className="w-full overflow-hidden border-b"
             style={{
               backgroundColor: SEEDHOUSE_COLORS.sheet,
@@ -144,6 +182,7 @@ export function SeedhouseHeader(): React.JSX.Element {
                     {t.appSheetTitle}
                   </h2>
                   <button
+                    ref={closeButtonRef}
                     type="button"
                     onClick={() => setAppSheetOpen(false)}
                     className="min-h-[44px] px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] border cursor-pointer transition-all duration-200 active:translate-y-[1px]"

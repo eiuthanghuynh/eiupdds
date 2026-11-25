@@ -22,6 +22,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-anchor: none;
   background-color: var(--bg-kraft);
   color: var(--ink-primary);
   caret-color: var(--accent-terracotta);
@@ -29,6 +30,7 @@ html {
 
 body {
   margin: 0;
+  overflow-anchor: none;
   background-color: var(--bg-kraft);
   color: var(--ink-primary);
   font-family: var(--font-body), system-ui, -apple-system, sans-serif;

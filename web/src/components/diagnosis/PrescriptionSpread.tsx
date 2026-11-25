@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { animate, m, useReducedMotion } from 'motion/react';
+import { CameraLeafIcon } from '@/components/primitives/WoodcutIcons';
 import { openMobileAppDrawer } from '@/lib/config/mobileApp';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { SEEDHOUSE_COLORS } from '@/lib/theme/seedhouseTheme';
@@ -267,19 +268,37 @@ export function PrescriptionSpread({
         )}
 
         <div
-          className="pt-4 border-t flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm"
-          style={{ borderColor: '#D6C8B0' }}
+          className="mt-2 p-4 sm:p-5 border flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          style={{
+            backgroundColor: SEEDHOUSE_COLORS.oliveStage,
+            borderColor: SEEDHOUSE_COLORS.oliveRule,
+            color: SEEDHOUSE_COLORS.creamWarm,
+          }}
         >
-          <span style={{ color: SEEDHOUSE_COLORS.inkMuted }}>{t.prescriptionAppPrompt}</span>
+          <div className="flex items-start sm:items-center gap-3.5">
+            <span
+              className="shrink-0 w-10 h-10 rounded-full border border-dashed flex items-center justify-center"
+              style={{
+                borderColor: SEEDHOUSE_COLORS.mustard,
+                backgroundColor: SEEDHOUSE_COLORS.oliveMat,
+              }}
+            >
+              <CameraLeafIcon size={20} stroke={SEEDHOUSE_COLORS.mustard} />
+            </span>
+            <div className="space-y-0.5">
+              <div className="font-display text-base sm:text-lg font-bold leading-snug">
+                {t.prescriptionAppPrompt}
+              </div>
+              <p className="text-xs sm:text-sm m-0" style={{ color: '#E2D8C1' }}>
+                {t.appFeatureGps}
+              </p>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={openMobileAppDrawer}
-            className="min-h-[44px] px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] border cursor-pointer transition-all duration-200 active:translate-y-[1px]"
-            style={{
-              borderColor: SEEDHOUSE_COLORS.olive,
-              backgroundColor: SEEDHOUSE_COLORS.sheet,
-              color: SEEDHOUSE_COLORS.olive,
-            }}
+            className="plaque-terracotta shrink-0 min-h-[44px] px-5 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-[0.12em] border-0 cursor-pointer"
           >
             {t.prescriptionAppButton}
           </button>
