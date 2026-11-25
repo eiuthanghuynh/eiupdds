@@ -20,10 +20,11 @@ export interface UiCopy {
   cropHintLabel: string;
   cropHintAll: string;
   uploadCta: string;
-  uploadDropHint: string;
+  uploadPhotoTip: string;
   quotaLabel: (remaining: number, limit: number) => string;
   sampleGroupLabel: string;
   sampleReferenceBadge: string;
+  resetUploadButton: string;
   toggleBoxesHide: string;
   toggleBoxesShow: string;
   confidenceLabel: (pct: number, count: number) => string;
@@ -84,8 +85,8 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     brandSubtitle: 'Hệ Thống Nhận Diện Bệnh Cây Trồng',
     navAriaLabel: 'Điều hướng trang chủ',
     navWorkbench: 'Soi Lá Bệnh',
+    navAlmanac: 'Sổ Tay Bệnh',
     navHowItWorks: 'Cách Hoạt Động',
-    navAlmanac: '9 Cây & 15 Bệnh',
     langToggleAriaToEn: 'Chuyển sang Tiếng Anh (EN)',
     langToggleAriaToVi: 'Chuyển sang Tiếng Việt (VN)',
     appButton: 'Ứng Dụng',
@@ -97,15 +98,15 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     appFeatureGps: 'Ghi nhận vị trí thửa ruộng tự động giúp theo dõi ổ bệnh theo mùa vụ.',
     appSheetClose: 'Thu gọn',
     heroHeading: 'Soi Đốm Lá — Giữ Trọn Vụ Mùa',
-    heroLead:
-      'Chụp hoặc tải lên một tấm ảnh mặt lá có đốm vàng, cháy mép hay mốc trắng. Hệ thống khoanh vùng ngay vết bệnh trên lá và hướng dẫn cách xử lý an toàn, chữ to dễ đọc, không cần đăng nhập.',
-    cropHintLabel: 'Loại cây đang trồng (không bắt buộc):',
+    heroLead: 'Chụp ảnh mặt lá có đốm bệnh để xem vùng bệnh và cách xử lý an toàn ngay.',
+    cropHintLabel: 'Loại cây (không bắt buộc):',
     cropHintAll: 'Tự động nhận diện từ lá',
     uploadCta: 'Chụp / Tải Ảnh Lá Lên',
-    uploadDropHint: 'Hoặc kéo thả ảnh lá cây vào đây (JPEG, PNG, WebP — tối đa\u00A015MB)',
-    quotaLabel: (remaining, limit) => `Còn ${remaining}/${limit} lượt quét ảnh thật miễn phí trong giờ này`,
-    sampleGroupLabel: 'Chưa có sẵn ảnh? Bấm xem thử lá mẫu:',
-    sampleReferenceBadge: 'Mẫu đối chứng có sẵn',
+    uploadPhotoTip: 'Mẹo: đặt 1 lá đủ sáng, giữ vững tay để máy khoanh chính xác.',
+    quotaLabel: (remaining, limit) => `Còn ${remaining}/${limit} lượt quét miễn phí giờ này`,
+    sampleGroupLabel: 'Xem nhanh lá mẫu:',
+    sampleReferenceBadge: 'Mẫu có sẵn',
+    resetUploadButton: 'Về mẫu mặc định',
     toggleBoxesHide: 'Tắt khung đốm bệnh',
     toggleBoxesShow: 'Bật khung đốm bệnh',
     confidenceLabel: (pct, count) => `Độ chắc chắn ${pct}% · Khoanh ${count} vùng trên lá`,
@@ -178,7 +179,7 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     navAriaLabel: 'Homepage navigation',
     navWorkbench: 'Leaf Scanner',
     navHowItWorks: 'How It Works',
-    navAlmanac: '9 Crops & 15 Diseases',
+    navAlmanac: 'Disease Guide',
     langToggleAriaToEn: 'Switch language to English (EN)',
     langToggleAriaToVi: 'Switch language to Vietnamese (VN)',
     appButton: 'Mobile App',
@@ -190,15 +191,15 @@ export const UI_DICTIONARY: Record<Locale, UiCopy> = {
     appFeatureGps: 'Attach field GPS coordinates automatically to track seasonal disease hotspots.',
     appSheetClose: 'Close',
     heroHeading: 'Inspect Leaf Spots — Protect Your Harvest',
-    heroLead:
-      'Snap or upload a clear photo of a spotted, blighted, or curling leaf. EIU PDDS highlights lesions directly on your leaf and pairs biological-first remedies with clear pre-harvest safety intervals.',
-    cropHintLabel: 'Crop being grown (optional):',
+    heroLead: 'Snap a spotted leaf to locate lesions and get safe treatment steps instantly.',
+    cropHintLabel: 'Crop (optional):',
     cropHintAll: 'Auto-detect from leaf photo',
     uploadCta: 'Capture / Upload Leaf Photo',
-    uploadDropHint: 'Or drag and drop a leaf image here (JPEG, PNG, WebP — max\u00A015MB)',
-    quotaLabel: (remaining, limit) => `${remaining}/${limit} free live guest scans remaining this hour`,
-    sampleGroupLabel: 'No leaf photo handy? Try a reference specimen:',
-    sampleReferenceBadge: 'Sample reference',
+    uploadPhotoTip: 'Tip: photograph one leaf in clear daylight for accurate detection.',
+    quotaLabel: (remaining, limit) => `${remaining}/${limit} free guest scans left this hour`,
+    sampleGroupLabel: 'Try a real leaf sample:',
+    sampleReferenceBadge: 'Sample',
+    resetUploadButton: 'Reset view',
     toggleBoxesHide: 'Hide lesion boxes',
     toggleBoxesShow: 'Show lesion boxes',
     confidenceLabel: (pct, count) => `${pct}% confidence · ${count} region(s) bounded`,

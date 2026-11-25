@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DeckledEdge } from '@/components/primitives/DeckledEdge';
 import { StampCheckIcon, WoodcutSunLeafMark } from '@/components/primitives/WoodcutIcons';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -13,25 +13,36 @@ export function SeedhouseHeader(): React.JSX.Element {
   const nextLocale = locale === 'vi' ? 'en' : 'vi';
   const toggleAria = locale === 'vi' ? t.langToggleAriaToEn : t.langToggleAriaToVi;
 
+  useEffect(() => {
+    if (!appSheetOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setAppSheetOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [appSheetOpen]);
+
   return (
     <header className="w-full">
       <div
-        className="w-full px-5 sm:px-8 lg:px-12 pt-5 pb-4"
+        className="w-full px-3.5 sm:px-8 lg:px-12 py-1.5 sm:py-3"
         style={{ backgroundColor: SEEDHOUSE_COLORS.olive, color: SEEDHOUSE_COLORS.cream }}
       >
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-4 gap-y-1">
           <a
             href="#workbench"
-            className="flex items-center gap-3.5 no-underline group"
+            className="flex items-center gap-2 sm:gap-3 no-underline group min-h-[44px] shrink-0"
             style={{ color: SEEDHOUSE_COLORS.cream }}
           >
-            <WoodcutSunLeafMark size={42} stroke={SEEDHOUSE_COLORS.cream} />
+            <WoodcutSunLeafMark size={30} stroke={SEEDHOUSE_COLORS.cream} />
             <div>
-              <div className="font-display text-lg sm:text-xl font-bold tracking-[0.2em] uppercase leading-tight">
+              <div className="font-display text-sm sm:text-xl font-bold tracking-[0.12em] sm:tracking-[0.2em] uppercase leading-tight whitespace-nowrap">
                 EIU PDDS
               </div>
               <div
-                className="text-xs tracking-[0.08em] uppercase"
+                className="hidden sm:block text-xs tracking-[0.08em] uppercase"
                 style={{ color: '#E2D6BE' }}
               >
                 {t.brandSubtitle}
@@ -41,38 +52,31 @@ export function SeedhouseHeader(): React.JSX.Element {
 
           <nav
             aria-label={t.navAriaLabel}
-            className="order-3 lg:order-none w-full lg:w-auto pt-2.5 lg:pt-0 border-t lg:border-t-0 flex flex-wrap items-center gap-x-5 gap-y-2 lg:gap-6 text-xs font-semibold tracking-[0.1em] uppercase"
+            className="order-3 lg:order-none w-full lg:w-auto pt-0.5 lg:pt-0 border-t lg:border-t-0 flex items-center gap-x-5 text-xs font-semibold tracking-[0.1em] uppercase"
             style={{ borderColor: '#697349' }}
           >
             <a
               href="#workbench"
-              className="hover:underline"
+              className="min-h-[44px] inline-flex items-center hover:underline"
               style={{ color: SEEDHOUSE_COLORS.cream }}
             >
               {t.navWorkbench}
             </a>
             <a
-              href="#how-it-works"
-              className="hover:underline"
-              style={{ color: SEEDHOUSE_COLORS.cream }}
-            >
-              {t.navHowItWorks}
-            </a>
-            <a
               href="#almanac"
-              className="hover:underline"
+              className="min-h-[44px] inline-flex items-center hover:underline"
               style={{ color: SEEDHOUSE_COLORS.cream }}
             >
               {t.navAlmanac}
             </a>
           </nav>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setLocale(nextLocale)}
               aria-label={toggleAria}
-              className="px-3.5 py-2 text-xs font-bold tracking-[0.12em] uppercase border cursor-pointer transition-colors"
+              className="min-h-[44px] px-2.5 sm:px-3.5 py-2 text-xs font-bold tracking-[0.1em] sm:tracking-[0.12em] uppercase border cursor-pointer transition-colors whitespace-nowrap"
               style={{
                 borderColor: '#CFC1A5',
                 backgroundColor: '#363E20',
@@ -80,7 +84,7 @@ export function SeedhouseHeader(): React.JSX.Element {
               }}
             >
               <span className={locale === 'vi' ? 'underline font-extrabold' : 'opacity-80'}>VN</span>
-              <span className="mx-1.5 opacity-60">|</span>
+              <span className="mx-1 opacity-60">|</span>
               <span className={locale === 'en' ? 'underline font-extrabold' : 'opacity-80'}>EN</span>
             </button>
 
@@ -89,7 +93,7 @@ export function SeedhouseHeader(): React.JSX.Element {
               onClick={() => setAppSheetOpen((prev) => !prev)}
               aria-expanded={appSheetOpen}
               aria-controls="eiu-pdds-app-companion"
-              className="px-4 py-2 text-xs font-bold tracking-[0.12em] uppercase border cursor-pointer transition-colors"
+              className="min-h-[44px] px-2.5 sm:px-3.5 py-2 text-xs font-bold tracking-[0.1em] sm:tracking-[0.12em] uppercase border cursor-pointer transition-colors whitespace-nowrap"
               style={{
                 borderColor: SEEDHOUSE_COLORS.cream,
                 backgroundColor: appSheetOpen ? SEEDHOUSE_COLORS.cream : 'transparent',
@@ -120,7 +124,7 @@ export function SeedhouseHeader(): React.JSX.Element {
               <button
                 type="button"
                 onClick={() => setAppSheetOpen(false)}
-                className="px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.1em] border cursor-pointer"
+                className="min-h-[44px] px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] border cursor-pointer"
                 style={{
                   borderColor: SEEDHOUSE_COLORS.hairline,
                   backgroundColor: SEEDHOUSE_COLORS.parchment,

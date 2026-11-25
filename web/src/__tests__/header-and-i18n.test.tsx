@@ -45,16 +45,17 @@ describe('SeedhouseHeader & Bilingual Agronomic Dictionary', () => {
     await user.click(screen.getByRole('button', { name: /ứng dụng/i }));
     expect(screen.getByText(/lưu nhật ký đồng ruộng/i)).toBeInTheDocument();
 
+    await user.keyboard('{Escape}');
+    expect(screen.queryByText(/lưu nhật ký đồng ruộng/i)).not.toBeInTheDocument();
+
     const nav = screen.getByRole('navigation', { name: /điều hướng trang chủ/i });
     expect(nav.className).not.toMatch(/\bhidden\b/);
     expect(screen.getByRole('link', { name: /soi lá bệnh/i })).toHaveAttribute('href', '#workbench');
-    expect(screen.getByRole('link', { name: /cách hoạt động/i })).toHaveAttribute(
-      'href',
-      '#how-it-works'
-    );
-    expect(screen.getByRole('link', { name: /9 cây & 15 bệnh/i })).toHaveAttribute(
+    expect(screen.queryByRole('link', { name: /cách hoạt động/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /sổ tay bệnh/i })).toHaveAttribute(
       'href',
       '#almanac'
     );
+    expect(screen.getByRole('button', { name: /ứng dụng/i }).className).toMatch(/min-h-\[44px\]/);
   });
 });

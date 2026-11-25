@@ -349,8 +349,8 @@ export function LeafSpecimenStage({
             className="relative w-full mx-auto overflow-hidden"
             style={{
               aspectRatio: `${imgW} / ${imgH}`,
-              maxHeight: '380px',
-              maxWidth: `${Math.round((380 * imgW) / imgH)}px`,
+              maxHeight: '350px',
+              maxWidth: `${Math.round((350 * imgW) / imgH)}px`,
             }}
           >
             <img

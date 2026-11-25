@@ -89,6 +89,18 @@ describe('PrescriptionSpread & DiagnosticWorkbench', () => {
     expect(screen.getByText(/chỉ hỗ trợ định dạng ảnh jpeg, png hoặc webp/i)).toBeInTheDocument();
   });
 
+  it('uses a native zero-FOUC crop select below CTA and replaces JPEG/PNG/WebP tech copy with an inline photo tip', () => {
+    render(
+      <Providers>
+        <DiagnosticWorkbench />
+      </Providers>
+    );
+    const cropSelect = document.getElementById('crop-hint-select');
+    expect(cropSelect?.tagName).toBe('SELECT');
+    expect(screen.queryByText(/JPEG, PNG, WebP/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/1 lá đủ sáng/i)).toBeInTheDocument();
+  });
+
   it('localizes English live-upload treatments to Vietnamese, warns about chemical wait days on 0-day bio tab, and omits dosage label on CULTURAL tab', async () => {
     const user = userEvent.setup();
     const liveEnglishDiag = {
