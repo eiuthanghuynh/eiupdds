@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { QRCode } from 'antd';
 import { AnimatePresence, m } from 'motion/react';
 import { DeckledEdge } from '@/components/primitives/DeckledEdge';
-import { StampCheckIcon, WoodcutSunLeafMark } from '@/components/primitives/WoodcutIcons';
+import { EiuUniversityMark } from '@/components/primitives/EiuUniversityMark';
+import { StampCheckIcon } from '@/components/primitives/WoodcutIcons';
 import { OPEN_APP_SHEET_EVENT, getMobileAppDownloadUrl } from '@/lib/config/mobileApp';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { SEEDHOUSE_COLORS } from '@/lib/theme/seedhouseTheme';
@@ -51,7 +52,7 @@ export function SeedhouseHeader(): React.JSX.Element {
             className="flex items-center gap-2 sm:gap-3 no-underline group min-h-[44px] shrink-0"
             style={{ color: SEEDHOUSE_COLORS.cream }}
           >
-            <WoodcutSunLeafMark size={30} stroke={SEEDHOUSE_COLORS.cream} />
+            <EiuUniversityMark size={34} />
             <div>
               <div className="font-display text-sm sm:text-xl font-bold tracking-[0.12em] sm:tracking-[0.2em] uppercase leading-tight whitespace-nowrap">
                 EIU PDDS

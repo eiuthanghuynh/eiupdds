@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { DeckledEdge } from '@/components/primitives/DeckledEdge';
-import { WoodcutSunLeafMark } from '@/components/primitives/WoodcutIcons';
+import { EiuUniversityMark } from '@/components/primitives/EiuUniversityMark';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { SEEDHOUSE_COLORS } from '@/lib/theme/seedhouseTheme';
 
@@ -22,7 +22,7 @@ export function SeedhouseFooter({
       >
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="flex items-center gap-3 max-w-md">
-            <WoodcutSunLeafMark size={28} stroke={SEEDHOUSE_COLORS.cream} />
+            <EiuUniversityMark size={32} />
             <p className="text-sm leading-snug m-0" style={{ color: '#EAE0CC' }}>
               {t.footerSummary}
             </p>

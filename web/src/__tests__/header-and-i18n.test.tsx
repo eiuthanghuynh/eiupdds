@@ -26,6 +26,7 @@ describe('SeedhouseHeader & Bilingual Agronomic Dictionary', () => {
       </Providers>
     );
     expect(screen.getByText('EIU PDDS')).toBeInTheDocument();
+    expect(screen.getByTestId('eiu-brand-mark')).toHaveAttribute('src', '/eiu-mark.png');
     expect(screen.getByTestId('plant')).toHaveTextContent('Khoai tây');
     expect(screen.getByTestId('disease')).toHaveTextContent('Bệnh mốc sương khoai tây');
     expect(screen.getByTestId('sev')).toHaveTextContent(/^Nguy hiểm$/);
