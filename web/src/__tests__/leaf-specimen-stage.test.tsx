@@ -44,7 +44,10 @@ describe('LeafSpecimenStage', () => {
     );
     const frame = screen.getByTestId('specimen-aspect-frame');
     expect(frame).toHaveStyle({ aspectRatio: '1080 / 1920' });
-    expect(screen.getByTestId('bbox-overlay-group')).toBeVisible();
+    const overlayGroup = screen.getByTestId('bbox-overlay-group');
+    expect(overlayGroup).toBeVisible();
+    expect(overlayGroup).toHaveClass('animate-bbox-reveal');
+    expect(screen.queryByText('EIU PDDS')).not.toBeInTheDocument();
     const pills = screen.getAllByTestId('bbox-label-pill');
     const firstTag = pills[0];
     const rightPct = Number.parseFloat(firstTag.style.right || '0');

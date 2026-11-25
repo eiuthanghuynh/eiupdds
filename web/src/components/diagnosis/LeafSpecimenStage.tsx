@@ -161,7 +161,10 @@ export function LeafSpecimenStage({
         className="flex flex-wrap items-start justify-between gap-4 pb-4 border-b"
         style={{ borderColor: SEEDHOUSE_COLORS.oliveRule }}
       >
-        <div className="space-y-1.5">
+        <div
+          key={showActiveResult ? `head-${diagnosis.diagnosisId}` : 'stage-state'}
+          className="space-y-1.5 animate-specimen-fade"
+        >
           <h2
             className="font-display text-xl sm:text-2xl font-bold leading-snug m-0"
             style={{ color: SEEDHOUSE_COLORS.creamWarm }}
@@ -198,7 +201,7 @@ export function LeafSpecimenStage({
         {/* Tactile Woodcut Verification Stamp (only when valid result is shown) */}
         {showActiveResult && (
           <div
-            key={diagnosis.diagnosisId}
+            key={`stamp-${diagnosis.diagnosisId}`}
             className="animate-ink-stamp px-3.5 py-2 border border-dashed flex items-center gap-2 text-xs font-bold tracking-[0.12em] uppercase shrink-0"
             style={
               isHealthy
@@ -252,10 +255,12 @@ export function LeafSpecimenStage({
             <img
               src={previewUrl}
               alt=""
-              className="max-h-36 w-auto opacity-65 mb-2 object-contain"
+              className="max-h-36 w-auto opacity-65 mb-2 object-contain animate-stage-pulse"
             />
           )}
-          <div className="font-display text-lg sm:text-xl font-bold">{t.loadingStageTitle}</div>
+          <div className="font-display text-lg sm:text-xl font-bold animate-stage-pulse">
+            {t.loadingStageTitle}
+          </div>
           <p className="text-sm max-w-md m-0" style={{ color: '#E2D8C1' }}>
             {t.loadingStageBody}
           </p>
@@ -339,8 +344,9 @@ export function LeafSpecimenStage({
           style={{ backgroundColor: SEEDHOUSE_COLORS.oliveMat }}
         >
           <div
+            key={diagnosis.diagnosisId}
             data-testid="specimen-aspect-frame"
-            className="relative w-full mx-auto overflow-hidden"
+            className="relative w-full mx-auto overflow-hidden animate-specimen-fade"
             style={{
               aspectRatio: `${imgW} / ${imgH}`,
               maxHeight: '350px',
@@ -361,7 +367,7 @@ export function LeafSpecimenStage({
             {showBoxes && boxCount > 0 && (
               <div
                 data-testid="bbox-overlay-group"
-                className="absolute inset-0 w-full h-full pointer-events-none"
+                className="absolute inset-0 w-full h-full pointer-events-none animate-bbox-reveal"
               >
                 <svg
                   viewBox="0 0 1000 1000"
@@ -432,18 +438,16 @@ export function LeafSpecimenStage({
       )}
 
       {/* Bottom Stage Controls: Toggle Lesion Reticles */}
-      <div
-        className="pt-3 border-t flex flex-wrap items-center justify-between gap-3 text-xs"
-        style={{ borderColor: SEEDHOUSE_COLORS.oliveRule }}
-      >
-        <span style={{ color: '#E2D8C1' }}>EIU PDDS</span>
-
-        {boxCount > 0 && !error && !isLoading && (
+      {boxCount > 0 && !error && !isLoading && (
+        <div
+          className="pt-3 border-t flex flex-wrap items-center justify-end gap-3 text-xs"
+          style={{ borderColor: SEEDHOUSE_COLORS.oliveRule }}
+        >
           <button
             type="button"
             onClick={() => setShowBoxes((prev) => !prev)}
             aria-pressed={showBoxes}
-            className="min-h-[44px] px-3.5 py-2 font-bold uppercase tracking-[0.1em] border flex items-center gap-2 cursor-pointer transition-colors"
+            className="min-h-[44px] px-3.5 py-2 font-bold uppercase tracking-[0.1em] border flex items-center gap-2 cursor-pointer transition-all duration-200 ease-out active:translate-y-[1px]"
             style={{
               borderColor: SEEDHOUSE_COLORS.mustard,
               backgroundColor: '#2B3318',
@@ -453,8 +457,8 @@ export function LeafSpecimenStage({
             <EyeReticleIcon size={16} stroke={SEEDHOUSE_COLORS.mustard} />
             <span>{showBoxes ? t.toggleBoxesHide : t.toggleBoxesShow}</span>
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

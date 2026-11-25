@@ -84,7 +84,7 @@ export function PrescriptionSpread({
                     role="tab"
                     aria-selected={isSelected}
                     onClick={() => setSelectedIndex(idx)}
-                    className="px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-[0.08em] border cursor-pointer transition-colors"
+                    className="px-4 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-[0.08em] border cursor-pointer transition-all duration-200 ease-out active:translate-y-[1px]"
                     style={
                       isSelected
                         ? {
@@ -114,7 +114,10 @@ export function PrescriptionSpread({
         </div>
 
         {activeTreatment && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 items-stretch">
+          <div
+            key={`${diagnosis.diagnosisId}-${activeTreatment.id}`}
+            className="grid grid-cols-1 lg:grid-cols-3 gap-0 items-stretch animate-specimen-fade"
+          >
             {/* Column 1: Field Action Steps */}
             <div
               className="pb-6 lg:pb-0 lg:pr-8 lg:border-r space-y-2.5"

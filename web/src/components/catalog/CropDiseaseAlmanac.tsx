@@ -78,13 +78,13 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
   return (
     <section
       id="almanac"
-      className="w-full px-5 sm:px-8 lg:px-12 py-10"
+      className="w-full px-5 sm:px-8 lg:px-12 py-10 scroll-mt-2 min-h-[calc(100vh-96px)]"
       style={{
         backgroundColor: SEEDHOUSE_COLORS.parchment,
         color: SEEDHOUSE_COLORS.ink,
       }}
     >
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto w-full space-y-6">
         <div
           className="pb-4 border-b flex flex-wrap items-end justify-between gap-4"
           style={{ borderColor: SEEDHOUSE_COLORS.hairline }}
@@ -115,7 +115,7 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                 setExpandedDiseaseCode(null);
               }}
               aria-pressed={selectedPlantCode === ''}
-              className="px-4 py-2 min-h-[44px] text-xs sm:text-sm font-bold border cursor-pointer transition-colors"
+              className="px-4 py-2 min-h-[44px] text-xs sm:text-sm font-bold border cursor-pointer transition-all duration-200 ease-out active:translate-y-[1px]"
               style={
                 selectedPlantCode === ''
                   ? {
@@ -144,7 +144,7 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                     setExpandedDiseaseCode(null);
                   }}
                   aria-pressed={active}
-                  className="px-3.5 py-2 min-h-[44px] text-xs sm:text-sm font-bold border flex items-center gap-2 cursor-pointer transition-colors"
+                  className="px-3.5 py-2 min-h-[44px] text-xs sm:text-sm font-bold border flex items-center gap-2 cursor-pointer transition-all duration-200 ease-out active:translate-y-[1px]"
                   style={
                     active
                       ? {
@@ -194,7 +194,7 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
 
         {/* Hairline-Divided Disease Ledger with Inline Fold-Open Sheets */}
         <div
-          className="border-t border-b divide-y"
+          className="border-t border-b divide-y min-h-[380px]"
           style={{ borderColor: SEEDHOUSE_COLORS.hairline }}
         >
           {diseasesQuery.isLoading && diseases.length === 0 ? (
@@ -225,7 +225,7 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                         prev === disease.diseaseCode ? null : disease.diseaseCode
                       )
                     }
-                    className="w-full min-h-[44px] px-4 sm:px-6 py-3.5 text-left flex flex-wrap items-center justify-between gap-4 cursor-pointer transition-colors hover:bg-[#FAF5EB]"
+                    className="w-full min-h-[44px] px-4 sm:px-6 py-3.5 text-left flex flex-wrap items-center justify-between gap-4 cursor-pointer transition-colors duration-200 hover:bg-[#FAF5EB]"
                     style={{
                       backgroundColor: isOpen ? SEEDHOUSE_COLORS.sheet : 'transparent',
                       color: SEEDHOUSE_COLORS.ink,
@@ -279,7 +279,7 @@ export function CropDiseaseAlmanac(): React.JSX.Element {
                   setExpandedDiseaseCode(null);
                 }
               }}
-              className="px-5 py-2.5 min-h-[44px] text-sm font-bold border cursor-pointer transition-colors hover:bg-[#FAF5EB]"
+              className="px-5 py-2.5 min-h-[44px] text-sm font-bold border cursor-pointer transition-all duration-200 ease-out active:translate-y-[1px] hover:bg-[#FAF5EB]"
               style={{
                 backgroundColor: SEEDHOUSE_COLORS.sheet,
                 borderColor: SEEDHOUSE_COLORS.hairline,

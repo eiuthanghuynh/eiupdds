@@ -18,7 +18,8 @@ export function DiseaseDetailSheet({
   if (detailQuery.isLoading && !localRef) {
     return (
       <div
-        className="px-5 sm:px-7 py-6 border-t text-sm"
+        data-testid="disease-detail-sheet"
+        className="px-5 sm:px-7 py-6 border-t text-sm animate-sheet-unfold"
         style={{
           backgroundColor: SEEDHOUSE_COLORS.sheet,
           borderColor: SEEDHOUSE_COLORS.hairline,
@@ -40,7 +41,8 @@ export function DiseaseDetailSheet({
 
   return (
     <div
-      className="px-5 sm:px-7 py-6 border-t space-y-5"
+      data-testid="disease-detail-sheet"
+      className="px-5 sm:px-7 py-6 border-t space-y-5 animate-sheet-unfold"
       style={{
         backgroundColor: SEEDHOUSE_COLORS.sheet,
         borderColor: SEEDHOUSE_COLORS.hairline,

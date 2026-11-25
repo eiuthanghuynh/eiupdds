@@ -286,7 +286,7 @@ export function DiagnosticWorkbench(): React.JSX.Element {
                         key={item.key}
                         type="button"
                         onClick={() => handleSelectSample(idx)}
-                        className="min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-bold border cursor-pointer transition-colors"
+                        className="min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-bold border cursor-pointer transition-all duration-200 ease-out active:translate-y-[1px]"
                         style={
                           isActive
                             ? {

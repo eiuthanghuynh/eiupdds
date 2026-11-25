@@ -20,6 +20,8 @@ describe('CropDiseaseAlmanac & Inline Fold-Open Sheet', () => {
       expect(screen.getByRole('button', { name: /^Cà chua$/i })).toBeInTheDocument();
     });
 
+    const almanacSection = document.getElementById('almanac');
+    expect(almanacSection?.className).toContain('min-h-[calc(100vh-96px)]');
     expect(screen.getAllByTestId('almanac-disease-row')).toHaveLength(6);
     expect(screen.queryByText(/magnaporthe oryzae/i)).not.toBeInTheDocument();
 
@@ -37,6 +39,7 @@ describe('CropDiseaseAlmanac & Inline Fold-Open Sheet', () => {
     // Inline paper sheet unfolds in-place (not a modal dialog) with active ingredients & dosage
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(await screen.findByText(/magnaporthe oryzae/i)).toBeInTheDocument();
+    expect(screen.getByTestId('disease-detail-sheet')).toHaveClass('animate-sheet-unfold');
     expect(screen.getAllByText(/hoạt chất/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/tricyclazole/i).length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText(/liều lượng/i).length).toBeGreaterThan(0);

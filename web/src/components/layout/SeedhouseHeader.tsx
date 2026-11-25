@@ -109,7 +109,7 @@ export function SeedhouseHeader(): React.JSX.Element {
       {appSheetOpen && (
         <section
           id="eiu-pdds-app-companion"
-          className="w-full px-5 sm:px-8 lg:px-12 py-6 border-b"
+          className="w-full px-5 sm:px-8 lg:px-12 py-6 border-b animate-sheet-unfold"
           style={{
             backgroundColor: SEEDHOUSE_COLORS.sheet,
             borderColor: SEEDHOUSE_COLORS.hairline,
